@@ -1,0 +1,252 @@
+\documentclass[aspectratio=169, table]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage{listings} 
+
+\usetheme{Pradita}
+
+\subtitle{IF140303-Web Application Development}
+
+\title{\LARGE{Session-01:\\Introduction to Elixir}
+	\vspace{20pt}}
+\date[Serial]{\scriptsize {PRU/SPMI/FR-BM-18/0222}}
+\author[Pradita]{\small{\textbf{Alfa Yohannis}}}
+
+\lstdefinelanguage{Elixir} {
+	keywords={def, defmodule, do, end, for, if, else, true, false},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={@moduledoc, iex, Enum, @doc},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	showstringspaces=false
+}
+
+\begin{document}
+	
+	\frame{\titlepage}
+	
+	\begin{frame}
+		\frametitle{What is Elixir?}
+		\begin{itemize}
+			\item Elixir is a dynamic, functional programming language designed for building scalable and maintainable applications.
+			\item It runs on the Erlang VM (BEAM), known for its ability to handle large amounts of concurrent processes.
+			\item Elixir leverages Erlang's capabilities for distributed systems, fault-tolerance, and low-latency messaging.
+			\item Its syntax is inspired by Ruby, making it accessible for developers familiar with Ruby.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{How to Install Elixir}
+		\vspace{20pt}
+		\begin{itemize}
+			\item \textbf{On macOS:}
+			\begin{itemize}
+				\item Use Homebrew: \texttt{brew install elixir}
+			\end{itemize}
+			\item \textbf{On Ubuntu:}
+			\begin{itemize}
+				\item Install dependencies: \texttt{sudo apt-get install wget gnupg}
+				\item Add the Elixir repository:\\\texttt{wget -qO- \url{https://deb.nodesource.com/setup\_16.x} | sudo -E bash -}
+				\item Install Elixir: \texttt{sudo apt-get install elixir}
+			\end{itemize}
+			\item \textbf{On Windows:}
+			\begin{itemize}
+				\item Download the installer from the Elixir website: \url{https://elixir-lang.org/install.html}
+			\end{itemize}
+			\item Verify the installation by running: \texttt{elixir --version}
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Module Documentation}
+		\begin{lstlisting}[language=Elixir]
+			defmodule Lottery do
+			@moduledoc """
+			This module provides functionalities for managing a lottery system.
+			It includes functions for creating, shuffling, checking for numbers, and distributing numbers within the lottery pool.
+			"""
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{@moduledoc} provides documentation for the \texttt{Lottery} module.
+			\item Describes the module's purpose and the functionalities it offers.
+			\item Includes functions for creating, shuffling, checking, and distributing numbers.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Elixir: Lottery Module}
+		\begin{lstlisting}[language=Elixir]
+			defmodule Lottery do
+			def greet do
+			"Good luck!"
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item The \texttt{Lottery} module handles lottery operations such as creating pools, shuffling, and checking numbers.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Greeting Function}
+		\begin{lstlisting}[language=Elixir]
+			def greet do
+			"Good luck!"
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item The \texttt{greet/0} function returns a simple greeting message.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Generating Lottery Pool}
+		\begin{lstlisting}[language=Elixir]
+			@spec generate_pool() :: [<<_::24, _::_*16>>, ...]
+			def generate_pool do
+			numbers = ["Number 1", "Number 2", "Number 3", "Number 4", "Number 5", "Number 6"]
+			pots = ["Pot 1", "Pot 2", "Pot 3", "Pot 4"]
+			
+			for pot <- pots, number <- numbers do
+			"#{number} in #{pot}"
+			end
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{generate\_pool/0} creates a list of lottery numbers across multiple pots.
+			\item The nested \texttt{for} comprehensions combine numbers with pot labels.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Shuffling the Pool}
+		\begin{lstlisting}[language=Elixir]
+			def randomize(pool) do
+			Enum.shuffle(pool)
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{randomize/1} shuffles the list of lottery numbers.
+			\item Utilizes \texttt{Enum.shuffle/1} to randomize the order.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Checking Number Presence}
+		\begin{lstlisting}[language=Elixir]
+			@spec contains?(any(), any()) :: boolean()
+			def contains?(pool, number) do
+			Enum.member?(pool, number)
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{contains?/2} checks if a number is present in the lottery pool.
+			\item Uses \texttt{Enum.member?/2} to verify presence.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Distributing the Pool}
+		\begin{lstlisting}[language=Elixir]
+			def distribute(pool, draw_size) do
+			Enum.split(pool, draw_size)
+			end
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{distribute/2} splits the pool into two lists based on the draw size.
+			\item Returns a tuple containing two lists.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Function Documentation (1)}
+		\begin{lstlisting}[language=Elixir]
+			@doc """
+			Splits the pool into two parts based on draw_size.
+			
+			## Parameters
+			
+			- pool: List of lottery numbers.
+			- draw_size: Number of items in the first part.
+			
+			## Returns
+			
+			- A tuple with two lists: the first with draw_size items, and the second with the rest.
+			
+			## Example
+			
+			iex> Lottery.distribute(["Number 1 in Pot 1", "Number 2 in Pot 2"], 1)
+			{["Number 1 in Pot 1"], ["Number 2 in Pot 2"]}
+			"""
+		\end{lstlisting}
+	\end{frame}
+
+	\begin{frame}[fragile]
+		\frametitle{Function Documentation (2)}
+		\begin{itemize}
+			\item \texttt{@doc} provides documentation for the \texttt{distribute/2} function.
+			\item Describes the parameters: \texttt{pool} and \texttt{draw\_size}.
+			\item Details the return value: a tuple with two lists.
+			\item Provides an example usage.
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Function Name/Number}
+		\begin{itemize}
+			\item In Elixir, \texttt{function name/number} refers to the arity of a function.
+			\item The number after the slash (/) indicates the number of arguments the function takes.
+			\item For example:
+			\begin{itemize}
+				\item \texttt{greet/0} has 0 arguments.
+				\item \texttt{generate\_pool/0} has 0 arguments.
+				\item \texttt{contains?/2} has 2 arguments.
+				\item \texttt{distribute/2} has 2 arguments.
+			\end{itemize}
+			\item This notation is useful for distinguishing between different functions with the same name but different arity.
+		\end{itemize}
+	\end{frame}
+
+
+\begin{frame}
+	\frametitle{What is Functional Programming?}
+	\begin{itemize}
+		\item Functional programming is a paradigm that treats computation as the evaluation of mathematical functions.
+		\item It avoids changing-state and mutable data.
+		\item Functions are first-class citizens, meaning they can be passed as arguments, returned from other functions, and assigned to variables.
+		\item It emphasizes the use of pure functions, which have no side effects and always produce the same output for the same input.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Key Concepts of Functional Programming (1)}
+	\begin{itemize}
+		\item \textbf{Immutability:} Data cannot be modified after it is created. Instead, new data structures are created.
+		\item \textbf{Pure Functions:} Functions that do not cause side effects and return the same result for the same inputs.
+		\item \textbf{Higher-Order Functions:} Functions that can take other functions as arguments or return them as results.
+		\item \textbf{First-Class Functions:} Functions are treated as first-class citizens, allowing them to be assigned to variables, passed as arguments, and returned from other functions.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Key Concepts of Functional Programming (2)}
+	\begin{itemize}
+		\item \textbf{Declarative Style:} Focuses on what to compute rather than how to compute it, emphasizing expressions and declarations over statements.
+		\item \textbf{Recursion:} Functional programming often uses recursion as the primary mechanism for iteration, avoiding traditional loops.
+	\end{itemize}
+\end{frame}
+
+\end{document}
