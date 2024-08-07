@@ -1,0 +1,116 @@
+\documentclass[aspectratio=169, table]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage{listings} 
+
+\usetheme{Pradita}
+
+\subtitle{IF140303-Web Application Development}
+
+\title{\LARGE{Session-02:\\Pattern Matching in Elixir}
+	\vspace{20pt}}
+\date[Serial]{\scriptsize {PRU/SPMI/FR-BM-18/0222}}
+\author[Pradita]{\small{\textbf{Alfa Yohannis}}}
+
+\lstdefinelanguage{Elixir} {
+	keywords={def, defmodule, do, end, for, if, else, true, false},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={@moduledoc, iex, Enum, @doc},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	showstringspaces=false
+}
+
+\begin{document}
+	
+	\frame{\titlepage}
+	
+\begin{frame}[fragile]
+	\frametitle{Module Definition}
+	\begin{lstlisting}[language=Elixir]
+		defmodule Cards do
+		def hello do
+		"hi there!"
+		end
+	\end{lstlisting}
+	\begin{itemize}
+		\item Defines the `Cards` module.
+		\item Contains a function named `hello` that returns a simple greeting message.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Creating a Deck}
+	\begin{lstlisting}[language=Elixir]
+		@spec create_deck() :: [<<_::24, _::_*16>>, ...]
+		def create_deck do
+		values = ["Ace", "Two", "Three", "Four", "Five", "Six"]
+		suits = ["Spades", "Clubs", "Hearts", "Diamond"]
+		
+		for suit <- suits, value <- values do
+		"#{value} of #{suit}"
+		end
+		end
+	\end{lstlisting}
+	\begin{itemize}
+		\item The `create\_deck` function generates a list of cards.
+		\item Combines card values with suits to form a full deck.
+		\item Uses a nested `for` comprehension to produce the card combinations.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Shuffling the Deck}
+	\begin{lstlisting}[language=Elixir]
+		def shuffle(deck) do
+		Enum.shuffle(deck)
+		end
+	\end{lstlisting}
+	\begin{itemize}
+		\item The `shuffle` function randomizes the order of cards in the deck.
+		\item Uses `Enum.shuffle/1` to shuffle the list.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Checking for a Card}
+	\begin{lstlisting}[language=Elixir]
+		@spec contains?(any(), any()) :: boolean()
+		def contains?(deck, card) do
+		Enum.member?(deck, card)
+		end
+	\end{lstlisting}
+	\begin{itemize}
+		\item The `contains?/2` function checks if a specific card is present in the deck.
+		\item Utilizes `Enum.member?/2` to determine the presence of the card.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Dealing Cards}
+	\begin{lstlisting}[language=Elixir]
+		def deal(deck, hand_size) do
+		Enum.split(deck, hand_size)
+		end
+	\end{lstlisting}
+	\begin{itemize}
+		\item The `deal/2` function splits the deck into two parts based on the hand size.
+		\item Uses `Enum.split/2` to divide the deck.
+		\item Returns a tuple with two lists: one for the hand and one for the remaining cards.
+	\end{itemize}
+\end{frame}
+
+\end{document}
