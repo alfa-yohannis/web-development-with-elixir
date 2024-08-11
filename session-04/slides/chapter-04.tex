@@ -1,0 +1,153 @@
+\documentclass[aspectratio=169, table]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage{listings} 
+
+\usetheme{Pradita}
+
+\subtitle{IF140303-Web Application Development}
+
+\title{\LARGE{Session-04:\\ Maps and Keyword Lists in Elixir}
+	\vspace{20pt}}
+\date[Serial]{\scriptsize {PRU/SPMI/FR-BM-18/0222}}
+\author[Pradita]{\small{\textbf{Alfa Yohannis}}}
+
+\lstdefinelanguage{Elixir} {
+	keywords={def, defmodule, do, end, for, if, else, true, false},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={@moduledoc, iex, Enum, @doc},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	showstringspaces=false
+}
+
+\begin{document}
+	
+	\frame{\titlepage}
+	
+	\begin{frame}
+		\frametitle{Overview of Maps in Elixir}
+		\begin{itemize}
+			\item Maps are key-value data structures in Elixir.
+			\item Keys can be of any type, allowing for flexible data representation.
+			\item Useful for representing structured data.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Creating and Accessing Maps}
+		\begin{lstlisting}[language=Elixir]
+			iex> colors = %{primary: "red"}
+			iex> colors.primary
+			"red"
+		\end{lstlisting}
+		\begin{itemize}
+			\item Maps are created using the \%{} syntax.
+			\item Access map values using the dot notation or via keys.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Pattern Matching with Maps}
+		\begin{lstlisting}[language=Elixir]
+			iex> colors = %{primary: "red", secondary: "blue"}
+			iex> %{secondary: secondary_color} = colors
+			iex> secondary_color
+			"blue"
+		\end{lstlisting}
+		\begin{itemize}
+			\item Maps can be pattern matched to extract values.
+			\item Allows for easy decomposition of map data.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Immutability and Updating Maps}
+		\begin{lstlisting}[language=Elixir]
+			iex> colors = %{primary: "red"}
+			iex> colors.primary = "blue"
+			** (MatchError) no match of right hand side value: "blue"
+		\end{lstlisting}
+		\begin{itemize}
+			\item Maps are immutable, meaning they cannot be directly updated.
+			\item Updates require creating a new map.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Updating Maps with \texttt{put/3} and the \texttt{\%{ | }} Syntax}
+		\begin{lstlisting}[language=Elixir]
+			iex> colors = %{primary: "red"}
+			iex> colors = Map.put(colors, :primary, "blue")
+			iex> colors
+			%{primary: "blue"}
+			
+			iex> colors = %{colors | primary: "blue"}
+			iex> colors
+			%{primary: "blue"}
+		\end{lstlisting}
+		\begin{itemize}
+			\item Use \texttt{Map.put/3} or the \texttt{\%{ | }} syntax to update maps.
+			\item This creates a new map with the updated values.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Overview of Keyword Lists}
+		\begin{itemize}
+			\item Keyword lists are lists of key-value pairs.
+			\item Keys must be atoms, and keys are ordered.
+			\item Commonly used in Ecto and other Elixir libraries.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Creating and Accessing Keyword Lists}
+		\begin{lstlisting}[language=Elixir]
+			iex> colors = [{:primary, "red"}, {:secondary, "green"}]
+			iex> colors[:primary]
+			"red"
+		\end{lstlisting}
+		\begin{itemize}
+			\item Keyword lists can be accessed using the key in square brackets.
+			\item Useful for simple, ordered collections of key-value pairs.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Updating Keyword Lists}
+		\begin{lstlisting}[language=Elixir]
+			iex> colors = [primary: "red", secondary: "blue"]
+			iex> colors = [primary: "red", primary: "blue"]
+			iex> colors[:primary]
+			"blue"
+		\end{lstlisting}
+		\begin{itemize}
+			\item Updating a keyword list involves reassigning it with new values.
+			\item Duplicate keys in keyword lists will result in the last value being used.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Summary}
+		\begin{itemize}
+			\item We explored Maps and Keyword Lists in Elixir.
+			\item We learned how to create, access, and update both data structures.
+			\item Understanding these structures is key for working with Elixir data and using libraries like Ecto.
+		\end{itemize}
+	\end{frame}
+	
+\end{document}

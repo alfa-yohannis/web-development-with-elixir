@@ -1,0 +1,179 @@
+\documentclass[aspectratio=169, table]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage{listings} 
+
+\usetheme{Pradita}
+
+\subtitle{IF140303-Web Application Development}
+
+\title{\LARGE{Session-03:\\ Elixir Documentation and Testing}
+	\vspace{20pt}}
+\date[Serial]{\scriptsize {PRU/SPMI/FR-BM-18/0222}}
+\author[Pradita]{\small{\textbf{Alfa Yohannis}}}
+
+\lstdefinelanguage{Elixir} {
+	keywords={def, defmodule, do, end, for, if, else, true, false},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={@moduledoc, iex, Enum, @doc},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	showstringspaces=false
+}
+
+\begin{document}
+	
+	\frame{\titlepage}
+	
+	\begin{frame}
+		\frametitle{Overview of Elixir Documentation}
+		\begin{itemize}
+			\item Elixir provides powerful tools for creating documentation directly within your code.
+			\item \texttt{@moduledoc} and \texttt{@doc} are used to document modules and functions.
+			\item Mix tasks like \texttt{mix docs} can generate HTML documentation from your code.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Adding Dependencies for Documentation}
+		\begin{itemize}
+			\item To generate documentation, add \texttt{ex\_doc} to your \texttt{mix.exs} dependencies.
+		\end{itemize}
+		\begin{lstlisting}[language=Elixir]
+			defp deps do
+			[
+			{:ex_doc, "~> 0.12"}
+			]
+			end
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\texttt{@moduledoc}: Module Documentation}
+		\begin{itemize}
+			\item Use \texttt{@moduledoc} at the top of your module to provide an overview.
+			\item Describes the purpose, usage, and any relevant details of the module.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Example: \texttt{@moduledoc}}
+		\begin{lstlisting}[language=Elixir]
+			defmodule Lottery do
+			@moduledoc """
+			This module provides functionalities for managing a lottery system.
+			It includes functions for creating, shuffling, checking for numbers,
+			saving, loading, and distributing numbers within the lottery pool.
+			"""
+			end
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\texttt{@doc}: Function Documentation}
+		\begin{itemize}
+			\item \texttt{@doc} is used to document individual functions.
+			\item Include descriptions, parameters, return values, and examples.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Example: \texttt{@doc}}
+		\begin{lstlisting}[language=Elixir]
+			@doc """
+			Generates a pool of lottery numbers with different pots.
+			
+			## Returns
+			- A list of lottery numbers with their respective pot numbers.
+			
+			## Examples
+			iex> Lottery.generate_pool()
+			["Number 1 in Pot 1", "Number 2 in Pot 1", ...]
+			"""
+			def generate_pool do
+			# implementation
+			end
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Generating Documentation}
+		\begin{itemize}
+			\item Run \texttt{mix docs} to generate HTML documentation.
+			\item The output will be stored in the \texttt{doc} directory.
+			\item View it by opening \texttt{index.html} in your browser.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Overview of Testing in Elixir}
+		\begin{itemize}
+			\item Elixir uses \texttt{ExUnit} for writing and running tests.
+			\item \texttt{ExUnit.Case} is used to define a test module.
+			\item Tests are written as functions prefixed with \texttt{test}.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Basic Example of a Test}
+		\begin{lstlisting}[language=Elixir]
+			defmodule LotteryTest do
+			use ExUnit.Case
+			
+			test "generate_pool creates 20 lottery numbers" do
+			assert length(Lottery.generate_pool()) == 20
+			end
+			end
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Doctests in Elixir}
+		\begin{itemize}
+			\item Doctests allow you to run the examples in your documentation as tests.
+			\item Ensure the examples in your \texttt{@doc} annotations are correct.
+			\item Use \texttt{doctest ModuleName} in your test module.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Adding Doctests to Your Tests}
+		\begin{lstlisting}[language=Elixir]
+			defmodule LotteryTest do
+			use ExUnit.Case
+			doctest Lottery
+			end
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Running Tests}
+		\begin{itemize}
+			\item Run \texttt{mix test} to execute all your tests.
+			\item Ensure your code is thoroughly tested and your documentation examples are correct.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Summary}
+		\begin{itemize}
+			\item We covered how to document Elixir code using \texttt{@moduledoc} and \texttt{@doc}.
+			\item We explored how to write and run tests, including using doctests.
+			\item Proper documentation and testing are essential for maintainable and reliable code.
+		\end{itemize}
+	\end{frame}
+	
+\end{document}

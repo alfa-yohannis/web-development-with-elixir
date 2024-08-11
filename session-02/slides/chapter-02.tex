@@ -7,7 +7,7 @@
 
 \subtitle{IF140303-Web Application Development}
 
-\title{\LARGE{Session-02:\\Pattern Matching in Elixir}
+\title{\LARGE{Session-02:\\ Elixir's pattern matching }
 	\vspace{20pt}}
 \date[Serial]{\scriptsize {PRU/SPMI/FR-BM-18/0222}}
 \author[Pradita]{\small{\textbf{Alfa Yohannis}}}
@@ -38,79 +38,96 @@
 	
 	\frame{\titlepage}
 	
-\begin{frame}[fragile]
-	\frametitle{Module Definition}
-	\begin{lstlisting}[language=Elixir]
-		defmodule Cards do
-		def hello do
-		"hi there!"
-		end
-	\end{lstlisting}
-	\begin{itemize}
-		\item Defines the `Cards` module.
-		\item Contains a function named `hello` that returns a simple greeting message.
-	\end{itemize}
-\end{frame}
-
-\begin{frame}[fragile]
-	\frametitle{Creating a Deck}
-	\begin{lstlisting}[language=Elixir]
-		@spec create_deck() :: [<<_::24, _::_*16>>, ...]
-		def create_deck do
-		values = ["Ace", "Two", "Three", "Four", "Five", "Six"]
-		suits = ["Spades", "Clubs", "Hearts", "Diamond"]
-		
-		for suit <- suits, value <- values do
-		"#{value} of #{suit}"
-		end
-		end
-	\end{lstlisting}
-	\begin{itemize}
-		\item The `create\_deck` function generates a list of cards.
-		\item Combines card values with suits to form a full deck.
-		\item Uses a nested `for` comprehension to produce the card combinations.
-	\end{itemize}
-\end{frame}
-
-\begin{frame}[fragile]
-	\frametitle{Shuffling the Deck}
-	\begin{lstlisting}[language=Elixir]
-		def shuffle(deck) do
-		Enum.shuffle(deck)
-		end
-	\end{lstlisting}
-	\begin{itemize}
-		\item The `shuffle` function randomizes the order of cards in the deck.
-		\item Uses `Enum.shuffle/1` to shuffle the list.
-	\end{itemize}
-\end{frame}
-
-\begin{frame}[fragile]
-	\frametitle{Checking for a Card}
-	\begin{lstlisting}[language=Elixir]
-		@spec contains?(any(), any()) :: boolean()
-		def contains?(deck, card) do
-		Enum.member?(deck, card)
-		end
-	\end{lstlisting}
-	\begin{itemize}
-		\item The `contains?/2` function checks if a specific card is present in the deck.
-		\item Utilizes `Enum.member?/2` to determine the presence of the card.
-	\end{itemize}
-\end{frame}
-
-\begin{frame}[fragile]
-	\frametitle{Dealing Cards}
-	\begin{lstlisting}[language=Elixir]
-		def deal(deck, hand_size) do
-		Enum.split(deck, hand_size)
-		end
-	\end{lstlisting}
-	\begin{itemize}
-		\item The `deal/2` function splits the deck into two parts based on the hand size.
-		\item Uses `Enum.split/2` to divide the deck.
-		\item Returns a tuple with two lists: one for the hand and one for the remaining cards.
-	\end{itemize}
-\end{frame}
-
+	\begin{frame}
+		\frametitle{Recap: Function Documentation and Arity}
+		\begin{itemize}
+			\item In Elixir, the function name followed by a slash and number indicates the arity, or the number of arguments the function takes.
+			\item \texttt{function name/number} notation helps in distinguishing between different functions with the same name but different arities.
+			\item Example: \texttt{greet/0}, \texttt{generate\_pool/0}, \texttt{contains?/2}, \texttt{distribute/2}.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Introduction to Advanced Concepts}
+		\begin{itemize}
+			\item This session covers more advanced Elixir concepts within the context of a Lottery module.
+			\item We’ll explore how to save and load data, and how to create more complex operations like creating a randomized hand from the lottery pool.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Saving the Lottery Pool to a File}
+		\begin{lstlisting}[language=Elixir]
+			def save_pool(pool, filename) do
+			binary = :erlang.term_to_binary(pool)
+			File.write(filename, binary)
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{save\_pool/2} saves the lottery pool to a specified file.
+			\item Converts the pool to binary using \texttt{:erlang.term\_to\_binary/1}.
+			\item Writes the binary data to the file with \texttt{File.write/2}.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Loading the Lottery Pool from a File}
+		\begin{lstlisting}[language=Elixir]
+			def load_pool(filename) do
+			case File.read(filename) do
+			{:ok, binary} -> :erlang.binary_to_term(binary)
+			{:error, _reason} -> "That file does not exist"
+			end
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{load\_pool/1} loads the lottery pool from a specified file.
+			\item Reads the binary data from the file using \texttt{File.read/1}.
+			\item Converts the binary data back into the original list with \texttt{:erlang.binary\_to\_term/1}.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Creating a Randomized Hand}
+		\begin{lstlisting}[language=Elixir]
+			def create_hand(draw_size) do
+			Lottery.generate_pool()
+			|> Lottery.randomize()
+			|> Lottery.distribute(draw_size)
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{create\_hand/1} generates a randomized hand from the lottery pool.
+			\item Combines multiple operations: generating the pool, shuffling, and distributing.
+			\item Utilizes the pipe operator (\texttt{|>}) for chaining functions together.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{The Pipe Operator (\texttt{|>})}
+		\begin{itemize}
+			\item The pipe operator allows for chaining function calls in a clear and readable manner.
+			\item It passes the result of the expression on the left as the first argument to the function on the right.
+			\item Enhances code readability, especially when working with multiple transformations or operations.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Recap: Functional Programming Concepts}
+		\begin{itemize}
+			\item Functional programming emphasizes immutability, pure functions, and higher-order functions.
+			\item Functions can be passed as arguments, returned as results, and assigned to variables.
+			\item Recursion is preferred over loops for iteration.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Summary}
+		\begin{itemize}
+			\item We explored advanced Elixir concepts by continuing the development of the \texttt{Lottery} module.
+			\item We learned how to save and load data, create a randomized hand, and utilize the pipe operator.
+			\item These concepts further enhance our understanding of functional programming and Elixir's capabilities.
+		\end{itemize}
+	\end{frame}
+	
 \end{document}
