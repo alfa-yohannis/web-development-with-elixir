@@ -1,0 +1,334 @@
+\documentclass[aspectratio=169, table]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage{listings} 
+\usepackage{graphicx}
+
+\usetheme{Pradita}
+
+\subtitle{IF140303-Web Application Development}
+
+\title{\LARGE{Session-08:\\ Phoenix's MVC Model}}
+\date[Serial]{\scriptsize {PRU/SPMI/FR-BM-18/0222}}
+\author[Pradita]{\small{\textbf{Alfa Yohannis}}}
+
+\lstdefinelanguage{Elixir} {
+	keywords={def, defmodule, do, end, for, if, else, true, false},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={@moduledoc, iex, Enum, @doc},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	showstringspaces=false
+}
+
+\begin{document}
+	
+	\frame{\titlepage}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Phoenix MVC Model:\\ Model, View, Controller}}
+		\begin{itemize}
+			\item Model: Represents the data and business logic.
+			\item View: Handles the presentation layer.
+			\item Controller: Manages the flow of the application.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Model, View,\\ Controller Workflow}}
+		\begin{itemize}
+			\item Request received by the router.
+			\item Router directs the request to the appropriate controller.
+			\item Controller interacts with the model and selects a view.
+			\item View renders the final output.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Understanding Phoenix\\ Project Structure}}
+		\begin{itemize}
+			\item \texttt{controllers/}: Manages request handling.
+			\item \texttt{models/}: Represents database tables and business logic.
+			\item \texttt{views/}: Manages how data is presented.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Request Workflow: Router,\\ Controller, View}}
+		\begin{itemize}
+			\item Request hits the router.
+			\item Router directs to the controller.
+			\item Controller processes the request, uses model, and chooses view.
+			\item View generates HTML or JSON response.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Templates vs. Views}}
+		\begin{itemize}
+			\item Templates: HTML or eEx files used for rendering.
+			\item Views: Elixir modules that process data and select templates.
+			\item Naming conventions are crucial for Phoenix to locate files.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Starting Phoenix with IEx}
+		\begin{itemize}
+			\item In Elixir: \texttt{iex -S mix}.
+			\item In Phoenix: \texttt{iex -S mix phx.server}.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Phoenix Models and Database}
+		\begin{itemize}
+			\item Models represent database tables.
+			\item Phoenix needs to be told what data is in the database.
+			\item Models define the structure of database tables.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Creating a Topics Model}
+		\begin{lstlisting}[language=Elixir]
+			defmodule Discuss.Topic do
+			use Discuss.Web, :model
+			
+			schema "topics" do
+			field :title, :string
+			belongs_to :user, Discuss.User
+			has_many :comments, Discuss.Comment
+			end
+			
+			def changeset(struct, params \\ %{}) do
+			struct
+			|> cast(params, [:title])
+			|> validate_required([:title])
+			end
+			end
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Understanding Migrations}}
+		\begin{itemize}
+			\item Migrations manage changes to your database schema.
+			\item Command: \texttt{mix ecto.gen.migration add\_topics}.
+			\item Files stored in \texttt{priv/repo/migrations}.
+			\item Migration filenames include a timestamp.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Creating a Topics Migration}
+		\begin{lstlisting}[language=Elixir]
+			defmodule Discuss.Repo.Migrations.AddTopics do
+			use Ecto.Migration
+			
+			def change do
+			create table(:topics) do
+			add :title, :string
+			end
+			end
+			end
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Using GUI Databases\\ for PostgreSQL}}
+		\begin{itemize}
+			\item GUI tools like Postico or pgAdmin can simplify database management.
+			\item These tools provide a user-friendly interface for interacting with PostgreSQL.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Project Problems}}
+		\begin{table}[]
+			\centering
+			\begin{tabular}{|l|}
+				\hline
+				\textbf{Problem} \\ \hline
+				Need a new URL for the user to visit \\ \hline
+				New routes must map up to a method in a controller \\ \hline
+				Need to show a form to the user \\ \hline
+				Need to translate data in the form to something that can be saved \\ \hline
+				The controller and view are related to 'Page', but we are making stuff related to 'Topic' \\ \hline
+			\end{tabular}
+		\end{table}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Project Solutions}}
+		\begin{table}[]
+			\centering
+			\begin{tabular}{|l|}
+				\hline
+				\textbf{Solution} \\ \hline
+				Add a new route in router file \\ \hline
+				Add a new method in a controller to handle this request \\ \hline
+				Make a new template that contains the form \\ \hline
+				Create a 'Topic' model that can translate raw data into something that can be saved \\ \hline
+				Make a new controller and view to handle everything related to topics \\ \hline
+			\end{tabular}
+		\end{table}
+	\end{frame}
+	
+	
+	\begin{frame}
+		\frametitle{Handling Requests in Router}
+		\begin{itemize}
+			\item Ensure request handling in the router.
+			\item Example code:
+			\item 
+			\texttt{
+				scope "/", Discuss do\\
+				pipe\_through :browser\\
+				get "/", PageController, :index\\
+				get "/topics/new", TopicController, :new\\
+				end
+				}
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Controller Function\\ Name Conventions}}
+		\begin{itemize}
+			\item \texttt{new}: Render form for new resource.
+			\item \texttt{create}: Handle form submission and create resource.
+			\item \texttt{index}: List all resources.
+			\item \texttt{delete}: Remove a resource.
+			\item \texttt{edit}: Render form to edit resource.
+			\item \texttt{update}: Handle form submission and update resource.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Creating a Simple TopicController}
+		\begin{lstlisting}[language=Elixir]
+			defmodule Discuss.TopicController do
+			use Discuss.Web, :controller
+			def new(conn, params) do
+			end
+			end
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Fixing the Init Error}
+		\begin{itemize}
+			\item Error: function Discuss.TopicController.init/1 is undefined or private.
+			\item Solution: Add \texttt{use Discuss.Web, :controller} to include required functions.
+			\item Example: \\ \texttt{
+				defmodule Discuss.TopicController do\\
+				use Discuss.Web, :controller\\
+				def new(conn, params) do\\
+				end\\
+				end
+			}
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Elixir Keywords: \texttt{import},\\ \texttt{alias}, \texttt{use}}}
+		\begin{itemize}
+			\item \texttt{import}: Bring functions or macros into scope.
+			\item \texttt{alias}: Create shorter names for modules.
+			\item \texttt{use}: Inject functionality into a module.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Role of \texttt{web.ex} in Phoenix}}
+		\begin{itemize}
+			\item \texttt{web.ex}: Contains functionality for models, controllers, and views.
+			\item \texttt{use Discuss.Web, :controller}: Imports default controller functions and setup.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Content of controller in \texttt{web.ex}}}
+		\begin{itemize}
+			\item
+			\texttt{
+				def controller do\\
+				quote do\\
+				use Phoenix.Controller\\
+				alias Discuss.Repo\\
+				import Ecto\\
+				import Ecto.Query\\
+				import Discuss.Router.Helpers\\
+				import Discuss.Gettext\\
+				end\\
+				end
+			}
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Eliminating Errors with \\\texttt{use Discuss.Web, :controller}}}
+		\begin{itemize}
+			\item Adding \texttt{use Discuss.Web, :controller} resolves init function errors. Because the init function are included in it
+			\item Example:\\\texttt{
+				defmodule Discuss.TopicController do\\
+				use Discuss.Web, :controller\\
+				def new(conn, params) do\\
+				end\\
+				end
+			}
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Function Signature Mismatch\\ Errors}}
+		\begin{itemize}
+			\item Error format: \texttt{<function\_name>/<number>}
+			\item Example: \texttt{new/0} indicates the function \texttt{new} takes 0 arguments.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Debugging with \texttt{IO.inspect},\\ \texttt{conn}, and \texttt{params}}}
+		\begin{itemize}
+			\item \texttt{IO.inspect}: Prints values to the console for debugging.
+			\item \texttt{conn}: Contains information about the request and response.
+			\item \texttt{params}: Contains query parameters and form data.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Modifying TopicController to Use \\\texttt{conn} and \texttt{params}}}
+		\begin{verbatim}[language=Elixir]
+			defmodule Discuss.TopicController do
+			use Discuss.Web, :controller
+			def new(conn, params) do
+			IO.inspect(conn)
+			IO.inspect(params)
+			end
+			end
+		\end{verbatim}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Form Validation: Title Required}}
+		\begin{itemize}
+			\item Ensure that form input has a title.
+			\item Show error message: "You must enter a title" if missing.
+		\end{itemize}
+	\end{frame}
+	
+\end{document}
