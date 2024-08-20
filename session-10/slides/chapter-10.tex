@@ -1,0 +1,516 @@
+\documentclass[aspectratio=169, table]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+
+\usetheme{Pradita}
+
+\subtitle{IF140303-Web Application Development}
+
+\title{\LARGE{Session-10:\\ Saving Data in Phoenix}}
+\date[Serial]{\scriptsize {PRU/SPMI/FR-BM-18/0222}}
+\author[Pradita]{\small{\textbf{Alfa Yohannis}}}
+
+\lstdefinelanguage{Elixir} {
+	keywords={def, defmodule, do, end, for, if, else, true, false},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={@moduledoc, iex, Enum, @doc},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	showstringspaces=false
+}
+
+\begin{document}
+	
+	\frame{\titlepage}
+	
+	\begin{frame}
+		\frametitle{Saving Data in Phoenix}
+		\begin{itemize}
+			\item This session covers the process of saving user input to the database using Phoenix and Elixir.
+			\item We will explore the workflow from user input to data persistence.
+			\item We’ll also see how to handle errors and enhance the user experience with CSS.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Understanding the \\ Save Workflow}}
+		\begin{itemize}
+			\item The process begins with user input parameters submitted via a form.
+			\item The `changeset` function validates this input.
+			\item If validation succeeds, data is saved to the database.
+			\item The user is then redirected to the topic list with a success message.
+			\item If validation fails, the form is re-rendered with error messages.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Understanding \\ Ecto}}
+		\begin{itemize}
+			\item **Ecto** is a toolkit for data mapping and language integrated queries.
+			\item It provides tools to define schemas, validate data, and interact with databases.
+			\item The `changeset` function in Ecto allows data validation and casting.
+			\item **Repo** is an Ecto module responsible for persisting data to the database.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Updating the Create Function}
+		\begin{lstlisting}[language=Elixir]
+			defmodule Discuss.TopicController do
+			use Discuss.Web, :controller
+			
+			alias Discuss.Topic
+			
+			def new(conn, _params) do
+			changeset = Topic.changeset(%Topic{}, %{})
+			render conn, "new.html", changset: changeset
+			end
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Updating the Create Function}
+		\begin{lstlisting}[language=Elixir]
+			def create(conn, %{"topic" => topic}) do
+			changeset = Topic.changeset(%Topic{}, topic)
+			case Repo.insert(changset) do
+			{:ok, _topic} -> IO.inspect(post)
+			{:error, changeset} -> 
+			render conn, "new.html", changeset: changeset
+			end
+			end
+			end
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Explaining the Create Function}
+		\begin{itemize}
+			\item **new/2**: Initializes a new changeset for an empty `Topic`.
+			\item **create/2**: Handles form submission and attempts to save the new topic.
+			\item The `changeset` function validates the input data and prepares it for saving.
+			\item **Repo.insert/2**: Attempts to insert the validated data into the database.
+			\item If successful, the topic is saved and a success message is shown.
+			\item If it fails, the form is re-rendered with error messages.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Error Handling with error\_tag}
+		\begin{lstlisting}[language=Elixir]
+			<%= form_for @changeset, topic_path(@conn, :create), fn f -> %>
+			<div class="form-group">
+			<%= text_input f, :title, placeholder: "Title", class: "form-control" %>
+			<%= error_tag f, :title %>
+			</div>
+			<%= submit "Save Topic", class: "btn btn-primary" %>
+			<% end % >
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Understanding error\_tag}
+		\begin{itemize}
+			\item `error\_tag` helps in displaying error messages next to form fields.
+			\item It checks if the `changeset` contains errors for a specific field.
+			\item If an error exists, it generates an HTML element showing the error message.
+			\item This improves user experience by providing immediate feedback.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Adding CSS to the Project}}
+		\begin{itemize}
+			\item Add the following CSS to `web > static > css > app.css`:
+		\end{itemize}
+		\begin{lstlisting}[language=Elixir]
+			.help-block{
+				color: red;
+				text-transform: capitalize;
+				position: absolute;
+				top: 37px;
+			}
+			
+			.form-group{
+				position: relative;
+				margin-bottom: 25px;
+			}
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Impact of Adding \\ CSS}}
+		\begin{itemize}
+			\item Adding CSS to `app.css` impacts the entire project.
+			\item The `.help-block` class styles error messages, making them more noticeable.
+			\item The `.form-group` class provides structure and spacing to form elements.
+			\item These styles enhance the overall user interface and user experience.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Summary}
+		\begin{itemize}
+			\item We explored the workflow of saving data in Phoenix using Ecto.
+			\item We updated the create function and handled errors with `error\_tag`.
+			\item Finally, we enhanced the user interface with custom CSS.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Updating the Router}
+		\begin{itemize}
+			\item The router is updated to change the root path to show a list of topics.
+			\item This change breaks from the RESTful convention by routing "/" to the `TopicController`.
+			\item Remove unused `PageController` components.
+		\end{itemize}
+		\begin{lstlisting}[language=Elixir]
+			scope "/", Discuss do
+			pipe_through :browser
+			get "/", TopicController, :index
+			get "/topics/new", TopicController, :new
+			post "/topics", TopicController, :create
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Explanation of the Router Update}
+		\begin{itemize}
+			\item The root path ("/") now directs users to the `TopicController`'s `index` action.
+			\item The `index` action will display a list of topics.
+			\item Removed `PageController` since it’s no longer needed.
+			\item The `scope` block specifies the routing paths for the Discuss application.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Adding the Index Function \\to TopicController}}
+		\begin{lstlisting}[language=Elixir]
+			defmodule Discuss.TopicController do
+			use Discuss.Web, :controller
+			
+			alias Discuss.Topic
+			
+			def index(conn, _params) do
+			topics = Repo.all(Topic)
+			render conn, "index.html", topics: topics
+			end
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Explanation of the Index Function}
+		\begin{itemize}
+			\item The `index` function retrieves all topics from the database using `Repo.all/1`.
+			\item These topics are passed to the "index.html" template for rendering.
+			\item The `topics` list is available in the template as `@topics`.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Creating the Index Template}
+		\begin{lstlisting}[language=elixir]
+			<h5>Topics</h5>
+			
+			<ul class="collection">
+			<%= for topic <- @topics do %>
+			<li class="collection-item">
+			<%= topic.title %>
+			</li>
+			<% end %>
+			</ul>
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Explanation of the Index Template}
+		\begin{itemize}
+			\item The template displays a list of topics.
+			\item The `<ul>` element represents the unordered list, styled with the `collection` class.
+			\item The `for` loop iterates over each topic and renders its title inside a `<li>` element.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Updating the Create Function}
+		\begin{lstlisting}[language=Elixir]
+			def create(conn, %{"topic" => topic}) do
+			changeset = Topic.changeset(%Topic{}, topic)
+			case Repo.insert(changeset) do
+			{:ok, _topic} -> 
+			conn
+			|> put_flash(:info, "Topic Created")
+			|> redirect(to: topic_path(conn, :index))
+			{:error, changeset} -> 
+			render conn, "new.html", changeset: changeset
+			end
+			end
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Explanation of the Updated \\Create Function}}
+		\begin{itemize}
+			\item If `Repo.insert/1` is successful, a success message is flashed.
+			\item The user is then redirected to the `index` action, displaying the list of topics.
+			\item If the insert fails, the form is re-rendered with errors for correction.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Adding a Button to the \\Index Template}}
+		\begin{lstlisting}[language=Elixir]
+			<div class="fixed-action-btn">
+			<%= link to: topic_path(@conn, :new), class: "btn-floating btn-large waves-effect waves-light red" do %>
+			<i class="material-icons">add</i>
+			<% end %>
+			</div>
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Explanation of the Button Addition}
+		\begin{itemize}
+			\item The button is created using the `link/2` helper, directing users to the `new` action.
+			\item `topic\_path(@conn, :new)` generates the appropriate URL for the `new` topic form.
+			\item The button uses Materialize CSS for styling, with a floating effect and an add icon.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Adding Material Icons}
+		\begin{lstlisting}[language=elixir]
+			<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Explanation of Material Icons}
+		\begin{itemize}
+			\item The `<link>` tag includes Material Icons from Google Fonts into the project.
+			\item This allows the use of icons like the "add" icon in buttons or other UI elements.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Adding Edit and Update Routes}
+		\begin{lstlisting}[language=Elixir]
+			scope "/", Discuss do
+			pipe_through :browser
+			
+			get "/", TopicController, :index
+			get "/topics/new", TopicController, :new
+			post "/topics", TopicController, :create
+			get "/topics/:id/edit", TopicController, :edit
+			end
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Explanation of the Edit Route}
+		\begin{itemize}
+			\item The `edit` route allows users to load a form to edit an existing topic.
+			\item The `:id` parameter in the path corresponds to the topic being edited.
+			\item The `edit` action will retrieve the topic and display it for editing.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Adding the Edit Function\\to TopicController}}
+		\begin{lstlisting}[language=Elixir]
+			def edit(conn, %{"id" => topic_id}) do
+			topic = Repo.get(Topic, topic_id)
+			changeset = Topic.changeset(topic)
+			
+			render conn, "edit.html", changeset: changeset, topic: topic
+			end
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Explanation of the Edit Function}
+		\begin{itemize}
+			\item The `edit` function retrieves the topic to be edited using `Repo.get/2`.
+			\item A `changeset` is created for the topic, allowing for validation and form rendering.
+			\item The `edit.html` template is rendered with the `changeset` and `topic` data.
+		\end{itemize}
+	\end{frame}
+	
+	\section{Editing and Deleting Topics}
+	
+	\begin{frame}{\shortstack{Adding \texttt{edit.html.eex} to \\ \texttt{templates > topic}}}
+		\begin{itemize}
+			\item \texttt{
+				<\%= form\_for @changeset, topic\_path(@conn, :update, @topic), fn f -> \%> \\
+				<div class="form-group"> \\
+				<\%= text\_input f, :title, placeholder: "Title", class: "form-control" \%> \\
+				<\%= error\_tag f, :title \%> \\
+				</div> \\
+				<\%= submit "Save Topic", class: "btn btn-primary" \%> \\
+				<\% end \%>
+			}
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}{\shortstack{Adding \texttt{edit.html.eex} to \\ \texttt{templates > topic}}} 
+		\begin{itemize}
+			\item \texttt{form\_for @changeset}: Generates an HTML form bound to the \texttt{update} action.
+			\item \texttt{topic\_path(@conn, :update, @topic)}: The URL for submitting form data to \texttt{update}.
+			\item \texttt{text\_input f, :title}: Creates an input field for \texttt{title}, with validation.
+			\item \texttt{error\_tag f, :title}: Displays error message if \texttt{title} is invalid.
+			\item \texttt{submit "Save Topic"}: Submit button to save changes.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Updating Router to Include\\\texttt{put "/topics/:id"}}}
+		\begin{itemize}
+			\item \texttt{
+				scope "/", Discuss do \\
+				pipe\_through :browser  \\
+				get "/", PageController, :index \\
+				get "/topics/new", TopicController, :new \\
+				post "/topics", TopicController, :create \\
+				get "/topics/:id/edit", TopicController, :edit \\
+				put "/topics/:id", TopicController, :update \\
+				end
+			}
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Updating Router to Include\\\texttt{put "/topics/:id"}}}
+		\begin{itemize}
+			\item \texttt{put "/topics/:id"}: Defines the route for updating an existing topic.
+			\item The route maps to the \texttt{update} action in the \texttt{TopicController}.
+			\item \texttt{:id} is a placeholder for the topic’s ID.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Updating \texttt{TopicController} with\\\texttt{update/2} Function}}
+		\begin{itemize}
+			\item \texttt{
+				def update(conn, \%{"id" => topic\_id, "topic" => topic}) do \\
+				old\_topic = Repo.get(Topic, topic\_id) \\
+				changeset = Topic.changeset(old\_topic, topic) \\
+				case Repo.update(changset) do \\
+				{:ok, \_topic} -> \\
+				conn \\
+				|> put\_flash(:info, "Topic Updated") \\
+				|> redirect(to: topic\_path(conn, :index)) \\
+			}
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Updating \texttt{TopicController} with\\\texttt{update/2} Function}}
+		\begin{itemize}
+			\item \texttt{{:error, changset} -> \\
+				render conn, "edit.html", changeset: changeset, topic: old\_topic \\
+				end \\
+				end \\}
+			\item Retrieves the existing topic from the database using \texttt{Repo.get}.
+			\item Creates a changeset to validate and apply updates.
+			\item If update succeeds, flashes success message and redirects to \texttt{index}.
+			\item If update fails, re-renders the edit page with the errors.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Linking \texttt{index.html.eex}\\to Edit Pages}}
+		\texttt{
+			<h5>Topics</h5> \\
+			<ul class = "collection"> \\
+			<\%= for topic <- @topics do \%> \\
+			<li class="collection-item"> \\
+			<\%= topic.title \%> \\
+			<div class="right"> \\
+			<\%= link "Edit", to: topic\_path(@conn, :edit, topic) \%> \\
+			</div> \\
+			</li> \\
+			<\% end \%> \\
+			</ul>
+		}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Linking \texttt{index.html.eex}\\to Edit Pages}}
+		\begin{itemize}
+			\item Lists all topics with an "Edit" link next to each one.
+			\item \texttt{link "Edit"} generates a link to the edit page for each topic.
+			\item The link is tied to the specific topic’s ID.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}{\shortstack{Updating Router with \\Resource Handler}}
+		\texttt{
+			scope "/", Discuss do\\
+			resources "/", TopicController\\
+			end\\
+		}
+		
+		\begin{itemize}
+			\item Simplifies routing by using a \texttt{resources} macro.
+			\item Automatically generates RESTful routes for \texttt{TopicController}.
+			\item Eliminates the need to manually define individual routes.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Adding \texttt{delete/2} Function to\\\texttt{TopicController}}}
+		\texttt{
+			def delete(conn, \%{"id" => topic\_id}) do
+			Repo.get!(Topic, topic\_id) |> Repo.delete!
+			conn
+			|> put\_flash(:info, "Topic Deleted")
+			|> redirect(to: topic\_path(conn, :index)) 
+			end
+		}
+		
+		\begin{itemize}
+			\item Retrieves the topic to delete using \texttt{Repo.get!}.
+			\item Deletes the topic from the database using \texttt{Repo.delete!}.
+			\item Flashes a success message and redirects to the \texttt{index} page.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Linking \texttt{index.html.eex} to Delete Link}
+		\texttt{
+			<h5>Topics</h5>\\
+			<ul class = "collection">\\
+			<\%= for topic <- @topics do \%>\\
+			<li class="collection-item"> \\
+			<\%= topic.title \%>\\
+			<div class="right">\\
+			<\%= link "Edit", to: topic\_path(@conn, :edit, topic) \%>\\
+			<\%= link "Delete", to: topic\_path(@conn, :delete , topic), method: :delete \%>\\
+			</div>
+			</li>
+			<\% end \%> \\
+			</ul>
+		}
+		
+		\begin{itemize}
+			\item Adds a "Delete" link next to each topic.
+			\item The \texttt{method: :delete} ensures the correct HTTP method is used.
+			\item The link is tied to the specific topic’s ID.
+		\end{itemize}
+	\end{frame}
+	
+\end{document}
