@@ -1,0 +1,251 @@
+\documentclass[aspectratio=169, table]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage{listings} 
+
+\usetheme{Pradita}
+
+\subtitle{IF140303-Web Application Development}
+
+\title{\LARGE{Session-02:\\ Elixir's pattern matching }
+	\vspace{20pt}}
+\date[Serial]{\scriptsize {PRU/SPMI/FR-BM-18/0222}}
+\author[Pradita]{\small{\textbf{Alfa Yohannis}}}
+
+\lstdefinelanguage{Elixir} {
+	keywords={def, defmodule, do, end, for, if, else, true, false},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={@moduledoc, iex, Enum, @doc},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	showstringspaces=false
+}
+
+\begin{document}
+	
+	\frame{\titlepage}
+	
+	\begin{frame}
+		\frametitle{Recap: Function Documentation and Arity}
+		\begin{itemize}
+			\item In Elixir, the function name followed by a slash and number indicates the arity, or the number of arguments the function takes.
+			\item \texttt{function name/number} notation helps in distinguishing between different functions with the same name but different arities.
+			\item Example: \texttt{greet/0}, \texttt{generate\_pool/0}, \texttt{contains?/2}, \texttt{distribute/2}.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Introduction to Advanced Concepts}
+		\begin{itemize}
+			\item This session covers more advanced Elixir concepts within the context of a Lottery module.
+			\item We’ll explore how to save and load data, and how to create more complex operations like creating a randomized hand from the lottery pool.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Saving the Lottery Pool to a File}
+		\begin{lstlisting}[language=Elixir]
+			def save_pool(pool, filename) do
+			binary = :erlang.term_to_binary(pool)
+			File.write(filename, binary)
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{save\_pool/2} saves the lottery pool to a specified file.
+			\item Converts the pool to binary using \texttt{:erlang.term\_to\_binary/1}.
+			\item Writes the binary data to the file with \texttt{File.write/2}.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Loading the Lottery Pool from a File}
+		\begin{lstlisting}[language=Elixir]
+			def load_pool(filename) do
+			case File.read(filename) do
+			{:ok, binary} -> :erlang.binary_to_term(binary)
+			{:error, _reason} -> "That file does not exist"
+			end
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{load\_pool/1} loads the lottery pool from a specified file.
+			\item Reads the binary data from the file using \texttt{File.read/1}.
+			\item Converts the binary data back into the original list with \texttt{:erlang.binary\_to\_term/1}.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Creating a Randomized Hand}
+		\begin{lstlisting}[language=Elixir]
+			def create_hand(draw_size) do
+			Lottery.generate_pool()
+			|> Lottery.randomize()
+			|> Lottery.distribute(draw_size)
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{create\_hand/1} generates a randomized hand from the lottery pool.
+			\item Combines multiple operations: generating the pool, shuffling, and distributing.
+			\item Utilizes the pipe operator (\texttt{|>}) for chaining functions together.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{The Pipe Operator (\texttt{|>})}
+		\begin{itemize}
+			\item The pipe operator allows for chaining function calls in a clear and readable manner.
+			\item It passes the result of the expression on the left as the first argument to the function on the right.
+			\item Enhances code readability, especially when working with multiple transformations or operations.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Recap: Functional Programming Concepts}
+		\begin{itemize}
+			\item Functional programming emphasizes immutability, pure functions, and higher-order functions.
+			\item Functions can be passed as arguments, returned as results, and assigned to variables.
+			\item Recursion is preferred over loops for iteration.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Summary}
+		\begin{itemize}
+			\item We explored advanced Elixir concepts by continuing the development of the \texttt{Lottery} module.
+			\item We learned how to save and load data, create a randomized hand, and utilize the pipe operator.
+			\item These concepts further enhance our understanding of functional programming and Elixir's capabilities.
+		\end{itemize}
+	\end{frame}
+	
+\end{document}
+
+
+with the same format as the one I provide before, please make a brand new latex beamer ppt for 9th lessons containing, if the frame got too full, please separate the content to other frame too. I think the average frame should only contain 11 rows max and for the frametitle it can only contain 32 character, if its too long please do: \shortstack{first line \\ second line}:
+
+1. Explain about phoenix model. Explain that the model need to link to postgrees database and to validate data. and to create a model with its predetermined function, we need to invoke "use Discuss.Web, :model"
+
+2. Explain about the needs to implement these 2 item to achieve the goals in each model which is model schema for database relation, and changeset to help the validation side of things. Explain what schema does in this piece of code
+ 
+explain what each lines of codes do:
+
+defmodule Discuss.Topic do
+	use Discuss.Web, :model
+	
+	schema "topics" do
+	field :title, :string
+	end
+end
+
+3. Explain about changset does. Explain that we are now creating a form for user to post their discussion and we the user must enter the title of the post, in which validation comes in. 
+
+4. explain how validation generally works in OOP approach, and tell the difference it have with how validation works in elixir. mainly in oop we have a class >> create an object of it >> update the value >> validate the value >> and if its valit, save it to database. in elixir we don't have class so we instead take the value and then input it into multiple function to transform it. explain that "\\" are used to make a default value
+
+explain the addition of changeset and how each of the changeset lines works:
+
+defmodule Discuss.Topic do
+	use Discuss.Web, :model
+	
+	schema "topics" do
+	field :title, :string
+	end
+	
+	def changeset(struct, params \\ %{}) do
+	struct
+	|>cast(params, [:title])
+	|>validate_required([:title])
+	end
+end
+
+5. To represent the process of changeset and helps with the understanding of the process, we will use iex. explain that usually we need to make our own struct, but by invoking "use Discuss.Web, :model" phoenix will help us make the structs. the commands and please add the return when ran and explain what each commands does:
+
+iex> struct = %Discuss.Topic{}
+iex> params = %{title: "Great JS"}
+iex> Discuss.Topic.changeset(struct,params) >> this will succeed
+iex> Discuss.Topic.changeset(struct, %{}) >> this will fail
+
+6. Open topic_controller to link it with model and explain every lines, starting from alias and also what alias does:
+
+defmodule Discuss.TopicController do
+	use Discuss.web, :controller
+
+	alias Discuss.Topic
+
+	def new(conn, params) do
+	changeset = Topic.changeset(%Topic{}, %{})
+	end
+end
+
+7. now we will make topic_view.ex:
+defemodule Discuss.TopicView do
+	use Discuss.Web, :view
+end
+
+and in templates directory make a new directory named topic contain the html. contents of new.html.eex :
+<h1>New Test Form</h1>
+
+8. now we can access localhost:4000/topics/new but it will return error as we don't add render to our controller so now we will add it, and please explain what it does:
+
+defmodule Discuss.TopicController do
+	use Discuss.web, :controller
+
+	alias Discuss.Topic
+
+	def new(conn, params) do
+	changeset = Topic.changeset(%Topic{}, %{})
+	render conn, "new.html", changset: changeset
+	end
+end
+
+9. now we will work on the new.html.eex. instead simply write html to make the form, we will use a series of helper module to make the form for us. please explain how the code works in detail. also explain that <%= %> are used to add elixir code in html form. also explain what kind of html code will the elixir helper make:
+
+<%= form_for @changeset, topic_path(@conn, :create), fn f -> %>
+	<div class="form-group">
+	<%= text_input f, :title, placeholder: "Title", class: "form-control" %>
+	</div>
+	<%= submit "Save Topic", class: "btn btn-primary" %>
+<% end % >
+
+10. when we access the localhost:4000/topics/new we will receive and error stating that there are no helper clause as we still hasn't implement post handler for it. now we need to update the router.ex file and please explain what it does:
+
+scope "/", Discuss do
+    pipe_through :browser # Use the default browser stack
+
+    get "/", PageController, :index
+	get "/topics/new", TopicController, :new
+	post "/topics, TopicController, :create"
+
+end
+
+now the form will appear normally, but when we click the save topic button it will give error as we  hasn't make a function to create a discussion.
+
+11. update the topic_controller to add create function and explain what it does and explain that we need to use pattern matching to access the value of the submitted topic, as it is saved as "topic" which is a string. say that because we dont use param, we will make it to_params: 
+
+defmodule Discuss.TopicController do
+	use Discuss.web, :controller
+
+	alias Discuss.Topic
+
+	def new(conn, _params) do
+	changeset = Topic.changeset(%Topic{}, %{})
+	render conn, "new.html", changset: changeset
+	end
+
+	def create(conn, %{"topic" => topic}) do
+	
+	end
+end
+
+12. Please explain about iex> mix phoenix.routes. Please give an overview of all the material in this lesson. 

@@ -1,0 +1,120 @@
+\documentclass[aspectratio=169, table]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage{listings} 
+
+\usetheme{Pradita}
+
+\subtitle{IF140303-Web Application Development}
+
+\title{\LARGE{Session-14:\\ Phoenix v1.3 Changes}
+	\vspace{20pt}}
+\date[Serial]{\scriptsize {PRU/SPMI/FR-BM-18/0222}}
+\author[Pradita]{\small{\textbf{Alfa Yohannis}}}
+
+\begin{document}
+	
+	\frame{\titlepage}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Phoenix v1.3 Changes: \\ Overview}}
+		\begin{itemize}
+			\item Phoenix v1.3 introduces significant changes compared to v1.2, making it more powerful but also more complex.
+			\item v1.2 is generally easier to learn due to a simpler structure and fewer abstractions.
+			\item Major changes include an updated directory structure, new CLI commands, and the introduction of contexts.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Generating a New Project \\ in Phoenix v1.3}}
+		\begin{itemize}
+			\item To generate a new project in Phoenix v1.3, use the command:
+			\item \texttt{mix phx.new project\_name}
+			\item This creates a new folder with the updated directory structure.
+			\item The structure is more modular, promoting a clearer separation of concerns.
+			\item Example: Controllers, views, and templates are now in separate folders, enhancing maintainability.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{CLI Command Changes in \\ Phoenix v1.3}}
+		\begin{itemize}
+			\item Phoenix v1.3 introduces new CLI commands and changes existing ones.
+			\item Many commands that started with \texttt{phoenix} in v1.2 now start with \texttt{phx}.
+			\item Example: \texttt{mix phoenix.server} is now \texttt{mix phx.server}.
+			\item This change aims to standardize the naming conventions and align with Elixir's overall ecosystem.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Client Assets Directory \\ Separation}}
+		\begin{itemize}
+			\item In Phoenix v1.2, client assets were stored within the \texttt{web} folder.
+			\item Phoenix v1.3 introduces a separate \texttt{assets} folder outside of the \texttt{web} directory.
+			\item The \texttt{assets} folder contains everything related to front-end assets, including a new \texttt{static} subfolder.
+			\item This separation improves the clarity of the project structure and better supports modern front-end development workflows.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Web Folder Split in \\ Phoenix v1.3}}
+		\begin{itemize}
+			\item The \texttt{web} folder from Phoenix v1.2 is split into two parts in v1.3:
+			\item \texttt{update} and \texttt{update\_web}.
+			\item In v1.2, the \texttt{web} folder contained controllers, views, templates, and models.
+			\item In v1.3, \texttt{update} contains core business logic, while \texttt{update\_web} contains web-specific code like controllers and views.
+			\item This separation enhances code organization and makes large projects more manageable.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Understanding Contexts in \\ Phoenix v1.3}}
+		\begin{itemize}
+			\item Contexts are a new concept in Phoenix v1.3 that group related functionality.
+			\item Example contexts in our application could be \texttt{Accounts} for user management and \texttt{Posts} for topic and comment management.
+			\item Contexts provide a layer of abstraction, but they can also introduce complexity, especially when linking different contexts together.
+			\item In contrast, Phoenix v1.2 used a simpler, more direct approach to organizing code.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Generating HTML with \\ Phoenix v1.3 Commands}}
+		\begin{itemize}
+			\item Phoenix v1.3 introduces new commands for generating HTML resources:
+			\item \texttt{mix phx.gen.html Accounts User users email:string}
+			\item Generates a schema, migration, controller, view, and templates for managing users.
+			\item The files are placed in the appropriate folders based on the new structure.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Generating HTML for \\ Discussions and Comments}}
+		\begin{itemize}
+			\item To generate resources for discussions:
+			\item \texttt{mix phx.gen.html Discussions Topic topics title:string}
+			\item For comments within discussions:
+			\item \texttt{mix phx.gen.html Discussions Comment comments content:string}
+			\item These commands create all necessary files, organized within the context.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Models are Now Called \\ Schemas in Phoenix v1.3}}
+		\begin{itemize}
+			\item In Phoenix v1.3, what was referred to as a "model" in v1.2 is now called a "schema".
+			\item A schema defines the structure of your data and corresponds to a database table.
+			\item This renaming better reflects the purpose and functionality of these modules within the Elixir ecosystem.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Summary}
+		\begin{itemize}
+			\item Phoenix v1.3 introduces several significant changes, including new project structures, updated CLI commands, and the introduction of contexts.
+			\item Client assets are now in a separate \texttt{assets} folder, improving project organization.
+			\item The web folder is split into \texttt{update} and \texttt{update\_web}, enhancing code modularity.
+			\item The new concept of contexts in v1.3 groups related functionality, but with added complexity.
+		\end{itemize}
+	\end{frame}
+	
+\end{document}

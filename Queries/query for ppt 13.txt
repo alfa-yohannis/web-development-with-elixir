@@ -1,0 +1,830 @@
+\documentclass[aspectratio=169, table]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage{listings} 
+
+\usetheme{Pradita}
+
+\subtitle{IF140303-Web Application Development}
+
+\title{\LARGE{Session-02:\\ Elixir's pattern matching }
+	\vspace{20pt}}
+\date[Serial]{\scriptsize {PRU/SPMI/FR-BM-18/0222}}
+\author[Pradita]{\small{\textbf{Alfa Yohannis}}}
+
+\lstdefinelanguage{Elixir} {
+	keywords={def, defmodule, do, end, for, if, else, true, false},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={@moduledoc, iex, Enum, @doc},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	showstringspaces=false
+}
+
+\begin{document}
+	
+	\frame{\titlepage}
+	
+	\begin{frame}
+		\frametitle{Recap: Function Documentation and Arity}
+		\begin{itemize}
+			\item In Elixir, the function name followed by a slash and number indicates the arity, or the number of arguments the function takes.
+			\item \texttt{function name/number} notation helps in distinguishing between different functions with the same name but different arities.
+			\item Example: \texttt{greet/0}, \texttt{generate\_pool/0}, \texttt{contains?/2}, \texttt{distribute/2}.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Introduction to Advanced Concepts}
+		\begin{itemize}
+			\item This session covers more advanced Elixir concepts within the context of a Lottery module.
+			\item We’ll explore how to save and load data, and how to create more complex operations like creating a randomized hand from the lottery pool.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Saving the Lottery Pool to a File}
+		\begin{lstlisting}[language=Elixir]
+			def save_pool(pool, filename) do
+			binary = :erlang.term_to_binary(pool)
+			File.write(filename, binary)
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{save\_pool/2} saves the lottery pool to a specified file.
+			\item Converts the pool to binary using \texttt{:erlang.term\_to\_binary/1}.
+			\item Writes the binary data to the file with \texttt{File.write/2}.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Loading the Lottery Pool from a File}
+		\begin{lstlisting}[language=Elixir]
+			def load_pool(filename) do
+			case File.read(filename) do
+			{:ok, binary} -> :erlang.binary_to_term(binary)
+			{:error, _reason} -> "That file does not exist"
+			end
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{load\_pool/1} loads the lottery pool from a specified file.
+			\item Reads the binary data from the file using \texttt{File.read/1}.
+			\item Converts the binary data back into the original list with \texttt{:erlang.binary\_to\_term/1}.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Creating a Randomized Hand}
+		\begin{lstlisting}[language=Elixir]
+			def create_hand(draw_size) do
+			Lottery.generate_pool()
+			|> Lottery.randomize()
+			|> Lottery.distribute(draw_size)
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{create\_hand/1} generates a randomized hand from the lottery pool.
+			\item Combines multiple operations: generating the pool, shuffling, and distributing.
+			\item Utilizes the pipe operator (\texttt{|>}) for chaining functions together.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{The Pipe Operator (\texttt{|>})}
+		\begin{itemize}
+			\item The pipe operator allows for chaining function calls in a clear and readable manner.
+			\item It passes the result of the expression on the left as the first argument to the function on the right.
+			\item Enhances code readability, especially when working with multiple transformations or operations.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Recap: Functional Programming Concepts}
+		\begin{itemize}
+			\item Functional programming emphasizes immutability, pure functions, and higher-order functions.
+			\item Functions can be passed as arguments, returned as results, and assigned to variables.
+			\item Recursion is preferred over loops for iteration.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Summary}
+		\begin{itemize}
+			\item We explored advanced Elixir concepts by continuing the development of the \texttt{Lottery} module.
+			\item We learned how to save and load data, create a randomized hand, and utilize the pipe operator.
+			\item These concepts further enhance our understanding of functional programming and Elixir's capabilities.
+		\end{itemize}
+	\end{frame}
+	
+\end{document}
+
+
+with the same format as the one I provide before, please make a brand new latex beamer ppt for 13th lessons containing, if the frame got too full, please separate the content to other frame too. I think the average frame should only contain 11 rows max and for the frametitle it can only contain 32 character, if its too long please do: \shortstack{first line \\ second line}. preferably I want the content to be a bit more in detail, for example when I ask for explanations, I prefer it to not only give short description, but instead make it a bit more detailed:
+
+1. Explain we will make a comments section to add comments to topics, while doing this we will also make that when the comments get added, it will immediately appear on every users screen that are currently opening the same topic, quite like a live chat. we will use a websocket to do this, Explain what is websocket. the flow will be: user fills out form > click submit > websocket emits event ? server catches event > server creates comment > server emits event with new list of comments. 
+
+2. To make the comments section first we will need to update the topic_controller to include show handler, please explain what it does in detailss. because we already use (resources "/") keywords, we wont need to update the router:
+
+defmodule Discuss.TopicController do
+	use Discuss.web, :controller
+	  
+	alias Discuss.Topic
+
+	plug Discuss.Plugs.RequireAuth when action in [:new, :create, :edit, :update, :delete]
+	plug :check_topic_owner when action in [:update, :edit, :delete]
+
+	def index(conn, _params) do
+	  topics = Repo.all(Topic)
+	  render conn, "index.html", topics: topics
+	end
+
+	def show(conn, %{"id" => topic_id}) do
+	 topic = Repo.get!(Topic, topic_id)
+	 render conn, "show.html", topic: topic
+	end
+
+	def new(conn, _params) do
+	changeset = Topic.changeset(%Topic{}, %{})
+	render conn, "new.html", changset: changeset
+	end
+
+	def create(conn, %{"topic" => topic}) do
+	  changeset = conn.assigns.user
+	    |> build_assoc(:topics)
+	    |> Topic.changeset(topic)
+
+	  case Repo.insert(changset) do
+	    {:ok, _topic} -> 
+	      conn
+	      |> put_flash(:info, "Topic Created")
+	      |> redirect(to: topic_path(conn, :index))
+	    {:error, changeset} -> 
+	      render conn, "new.html", changeset: changeset
+	end
+
+	def edit(conn, %{"id" => topic_id}) do
+	  topic = Repo.get(Topic, topic_id)
+	  changset = Topic.changeset(topic)
+
+ 	  render conn, "edit.html", changeset: changeset, topic:topic
+	end
+
+	def update(conn, %{"id" => topic_id, "topic" => topic}) do
+	  old_topic = Repo.get(Topic, topic_id)
+	  changeset = Topic.changeset(old_topic, topic)
+
+	  case Repo.update(changset) do
+	    {:ok, _topic} ->
+	      conn
+	      |> put_flash(:info, "Topic Updated")
+	      |> redirect(to: topic_path(conn, :index))
+	    {:error, changset} ->
+	      render conn, "edit.html", changeset: changeset, topic: old_topic
+	  end
+	end
+	
+	def delete(conn, %{"id", topic_id}) do
+	  Repo.get!(Topic, topic_id) |> Repo.delete!
+	  conn
+	  |> put_flash(:info, "Topic Deleted")
+	  |> redirect(to: topic_path(conn, :index)) 
+	end
+
+	def check_topic_owner(conn, _params) do
+	  %{params: %{"id" => topic_id}} = conn
+
+	  if Repo.get(Topic, topic_id).user_id = conn.assigns.user.id do
+	    conn
+	  else
+	    conn
+	    |> put_flas(:error, "You cannot edit that")
+	    |> redirect(to: topic_path(conn, :index))
+	    |> halt()
+	end
+end
+
+3. go to: web > templates > topic > create show.html.eex. very simple contents:
+
+<%= topic.title %>
+
+4. Update index.html.eex to make the topics click able. Contents:
+
+<h5>Topics</h5>
+
+<ul class = "collection">
+  <%= for topic <- @topics do%>
+    <li class="collection-item"> 
+      <%= topic.title %>
+      <%= link topic.title, to: topic_path(@conn, :show, topic) %>
+
+      <%= if @conn.assigns.user.id == topic.user_id do%>
+        <div class="right">
+          <%= link "Edit", to: topic_path(@conn, :edit, topic) %>
+	  <%= link "Delete", to: topic_path(@conn, :delete , topic), method: :delete %>
+        </div>
+      <% end %>
+    </li>
+  <%end%>
+</ul>
+
+<div class="fixed-action-btn"
+  <%= link to: topic_path(@conn, :new), class: "btn-floating btn-large waves-effect waves-light red do %>
+    <i class="material-icons">add</>
+  <% end %>
+</div>
+
+5. make a new migration (mix ecto.gen.migration add_comments) then migrate it. Contents:
+
+defmodule Discuss.Repo.Migrations.AddComments do
+ use Ecto.Migration
+
+ def change do
+  create table(:comments) do
+   add :content, :string
+   add :user_id, references(:user)
+   add :topic_id, references(:topics)
+   timestamps()
+  end
+ def changeset(struct, params \\ %{}) do
+  struct
+  |> cast(params, [:content])
+  |> validate_required([:content])
+ end
+end
+
+6. create comment.ex models. please explain content in details:
+defmodule Discuss.Comment do
+ use Discuss.Web, :model
+
+ schema "comments" do
+  field :content, :string
+  belongs_to :user, Discuss.User
+  belongs_to :topic, Discuss.Topic
+  timestamps()
+ end
+ 
+ def changeset(struct, params \\ %{}) do
+  struct
+  |> cast(params, [:content])
+  |> validate_required([:content])
+ end
+end
+
+7. update both topic.ex and user.ex models to include: has_many :comments, Discuss.Comment
+
+8. to work on socket, we will be working with javascript in both web > channels, and web > static > js. Explain that we will be working on server side and client side too. Explain how websocket works in phoenix. explain channels in sockets in details.
+
+9. we can delete the comments of socket.js at web > static > js and here are the contents, please explain it in details:
+
+import {Socket} from "phoenix"
+let socket = new Socket("/socket", {params: {token: windows.userTokern}})
+
+socket.connect()
+
+let channel = socket.channel("comments:1", {})
+channel.join()
+ .receive("ok", resp => {console.log("Joined successfully", resp)})
+ .receive("error", resp => {console.log("Unable to join", resp)})
+
+export default socket
+
+10. we can also delete the comments in user_socket.ex at web > channels, and here are the contents, please explain it in details:
+
+defmodule Discuss.UserSocket do
+ use Phoenix.Socket
+
+ channel "comments:*", Discuss.CommentsChannel
+
+ transport :websocket, Phoenix.Transport.WebSocket
+
+ def connect(_params, socket) do
+  {:ok, socket}
+ end
+ 
+ def id(_socket) do: nil
+end
+
+11. We will only make and use 1 channel which is Comments channel with join and handle_in functions. go to web > channels > create comments_channel_ex. please explain the contents in details :
+
+defmodule Discuss.CommentsChannel do 
+ use Discuss.Web, :channel
+ 
+ def join(name, _params, socket) do
+  {:ok, %{hey: "there"}, socket}
+ end
+
+ def handle_in() do
+ end
+end
+
+11. update app.js, contents:
+import "phoenix.html"
+import "./socket"
+
+12. please explain the join function in socket flow: browser(join channel matching "comments:1") > server(UserSocket > any channel matching "comments:1" > socket forwarded to CommentsChannel > 'join' in CommentsChannel called > "join" returns map with data > data sent back to client) > browser(response with data means success! > success handler logs data)
+
+13. Update comments_channel.ex to include handle_in. Please explain it:
+defmodule Discuss.CommentsChannel do 
+ use Discuss.Web, :channel
+ 
+ def join(name, _params, socket) do
+  {:ok, %{hey: "there"}, socket}
+ end
+
+ def handle_in(name, message, socket) do
+  {:reply, :ok, socket}
+ end
+end
+
+14. update show.html.eex and socket.js. please explain it in details:
+
+show.html.eex:
+<%= @topic.title %>
+<script>
+ document.addEventListener("DOMContentLoaded", function() {
+  window.createSocket(<%= @topic.id %>)
+ }); 
+</script>
+
+socket.js:
+import {Socket} from "phoenix"
+let socket = new Socket("/socket", {params: {token: windows.userTokern}})
+
+socket.connect()
+
+const createSocket = () => {
+ let channel = socket.channel('comments:${topicId}', {})
+ channel.join()
+  .receive("ok", resp => {console.log("Joined successfully", resp)})
+  .receive("error", resp => {console.log("Unable to join", resp)})
+}
+
+window.createSocket = createSocket;
+
+15. Update comments_channel.ex. Please explain it in details:
+defmodule Discuss.CommentsChannel do 
+ use Discuss.Web, :channel
+ alias Discuss.Topic
+ 
+ def join("comments:" <> topic_id, _params, socket) do
+  topic_id = String.to_integer(topic_id)
+  topic = Repo.get(Topic, topic_id)
+
+  {:ok, %{}, socket}
+ end
+
+ def handle_in(name, %{"content" => content}, socket) do
+  {:reply, :ok, socket}
+ end
+end
+
+16. Update show.html.eex, please explain in details:
+<h5> <%= @topic.title %> </h5>
+
+<div class="input-filed">
+ <textarea class="materialize-textarea"></textarea>
+ <button class="btn">Add Comment</button>
+<script>
+ document.addEventListener("DOMContentLoaded", function() {
+  window.createSocket(<%= @topic.id %>)
+ }); 
+</script>
+
+17. Update socket.js, please explain in details:
+import {Socket} from "phoenix"
+let socket = new Socket("/socket", {params: {token: windows.userTokern}})
+
+socket.connect()
+
+const createSocket = () => {
+ let channel = socket.channel('comments:${topicId}', {})
+ channel.join()
+  .receive("ok", resp => {console.log("Joined successfully", resp);
+  })
+  .receive("error", resp => {console.log("Unable to join", resp);
+  });
+ document.querySelector('button').addEventListener('click',() => {\
+  const content = document.querySelector('textarea').value;
+
+  channel.push('comment:add', {content: content});
+ });
+}
+
+window.createSocket = createSocket;
+
+18. Update comments_channel.ex. Please explain it in details:
+defmodule Discuss.CommentsChannel do 
+ use Discuss.Web, :channel
+ alias Discuss.{Topic, Comment}
+ 
+ def join("comments:" <> topic_id, _params, socket) do
+  topic_id = String.to_integer(topic_id)
+  topic = Repo.get(Topic, topic_id)
+
+  {:ok, %{}, assign(socket, :topic, topic)}
+ end
+
+ def handle_in(name, %{"content" => content}, socket) do
+  topic = socket.assigns.topic
+  changeset = topic
+   |> build_assoc(:comments)
+   |> Comment.changeset(%{content: content})
+
+  case Repo.insert(changeset) dp
+   {:ok, comment} ->
+    {:reply, :ok, socket}
+   {:error, _reason} ->
+    {:reply, {:error, %{errors: changeset}}, socket}
+ end
+end
+
+19. explain this example flow: browser(start up client app with topic_id = 1 > join channel with "comments:1") > server(socket forwarded to CommentsChannel > Send back list of comments) > browser(JS App renders list of comments) 
+
+20. Update comments_channel.ex. Please explain the updates mainly the preload function in details:
+defmodule Discuss.CommentsChannel do 
+ use Discuss.Web, :channel
+ alias Discuss.{Topic, Comment}
+ 
+ def join("comments:" <> topic_id, _params, socket) do
+  topic_id = String.to_integer(topic_id)
+  topic = Topic 
+   |> Repo.get(topic_id)
+   |> Repo.preload(:comments)
+
+  {:ok, %{comments: topic.comments}, assign(socket, :topic, topic)}
+ end
+
+ def handle_in(name, %{"content" => content}, socket) do
+  topic = socket.assigns.topic
+  changeset = topic
+   |> build_assoc(:comments)
+   |> Comment.changeset(%{content: content})
+
+  case Repo.insert(changeset) dp
+   {:ok, comment} ->
+    {:reply, :ok, socket}
+   {:error, _reason} ->
+    {:reply, {:error, %{errors: changeset}}, socket}
+ end
+end
+
+21. update comment.ex models. please explain content in details, especially poison:
+defmodule Discuss.Comment do
+ use Discuss.Web, :model
+
+ @derive {Poison.Encoder, only: [:content]}
+
+ schema "comments" do
+  field :content, :string
+  belongs_to :user, Discuss.User
+  belongs_to :topic, Discuss.Topic
+  timestamps()
+ end
+ 
+ def changeset(struct, params \\ %{}) do
+  struct
+  |> cast(params, [:content])
+  |> validate_required([:content])
+ end
+end 
+
+22. Update socket.js, please explain in details:
+import {Socket} from "phoenix"
+let socket = new Socket("/socket", {params: {token: windows.userTokern}})
+
+socket.connect()
+
+const createSocket = () => {
+ let channel = socket.channel(`comments:${topicId}`, {})
+ channel.join()
+  .receive("ok", resp => {
+   renderComments(resp.comments);
+  })
+  .receive("error", resp => {console.log("Unable to join", resp);
+  });
+
+ document.querySelector('button').addEventListener('click',() => {\
+  const content = document.querySelector('textarea').value;
+  channel.push('comment:add', {content: content});
+ });
+};
+
+function renderComments(comments){
+ const renderedComments = comments.map(comment => {
+  return `
+   <li class="collection-item">
+    ${comment.content}
+   </li>
+  `;
+ });
+
+ document.querySelector('.collection').innerHTML = renderedComments.join('');
+}
+
+window.createSocket = createSocket;
+
+23. Update show.html.eex, please explain in details:
+<h5> <%= @topic.title %> </h5>
+
+<div class="input-filed">
+ <textarea class="materialize-textarea"></textarea>
+ <button class="btn">Add Comment</button>
+ <ul class="collection">
+ </ul>
+<script>
+ document.addEventListener("DOMContentLoaded", function() {
+  window.createSocket(<%= @topic.id %>)
+ }); 
+</script>
+
+24. update comments_channel.ex, please explain it in details:
+defmodule Discuss.CommentsChannel do 
+ use Discuss.Web, :channel
+ alias Discuss.{Topic, Comment}
+ 
+ def join("comments:" <> topic_id, _params, socket) do
+  topic_id = String.to_integer(topic_id)
+  topic = Topic 
+   |> Repo.get(topic_id)
+   |> Repo.preload(:comments)
+
+  {:ok, %{comments: topic.comments}, assign(socket, :topic, topic)}
+ end
+
+ def handle_in(name, %{"content" => content}, socket) do
+  topic = socket.assigns.topic
+  changeset = topic
+   |> build_assoc(:comments)
+   |> Comment.changeset(%{content: content})
+
+  case Repo.insert(changeset) dp
+   {:ok, comment} ->
+    broadcast!(socket, "comments:#{socket.assigns.topic.id}:new", ${comment: comment}
+    )
+    {:reply, :ok, socket} 
+   {:error, _reason} ->
+    {:reply, {:error, %{errors: changeset}}, socket}
+ end
+end
+
+25. Update socket.js to include another eventlistener, please explain the update in details:
+import {Socket} from "phoenix"
+let socket = new Socket("/socket", {params: {token: windows.userTokern}})
+
+socket.connect()
+
+const createSocket = () => {
+ let channel = socket.channel(`comments:${topicId}`, {})
+ channel.join()
+  .receive("ok", resp => {
+   renderComments(resp.comments);
+  })
+  .receive("error", resp => {console.log("Unable to join", resp);
+  });
+
+ channel.on(`comments:${topicId}:new`, renderComment);
+
+ document.querySelector('button').addEventListener('click',() => {\
+  const content = document.querySelector('textarea').value;
+  channel.push('comment:add', {content: content});
+ });
+};
+
+function renderComments(comments){
+ const renderedComments = comments.map(comment => {
+  return commentTemplate(comment)
+ });
+
+ document.querySelector('.collection').innerHTML = renderedComments.join('');
+}
+
+function renderComment(event){
+ const renderedComment = commentTemplate(event.comment)
+
+ document.querySelector('.collection').innerHTML += renderedComment;
+}
+
+function commentTemplate(comment){
+ return `
+   <li class="collection-item">
+    ${comment.content}
+   </li>
+  `;
+}
+
+window.createSocket = createSocket;
+
+26. Explain about authentication with sockets. flow: (server: generate unique token, add it to layout) > (browser: gets html file > socket boots up, sending userToken) > (server: verifies token, adds user to socket).
+
+27. update app.html.eex to apply unique token for authentication. please explain the additions of <script> if @conn.assigns.user do in details:
+
+<head>
+ <title>Hello Discuss!</title>
+ ...
+ <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+ <script>
+  <%= if @conn.assigns.user do %>
+    window.userToken = "<%= Phoenix.Token.sign(Discuss.Endpoint, "key" @conn.assigns.user.id) %>"
+  <% end %>
+ </script>
+ ...
+</head>
+  
+28. Update user_socket.ex at web > channels, please explain it in details especially the connect function and how it enable the usage of token to extract the userID for authentication:
+
+defmodule Discuss.UserSocket do
+ use Phoenix.Socket
+
+ channel "comments:*", Discuss.CommentsChannel
+
+ transport :websocket, Phoenix.Transport.WebSocket
+
+ def connect(%{"token" => token}, socket) do
+  case Phoenix.Token.verify(socket, "key", token) do
+   {:ok, user_id} -> 
+    {:ok, assign(socket, :user_id, user_id)}
+   {:error, _error} ->
+    :error
+ end
+ 
+ def id(_socket) do: nil
+end
+
+29. Explain that to setup a relationship we usually use build_assoc function, but the downside to that is it only capable of building 1 relationship at a time and it cannot be called twice. To assign a topic to user we will update comments_channel, especially the build_assoc in handle_in function:
+
+defmodule Discuss.CommentsChannel do 
+ use Discuss.Web, :channel
+ alias Discuss.{Topic, Comment}
+ 
+ def join("comments:" <> topic_id, _params, socket) do
+  topic_id = String.to_integer(topic_id)
+  topic = Topic 
+   |> Repo.get(topic_id)
+   |> Repo.preload(:comments)
+
+  {:ok, %{comments: topic.comments}, assign(socket, :topic, topic)}
+ end
+
+ def handle_in(name, %{"content" => content}, socket) do
+  topic = socket.assigns.topic
+  user_id = socket.assigns.user_id
+
+  changeset = topic
+   |> build_assoc(:comments, user_id: user_id)
+   |> Comment.changeset(%{content: content})
+
+  case Repo.insert(changeset) dp
+   {:ok, comment} ->
+    broadcast!(socket, "comments:#{socket.assigns.topic.id}:new", ${comment: comment}
+    )
+    {:reply, :ok, socket} 
+   {:error, _reason} ->
+    {:reply, {:error, %{errors: changeset}}, socket}
+ end
+end
+
+30. Explain what Repo.preload is used for, and with it being used to load data, and here we will load the user that associated the comment by updating the preload function to, please explain it in details:
+
+defmodule Discuss.CommentsChannel do 
+ use Discuss.Web, :channel
+ alias Discuss.{Topic, Comment}
+ 
+ def join("comments:" <> topic_id, _params, socket) do
+  topic_id = String.to_integer(topic_id)
+  topic = Topic 
+   |> Repo.get(topic_id)
+   |> Repo.preload(comments: [:user])
+
+  {:ok, %{comments: topic.comments}, assign(socket, :topic, topic)}
+ end
+
+ def handle_in(name, %{"content" => content}, socket) do
+  topic = socket.assigns.topic
+  user_id = socket.assigns.user_id
+
+  changeset = topic
+   |> build_assoc(:comments, user_id: user_id)
+   |> Comment.changeset(%{content: content})
+
+  case Repo.insert(changeset) dp
+   {:ok, comment} ->
+    broadcast!(socket, "comments:#{socket.assigns.topic.id}:new", ${comment: comment}
+    )
+    {:reply, :ok, socket} 
+   {:error, _reason} ->
+    {:reply, {:error, %{errors: changeset}}, socket}
+ end
+end
+
+31. with the update of the preload function, even though we are planning to also load the user, but it still won't appear, so we need to update the poison.encoder at comment model(comment.ex) to tell it to also load user. please explain it in detail:
+
+defmodule Discuss.Comment do
+ use Discuss.Web, :model
+
+ @derive {Poison.Encoder, only: [:content, :user]}
+
+ schema "comments" do
+  field :content, :string
+  belongs_to :user, Discuss.User
+  belongs_to :topic, Discuss.Topic
+  timestamps()
+ end
+ 
+ def changeset(struct, params \\ %{}) do
+  struct
+  |> cast(params, [:content])
+  |> validate_required([:content])
+ end
+end 
+
+32. along with that we also need to update the user models (user.ex), please explain the updates in details:
+
+defmodule Discuss.User do
+  use Discuss.Web, :model
+
+  @derive {Poison.Encoder, only: [:email]}
+
+  schema "users" do
+    field :email, string
+    field :provider, string
+    field :token, string
+    has_many :topics, Discuss.Topic
+    timestamps()
+  end
+  
+  def changeset(struct, params \\ %{}) do
+    struct
+    |> cast(params, [:email, :provider, :token])
+    |> validate_required([:email, :provider, :token])
+  end
+end
+
+33. Update socket.js, please explain it in detail, mainly the commentTemplate function:
+
+import {Socket} from "phoenix"
+let socket = new Socket("/socket", {params: {token: windows.userTokern}})
+
+socket.connect()
+
+const createSocket = () => {
+ let channel = socket.channel(`comments:${topicId}`, {})
+ channel.join()
+  .receive("ok", resp => {
+   renderComments(resp.comments);
+  })
+  .receive("error", resp => {console.log("Unable to join", resp);
+  });
+
+ channel.on(`comments:${topicId}:new`, renderComment);
+
+ document.querySelector('button').addEventListener('click',() => {\
+  const content = document.querySelector('textarea').value;
+  channel.push('comment:add', {content: content});
+ });
+};
+
+function renderComments(comments){
+ const renderedComments = comments.map(comment => {
+  return commentTemplate(comment)
+ });
+
+ document.querySelector('.collection').innerHTML = renderedComments.join('');
+}
+
+function renderComment(event){
+ const renderedComment = commentTemplate(event.comment)
+
+ document.querySelector('.collection').innerHTML += renderedComment;
+}
+
+function commentTemplate(comment){
+ let email = 'Anonymous';
+ if (comment.user){
+  email = comment.user.email
+ }
+
+ return `
+   <li class="collection-item">
+    ${comment.content}
+    <div class = "secondary-content">
+     ${email}
+    </div>
+   </li>
+  `;
+}
+
+window.createSocket = createSocket;

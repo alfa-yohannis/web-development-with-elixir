@@ -1,0 +1,508 @@
+\documentclass[aspectratio=169, table]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage{listings} 
+
+\usetheme{Pradita}
+
+\subtitle{IF140303-Web Application Development}
+
+\title{\LARGE{Session-12:\\ Applying a Plug in Elixir \\and Phoenix}
+	\vspace{20pt}}
+\date[Serial]{\scriptsize {PRU/SPMI/FR-BM-18/0222}}
+\author[Pradita]{\small{\textbf{Alfa Yohannis}}}
+
+\lstdefinelanguage{Elixir} {
+	keywords={def, defmodule, do, end, for, if, else, true, false},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={@moduledoc, iex, Enum, @doc},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	showstringspaces=false
+}
+
+\begin{document}
+	
+	\frame{\titlepage}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Introduction to \\ Plugs in Elixir}}
+		\begin{itemize}
+			\item A plug is a specification for composing web applications.
+			\item Plugs are the building blocks of Elixir web applications like Phoenix.
+			\item There are two types of plugs: 
+			\begin{itemize}
+				\item \textbf{Function Plug}: A simple plug, defined as a function.
+				\item \textbf{Module Plug}: A more complex plug, defined as a module.
+			\end{itemize}
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Creating a Module Plug \\ for Authentication}}
+		\begin{itemize}
+			\item We will create a module plug to check if a user is logged in.
+			\item This plug checks if a user ID is assigned in the connection object.
+			\item If the user ID exists, it fetches the user from the database and assigns it to the connection object.
+			\item The plug consists of two main functions:
+			\begin{itemize}
+				\item \texttt{init/1}: Used for setup, called once.
+				\item \texttt{call/2}: Called with the connection and returns a connection.
+			\end{itemize}
+			\item The \texttt{assign/3} function is used to store a value in the connection's assigns.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Creating the Plug Module}
+		\begin{lstlisting}[language=Elixir]
+			defmodule Discuss.Plugs.SetUser do
+			import Plug.Conn
+			import Phoenix.Controller
+			
+			alias Discuss.Repo
+			alias Discuss.User
+			alias Discuss.Router.Helpers
+			
+			def init(\_params) do
+			end
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Creating the Plug Module}
+		\begin{lstlisting}[language=Elixir]
+			def call(conn, \_params) do
+			user\_id = get\_session(conn, :user\_id)
+			cond do
+			user = user\_id \&\& Repo.get(User, user\_id) ->
+			assign(conn, :user, user)
+			true ->
+			assign(conn, :user, nil)
+			end
+			end
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{init/1}: Placeholder function for initialization.
+			\item \texttt{call/2}: Checks session for \texttt{user\_id}, assigns user if found.
+			\item \texttt{assign/3} stores user data in \texttt{conn.assigns} for later use.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Using the Plug \\ in the Router}}
+		\begin{itemize}
+			\item The created plug should be added to the router's pipeline.
+			\item Modify \texttt{router.ex} to include the plug in the browser pipeline.
+		\end{itemize}
+		\begin{lstlisting}[language=Elixir]
+			pipeline :browser do
+			plug Discuss.Plugs.SetUser
+			end
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Adding a Login Button \\ to the Header}}
+		\begin{lstlisting}[language=Elixir]
+			<body>
+			<nav class="light-blue">
+			<div class="nav-wrapper container">
+			<a href="/" class="brand-logo">Logo</a>
+			<ul class="right">
+			<\%= if @conn.assigns[:user] do \%>
+			<li>
+			<\%= link "Logout", to: session_path(@conn, :signout) \%>
+			</li>
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Adding a Login Button \\ to the Header}}
+		\begin{itemize}
+			\item We add a login button to the application header.
+			\item The button checks if a user is logged in and displays the appropriate option.
+			\item If the user is logged in, a logout button is shown; otherwise, a login button appears.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Adding a Login Button \\ to the Header}}
+		\begin{lstlisting}[language=Elixir]
+			<\% else \%>
+			<li>
+			<\%= link "Sign in with Github", to: session_path(@conn, :request, "github") \%>
+			</li>
+			<\% end \%>
+			</ul>
+			</div>
+			</nav>
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{@conn.assigns[:user]} is checked to see if a user is logged in.
+			\item The \texttt{link/2} function creates the login/logout link.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Updating the Router \\ for Signout}}
+		\begin{itemize}
+			\item We add a signout route to the router.
+			\item This allows users to log out of the application.
+		\end{itemize}
+		\begin{lstlisting}[language=Elixir]
+			scope "/auth", Discuss do
+			pipe\_through :browser
+			get "/signout", AuthController, :signout
+			get "/:provider", AuthController, :request
+			get "/:provider/callback", AuthController, :request
+			end
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Updating the AuthController \\ for Signout}}
+		\begin{itemize}
+			\item We add a \texttt{signout} function to the \texttt{AuthController}.
+			\item This function clears the session and redirects the user to the home page.
+		\end{itemize}
+		\begin{lstlisting}[language=Elixir]
+			...
+			def signout(conn, \_params) do
+			conn
+			|> configure\_session(drop: true)
+			|> redirect(to: topic\_path(conn, :index))
+			end
+			...
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Adding a Logout Button \\ to the Header}}
+		\begin{itemize}
+			\item The logout button is dynamically displayed in the header.
+			\item When clicked, it triggers the signout route and logs the user out.
+		\end{itemize}
+		\begin{lstlisting}[language=Elixir]
+			<body>
+			<nav class="light-blue">
+			<div class="nav-wrapper container">
+			<a href="/" class="brand-logo">Logo</a>
+			<ul class="right">
+			<\%= if @conn.assigns[:user] do \%>
+			<li>
+			<\%= link "Logout", to: session_path(@conn, :signout) \%>
+			</li>
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Adding a Logout Button \\ to the Header}}
+		\begin{lstlisting}[language=Elixir]
+			<\% else \%>
+			<li>
+			<\%= link "Sign in with Github", to: session_path(@conn, :request, "github") \%>
+			</li>
+			<\% end \%>
+			</ul>
+			</div>
+			</nav>
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{link/2} creates a hyperlink to the logout route.
+			\item The button is displayed based on the user's login status.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}{\shortstack{Adding Authorization: Restricting \\Actions Based on User Authentication}}
+		\begin{itemize}
+			\item We need to ensure only signed-in users can post, edit, or delete topics.
+			\item To enforce this, we'll create a new plug in `Web > controllers > plug > require\_auth.ex`.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]{Creating the `RequireAuth` Plug}
+		\begin{lstlisting}[language=Elixir]
+			defmodule Discuss.Plugs.RequireAuth do
+			use Plug.Conn
+			use Phoenix.Controller
+			
+			alias Discuss.Router.Helpers
+			
+			def init(_params) do
+			end
+			
+			def call(conn, _params) do
+			if conn.assigns[:user] do
+			conn
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}[fragile]{Creating the `RequireAuth` Plug}
+		\begin{lstlisting}[language=Elixir]
+			else
+			conn
+			|> put_flash(:error, "You must be logged in.")
+			|> redirect(to: Helpers.topic_path(conn, :index))
+			|> halt()
+			end
+			end
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{halt/0} stops the connection processing immediately.
+			\item This ensures that unauthorized users are redirected before further actions.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Updating `TopicController` \\ with `RequireAuth` Plug}}
+		\begin{itemize}
+			\item We will update the `TopicController` to restrict specific actions to signed-in users.
+			\item The plug is applied conditionally using `when` with the `action` keyword.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Updated `TopicController` \\ with `RequireAuth` Plug}}
+		\begin{lstlisting}[language=Elixir]
+			defmodule Discuss.TopicController do
+			use Discuss.Web, :controller
+			
+			alias Discuss.Topic
+			
+			plug Discuss.Plugs.RequireAuth when action in [:new, :create, :edit, :update, :delete]
+			...
+		\end{lstlisting}
+		\begin{itemize}
+			\item Only the specified actions (new, create, edit, update, delete) will trigger the `RequireAuth` plug.
+			\item This ensures non-logged-in users cannot access these actions.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}{Associating Users with Topics}
+		\begin{itemize}
+			\item We'll associate users with topics using a foreign key relationship.
+			\item This involves adding a `user\_id` column to the `topics` table.
+			\item Migration will alter the existing table, leaving the `user\_id` empty for previously created topics.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Migration: Adding `user\_id` \\to Topics}}
+		\begin{lstlisting}[language=Elixir]
+			defmodule Discuss.Repo.Migrations.AddUserIdToTopics do
+			use Ecto.Migration
+			
+			def change do
+			alter table(:topics) do
+			add :user_id, references(:users)
+			end
+			end
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{references(:users)} establishes the foreign key relationship.
+			\item Migrate the database with `mix ecto.migrate`.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}{Updating Models for Association}
+		\begin{itemize}
+			\item Now, we need to associate the `User` model with the `Topic` model.
+			\item This is done by adding the appropriate associations in both models.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{User Model: Adding\\  `has\_many` Association}}
+		\begin{lstlisting}[language=Elixir]
+			defmodule Discuss.User do
+			use Discuss.Web, :model
+			
+			schema "users" do
+			field :email, :string
+			field :provider, :string
+			field :token, :string
+			has_many :topics, Discuss.Topic
+			timestamps()
+			end
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{User Model: Adding\\  `has\_many` Association}}
+		\begin{lstlisting}[language=Elixir]
+			def changeset(struct, params \\ %{}) do
+			struct
+			|> cast(params, [:email, :provider, :token])
+			|> validate_required([:email, :provider, :token])
+			end
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{has\_many :topics} sets up the one-to-many relationship.
+			\item A user can have multiple topics.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Topic Model: Adding \\`belongs\_to` Association}}
+		\begin{lstlisting}[language=Elixir]
+			defmodule Discuss.Topic do
+			use Discuss.Web, :model
+			
+			schema "topics" do
+			field :title, :string
+			belongs_to :user, Discuss.User
+			end
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Topic Model: Adding \\`belongs\_to` Association}}
+		\begin{lstlisting}[language=Elixir]
+			def changeset(struct, params \\ %{}) do
+			struct
+			|> cast(params, [:title])
+			|> validate_required([:title])
+			end
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{belongs\_to :user} establishes the reverse relationship.
+			\item Each topic is associated with a specific user.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Updating `TopicController` to \\Associate Topics with Users}}
+		\begin{itemize}
+			\item We need to update the `create` function to associate a new topic with the current user.
+			\item This involves using `build\_assoc/2`.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Updating the `create` Function}
+		\begin{lstlisting}[language=Elixir]
+			def create(conn, %{"topic" => topic}) do
+			changeset = conn.assigns.user
+			|> build_assoc(:topics)
+			|> Topic.changeset(topic)
+			
+			case Repo.insert(changeset) do
+			{:ok, _topic} -> 
+			conn
+			|> put_flash(:info, "Topic Created")
+			|> redirect(to: topic_path(conn, :index))
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Updating the `create` Function}
+		\begin{lstlisting}[language=Elixir]
+			{:error, changeset} -> 
+			render conn, "new.html", changeset: changeset
+			end
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{build\_assoc/2} automatically associates the new topic with the current user.
+			\item This ensures that the `user\_id` field in the `topics` table is populated.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Restricting Edit/Delete Buttons Based on Ownership}}
+		\begin{itemize}
+			\item We will update the `index.html.eex` template to ensure only the topic owner can see edit/delete buttons.
+			\item This is done using an `if` statement.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]{Updating `index.html.eex` Template}
+		\begin{lstlisting}[language=Elixir]
+			<ul class = "collection">
+			<%= for topic <- @topics do %>
+			<li class="collection-item"> 
+			<%= topic.title %>
+			
+			<%= if @conn.assigns.user.id == topic.user_id do %>
+			<div class="right">
+			<%= link "Edit", to: topic_path(@conn, :edit, topic) %>
+			<%= link "Delete", to: topic_path(@conn, :delete , topic), method: :delete %>
+			</div>
+			<% end %>
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}[fragile]{Updating `index.html.eex` Template}
+		\begin{lstlisting}[language=Elixir]
+			</li>
+			<%end%>
+			</ul>
+		\end{lstlisting}
+		\begin{itemize}
+			\item The `if` statement ensures that only the topic owner sees the edit/delete options.
+			\item This provides a basic level of authorization on the front-end.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}{\shortstack{Adding a Plug to Refuse \\Unauthorized Actions}}
+		\begin{itemize}
+			\item Even though unauthorized users cannot see the buttons, they might still access actions via URL.
+			\item We'll create a plug to refuse unauthorized actions.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Adding a Plug to Refuse \\Unauthorized Actions}}
+		\begin{lstlisting}[language=Elixir]
+			def check_topic_owner(conn, _params) do
+			%{params: %{"id" => topic_id}} = conn
+			if Repo.get(Topic, topic_id).user_id == conn.assigns.user.id do
+			conn
+			else
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Adding a Plug to Refuse \\Unauthorized Actions}}
+		\begin{lstlisting}[language=Elixir]
+			conn
+			|> put_flash(:error, "You cannot edit that")
+			|> redirect(to: topic_path(conn, :index))
+			|> halt()
+			end
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item We compare the `user\_id` of the topic with the `id` of the logged-in user.
+			\item If they don't match, we refuse the action.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}{Conclusion}
+		\begin{itemize}
+			\item We implemented authorization to restrict actions based on user authentication.
+			\item Users are now associated with their topics.
+			\item These steps ensure better security and user management within our Discuss application.
+		\end{itemize}
+	\end{frame}
+	
+\end{document}

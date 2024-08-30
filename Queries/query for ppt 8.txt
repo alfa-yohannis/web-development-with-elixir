@@ -1,0 +1,257 @@
+\documentclass[aspectratio=169, table]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage{listings} 
+
+\usetheme{Pradita}
+
+\subtitle{IF140303-Web Application Development}
+
+\title{\LARGE{Session-02:\\ Elixir's pattern matching }
+	\vspace{20pt}}
+\date[Serial]{\scriptsize {PRU/SPMI/FR-BM-18/0222}}
+\author[Pradita]{\small{\textbf{Alfa Yohannis}}}
+
+\lstdefinelanguage{Elixir} {
+	keywords={def, defmodule, do, end, for, if, else, true, false},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={@moduledoc, iex, Enum, @doc},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	showstringspaces=false
+}
+
+\begin{document}
+	
+	\frame{\titlepage}
+	
+	\begin{frame}
+		\frametitle{Recap: Function Documentation and Arity}
+		\begin{itemize}
+			\item In Elixir, the function name followed by a slash and number indicates the arity, or the number of arguments the function takes.
+			\item \texttt{function name/number} notation helps in distinguishing between different functions with the same name but different arities.
+			\item Example: \texttt{greet/0}, \texttt{generate\_pool/0}, \texttt{contains?/2}, \texttt{distribute/2}.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Introduction to Advanced Concepts}
+		\begin{itemize}
+			\item This session covers more advanced Elixir concepts within the context of a Lottery module.
+			\item We’ll explore how to save and load data, and how to create more complex operations like creating a randomized hand from the lottery pool.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Saving the Lottery Pool to a File}
+		\begin{lstlisting}[language=Elixir]
+			def save_pool(pool, filename) do
+			binary = :erlang.term_to_binary(pool)
+			File.write(filename, binary)
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{save\_pool/2} saves the lottery pool to a specified file.
+			\item Converts the pool to binary using \texttt{:erlang.term\_to\_binary/1}.
+			\item Writes the binary data to the file with \texttt{File.write/2}.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Loading the Lottery Pool from a File}
+		\begin{lstlisting}[language=Elixir]
+			def load_pool(filename) do
+			case File.read(filename) do
+			{:ok, binary} -> :erlang.binary_to_term(binary)
+			{:error, _reason} -> "That file does not exist"
+			end
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{load\_pool/1} loads the lottery pool from a specified file.
+			\item Reads the binary data from the file using \texttt{File.read/1}.
+			\item Converts the binary data back into the original list with \texttt{:erlang.binary\_to\_term/1}.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Creating a Randomized Hand}
+		\begin{lstlisting}[language=Elixir]
+			def create_hand(draw_size) do
+			Lottery.generate_pool()
+			|> Lottery.randomize()
+			|> Lottery.distribute(draw_size)
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{create\_hand/1} generates a randomized hand from the lottery pool.
+			\item Combines multiple operations: generating the pool, shuffling, and distributing.
+			\item Utilizes the pipe operator (\texttt{|>}) for chaining functions together.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{The Pipe Operator (\texttt{|>})}
+		\begin{itemize}
+			\item The pipe operator allows for chaining function calls in a clear and readable manner.
+			\item It passes the result of the expression on the left as the first argument to the function on the right.
+			\item Enhances code readability, especially when working with multiple transformations or operations.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Recap: Functional Programming Concepts}
+		\begin{itemize}
+			\item Functional programming emphasizes immutability, pure functions, and higher-order functions.
+			\item Functions can be passed as arguments, returned as results, and assigned to variables.
+			\item Recursion is preferred over loops for iteration.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Summary}
+		\begin{itemize}
+			\item We explored advanced Elixir concepts by continuing the development of the \texttt{Lottery} module.
+			\item We learned how to save and load data, create a randomized hand, and utilize the pipe operator.
+			\item These concepts further enhance our understanding of functional programming and Elixir's capabilities.
+		\end{itemize}
+	\end{frame}
+	
+\end{document}
+
+
+with the same format as the one I provide before, please make a brand new latex beamer ppt for 8th lessons containing, if the frame got too full, please separate the content to other frame too. I think the average frame should only contain 11 rows max and for the frametitle it can only contain 32 character, if its too long please do: \shortstack{first line \\ second line}:
+
+1. Explain about phoenix MVC model: model, view, controller and how do model view controller works.
+
+2. explain 3 folder(controllers, models, and views)
+
+3. explain about the workflow of request: 
+- request > how request works
+- router > how do router works, especially when get "/" was called in web > views > router.ex. it will call a function in controller
+- controller > how controller works, and how it will execute the function
+
+4. explain difference between templates and views, also how both works together. Also tell about how important naming convention. Explain that while previously we open iex with iex -S mix, but now for phoenix we do iex -S mix.
+
+5. explain that phoenix know that there are data in the database, but we need to state what is the content of the database as phoenix doesn't know the inside by itself. Model will represent the table of the database for phoenix. 
+
+6. so here we will create a topics model:
+
+defmodule Discuss.Topic do
+  use Discuss.Web, :model
+
+  schema "topics" do
+    field :title, :string
+    belongs_to :user, Discuss.User
+    has_many :comments, Discuss.Comment
+  end
+
+  def changeset(struct, params \\ %{}) do
+    struct
+    |> cast(params, [:title])
+    |> validate_required([:title])
+  end
+end
+
+7. explain about migration. generate a migration file with "mix ecto.gen.migration add_topics". to access it go to priv > repo > migrations. explain how will the migration be file named.
+
+8. create migrations for topics table:
+
+defmodule Discuss.Repo.Migrations.AddTopics do
+  use Ecto.Migration
+
+  def change do
+    create table(:topics) do
+      add :title, :string
+    end
+  end
+end
+
+9. explain that we can use GUI database for postgrees, such as postico or pg admin to make the process easier
+
+10. here are the outline for the project in the form of problem and solution, please put it in the ppt preferably in the form of table:
+
+problem, solution:
+1. need a new URL for the user to visit > add a new route in router file
+2. new routes must map up to a method in a controller > add a new method in a controller to handle this request. The method will decide what to do with the request(probably render a form)
+3. need to show a form to the user > make a new template that contains the form
+4. need to translate data in the form to something that can be saved > create a 'Topic' model that can translate raw data from the form into something that can be saved in the database
+5. The controller and view that we currently have are related to a 'Page', but we are making stuff related to a 'Topic' > Makes a new controller and view to handle everything related to topics
+
+11. explain step 1 of handling request is making sure its being handled inside a the router. explain this code:
+
+scope "/", Discuss do
+    pipe_through :browser # Use the default browser stack
+
+    get "/", PageController, :index
+	  get "/topics/new", TopicController, :new
+  end
+
+12. explain the function name convention and its intent: new, create, index, delete, edit, update
+
+13. make a simple topic_controller in web > controllers with its content:
+
+defmodule Discuss.TopicController do
+	def new() do
+
+	end
+end
+
+
+now that TopicController and router to access it has been made, now localhost:4000/topics/new is accessible but contain an error: function Discuss.TopicController.init/1 is undefined or private.
+
+which mean that the init has not been included yet.
+
+13. explain about these keyword: import, alias, use
+
+14. explain what web.ex do for Model, controller, and view. explain that the "use" keyword will be used almost in every model, view, and controller to access tremendous amount of functionality that is available in web.ex, as it contains what makes a controller a controller, what makes a model a model, what makes a view a view. explain that if we have a module that we want to be used in all controller, we can simply include it in web.ex file, at the controller function. by doing that all controller will be able to access all of the provided functionality of the function controller, for example in this project it will be: "use Discuss.web, :controller" :
+
+def controller do
+    quote do
+      use Phoenix.Controller
+
+      alias Discuss.Repo
+      import Ecto
+      import Ecto.Query
+
+      import Discuss.Router.Helpers
+      import Discuss.Gettext
+    end
+  end
+
+15. explain that by simply adding this use Discuss.web, :controller to the code will eliminate the error as the init function are included there:
+
+defmodule Discuss.TopicController do
+	use Discuss.web, :controller
+	def new() do
+
+	end
+end
+
+16. remind that if we see error message with <function_name>/<number> that means that the function called we did, mentioned a wrong number of arguments, instead the there are a function with the same name, but have <number> amount of arguments. please give this example: new/0 means it the function new exist but take 0 arguments
+
+17. Explain what IO.inspect can do. Explain conn object and its contents. Explain params object and its contents. 
+
+modify topic_controller to contain conn, and params as an argument:
+
+defmodule Discuss.TopicController do
+	use Discuss.web, :controller
+	def new(conn, params) do
+
+	end
+end
+
+18. Explain that in the form to upload discussion, the discussion should have a title, and if users didn't input the title, there should be some error being shown on the screen saying: "You must enter a title".

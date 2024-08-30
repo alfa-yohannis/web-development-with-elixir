@@ -1,0 +1,297 @@
+\documentclass[aspectratio=169, table]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+
+\usetheme{Pradita}
+
+\subtitle{IF140303-Web Application Development}
+
+\title{\LARGE{Session-11: \\ Applying GitHub OAuth Authentication}}
+\date[Serial]{\scriptsize{PRU/SPMI/FR-BM-18/0222}}
+\author[Pradita]{\small{\textbf{Alfa Yohannis}}}
+
+\lstdefinelanguage{Elixir}{
+	keywords={def, defmodule, do, end, for, if, else, true, false, use, alias, plug},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={@moduledoc, iex, Enum, @doc},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	showstringspaces=false
+}
+
+\begin{document}
+	
+	\frame{\titlepage}
+	
+	\begin{frame}
+		\frametitle{Introduction to GitHub OAuth Authentication}
+		\begin{itemize}
+			\item We'll implement OAuth authentication using GitHub.
+			\item OAuth flow:
+			\begin{enumerate}
+				\item User clicks "Login with GitHub" on the web page.
+				\item Redirect to GitHub.com for authorization.
+				\item After authorization, GitHub redirects back with an authorization code.
+				\item Use the authorization code to retrieve user details.
+				\item Create a new user record and log the user in.
+			\end{enumerate}
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Using the \shortstack{Ueberauth Helper \\ Library for OAuth}}
+		\begin{itemize}
+			\item We'll use the \texttt{Ueberauth} library to handle the OAuth process.
+			\item Create a new controller to manage OAuth flows.
+			\item When the user clicks "Login with GitHub":
+			\begin{enumerate}
+				\item The controller triggers \texttt{Ueberauth} to start the OAuth flow.
+				\item Redirect to GitHub for authentication.
+				\item Handle GitHub's response with a callback function in the controller.
+			\end{enumerate}
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Installing Dependencies}
+		\begin{itemize}
+			\item Open \texttt{mix.exs} to add dependencies:
+			\begin{lstlisting}[language=Elixir]
+				defp deps do
+				[{..., :ueberauth, "~> 0.3"},
+				{:ueberauth_github, "~> 0.4"}]
+				end
+				def application do
+				[extra_applications: [...,:ueberauth, :ueberauth_github]]
+				end
+			\end{lstlisting}
+			\item Run \texttt{mix deps.get} to install dependencies.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Generating GitHub API Key}
+		\begin{itemize}
+			\item Go to GitHub to generate an API key for OAuth.
+			\begin{enumerate}
+				\item Navigate to Profile > Settings > Developer Settings.
+				\item Click on \texttt{OAuth applications} and register a new application.
+				\item Fill out the form, including the Authorization Callback URL.
+				\item Generate the Client ID and Client Secret.
+			\end{enumerate}
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Including the API Key in \\ Configuration Files}}
+		\begin{itemize}
+			\item Add the API key to \texttt{config.exs}:
+			\begin{lstlisting}[language=Elixir]
+				config :ueberauth, Ueberauth,
+				providers: [
+				github: {Ueberauth.Strategy.Github, []}]
+				config :ueberauth, Ueberauth.Strategy.Github.OAuth,
+				client_id: "your_generated_client_id",
+				client_secret: "your_generated_secret_id"
+			\end{lstlisting}
+			\item This configuration links Ueberauth with GitHub OAuth.
+			\item It's recommended to hide the API key if uploading to a public repository.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Creating the \shortstack{Authentication Controller}}
+		\begin{itemize}
+			\item Create a new controller at \texttt{web > controllers > auth\_controller.ex}:
+			\begin{lstlisting}[language=Elixir]
+				defmodule Discuss.AuthController do
+				use Discuss.Web, :controller
+				plug Ueberauth
+				def callback(conn, params) do
+				IO.inspect(conn.assigns)
+				IO.inspect(params)
+				end
+				end
+			\end{lstlisting}
+			\item \texttt{conn.assigns} returns user data (email, username, etc.).
+			\item \texttt{params} returns the authorization code and provider.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Updating the Router}
+		\begin{itemize}
+			\item Open \texttt{router.ex} and update it to include the auth routes:
+			\begin{lstlisting}[language=Elixir]
+				scope "/", Discuss do
+				pipe_through :browser
+				resources "/", TopicController
+				end
+				
+				scope "/auth", Discuss do
+				pipe_through :browser
+				get "/:provider", AuthController, :request
+				get "/:provider/callback", AuthController, :callback
+				end
+			\end{lstlisting}
+			\item \texttt{pipe\_through} specifies the pipeline to use.
+			\item The \texttt{scope "/auth"} block defines routes for OAuth-related actions.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Generating Migration \\ for Users Table}}
+		\begin{itemize}
+			\item Generate a migration file with:
+			\texttt{mix ecto.gen.migration add\_users}
+			\item In the migration file:
+			\begin{lstlisting}[language=Elixir]
+				defmodule Discuss.Repo.Migrations.AddUsers do
+				use Ecto.Migration
+				
+				def change do
+				create table(:users) do
+				add :email, :string
+				add :provider, :string
+				add :token, :string
+				timestamps()
+				end
+				end
+				end
+			\end{lstlisting}
+			\item This creates a \texttt{users} table with \texttt{email}, \texttt{provider}, \texttt{token}, and timestamps.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Creating the \shortstack{User Model}}
+		\begin{itemize}
+			\item Create a user model in \texttt{web > models > user.ex}:
+			\begin{lstlisting}[language=Elixir]
+				defmodule Discuss.User do
+				use Discuss.Web, :model
+				
+				schema "users" do
+				field :email, :string
+				field :provider, :string
+				field :token, :string
+				timestamps()
+				end
+				
+				def changeset(struct, params \\ %{}) do
+				struct
+				|> cast(params, [:email, :provider, :token])
+				|> validate_required([:email, :provider, :token])
+				end
+				end
+			\end{lstlisting}
+			\item This defines the structure and validations for the \texttt{users} table.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Updating the \shortstack{Auth Controller}}
+		\begin{itemize}
+			\item Update \texttt{auth\_controller.ex} to handle user authentication:
+			\begin{lstlisting}[language=Elixir]
+				defmodule Discuss.AuthController do
+				use Discuss.Web, :controller
+				plug Ueberauth
+				
+				alias Discuss.User
+				
+				def callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
+				user_params = %{token: auth.credentials.token,
+					email: auth.info.email,
+					provider: "github"}
+				changeset = User.changeset(%User{}, user_params)
+				insert_or_update_user(changeset)
+				end
+				
+				defp insert_or_update_user(changeset) do
+				case Repo.get_by(User, email: changeset.changes.email) do
+				nil -> Repo.insert(changeset)
+				user -> {:ok, user}
+				end
+				end
+				end
+			\end{lstlisting}
+			\item \texttt{callback/2} processes GitHub's OAuth response.
+			\item \texttt{insert\_or\_update\_user/1} inserts a new user or updates an existing one.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Short Explanation of Cookies}
+		\begin{itemize}
+			\item Cookies store user data on the client side, enabling session persistence.
+			\item In our flow:
+			\begin{enumerate}
+				\item After successful OAuth, the user's ID is stored in a cookie.
+				\item On subsequent requests, the server checks the cookie to retrieve the user ID.
+				\item If the user exists, they're automatically signed in.
+			\end{enumerate}
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Adding the \shortstack{Sign-In Functionality}}
+		\begin{itemize}
+			\item Update \texttt{auth\_controller.ex} to include sign-in:
+			\begin{lstlisting}[language=Elixir]
+				defmodule Discuss.AuthController do
+				use Discuss.Web, :controller
+				plug Ueberauth
+				
+				alias Discuss.User
+				
+				def callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
+				user_params = %{token: auth.credentials.token,
+					email: auth.info.email,
+					provider: "github"}
+				changeset = User.changeset(%User{}, user_params)
+				signin(conn, changeset)
+				end
+				
+				defp signin(conn, changeset) do
+				case insert_or_update_user(changeset) do
+				{:ok, user} ->
+				conn
+				|> put_flash(:info, "Welcome back!")
+				|> put_session(:user_id, user.id)
+				|> redirect(to: topic_path(conn, :index))
+				{:error, _reason} ->
+				conn
+				|> put_flash(:error, "Error signing in")
+				|> redirect(to: topic_path(conn, :index))
+				end
+				end
+				
+				defp insert_or_update_user(changeset) do
+				case Repo.get_by(User, email: changeset.changes.email) do
+				nil -> Repo.insert(changeset)
+				user -> {:ok, user}
+				end
+				end
+				end
+			\end{lstlisting}
+			\item \texttt{signin/2} manages the sign-in process, storing the user's ID in a session.
+			\item This ensures users are recognized upon returning to the application.
+		\end{itemize}
+	\end{frame}
+	
+\end{document}

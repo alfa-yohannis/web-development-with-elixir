@@ -1,0 +1,502 @@
+\documentclass[aspectratio=169, table]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage{listings} 
+
+\usetheme{Pradita}
+
+\subtitle{IF140303-Web Application Development}
+
+\title{\LARGE{Session-02:\\ Elixir's pattern matching }
+	\vspace{20pt}}
+\date[Serial]{\scriptsize {PRU/SPMI/FR-BM-18/0222}}
+\author[Pradita]{\small{\textbf{Alfa Yohannis}}}
+
+\lstdefinelanguage{Elixir} {
+	keywords={def, defmodule, do, end, for, if, else, true, false},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={@moduledoc, iex, Enum, @doc},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	showstringspaces=false
+}
+
+\begin{document}
+	
+	\frame{\titlepage}
+	
+	\begin{frame}
+		\frametitle{Recap: Function Documentation and Arity}
+		\begin{itemize}
+			\item In Elixir, the function name followed by a slash and number indicates the arity, or the number of arguments the function takes.
+			\item \texttt{function name/number} notation helps in distinguishing between different functions with the same name but different arities.
+			\item Example: \texttt{greet/0}, \texttt{generate\_pool/0}, \texttt{contains?/2}, \texttt{distribute/2}.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Introduction to Advanced Concepts}
+		\begin{itemize}
+			\item This session covers more advanced Elixir concepts within the context of a Lottery module.
+			\item We’ll explore how to save and load data, and how to create more complex operations like creating a randomized hand from the lottery pool.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Saving the Lottery Pool to a File}
+		\begin{lstlisting}[language=Elixir]
+			def save_pool(pool, filename) do
+			binary = :erlang.term_to_binary(pool)
+			File.write(filename, binary)
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{save\_pool/2} saves the lottery pool to a specified file.
+			\item Converts the pool to binary using \texttt{:erlang.term\_to\_binary/1}.
+			\item Writes the binary data to the file with \texttt{File.write/2}.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Loading the Lottery Pool from a File}
+		\begin{lstlisting}[language=Elixir]
+			def load_pool(filename) do
+			case File.read(filename) do
+			{:ok, binary} -> :erlang.binary_to_term(binary)
+			{:error, _reason} -> "That file does not exist"
+			end
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{load\_pool/1} loads the lottery pool from a specified file.
+			\item Reads the binary data from the file using \texttt{File.read/1}.
+			\item Converts the binary data back into the original list with \texttt{:erlang.binary\_to\_term/1}.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Creating a Randomized Hand}
+		\begin{lstlisting}[language=Elixir]
+			def create_hand(draw_size) do
+			Lottery.generate_pool()
+			|> Lottery.randomize()
+			|> Lottery.distribute(draw_size)
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{create\_hand/1} generates a randomized hand from the lottery pool.
+			\item Combines multiple operations: generating the pool, shuffling, and distributing.
+			\item Utilizes the pipe operator (\texttt{|>}) for chaining functions together.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{The Pipe Operator (\texttt{|>})}
+		\begin{itemize}
+			\item The pipe operator allows for chaining function calls in a clear and readable manner.
+			\item It passes the result of the expression on the left as the first argument to the function on the right.
+			\item Enhances code readability, especially when working with multiple transformations or operations.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Recap: Functional Programming Concepts}
+		\begin{itemize}
+			\item Functional programming emphasizes immutability, pure functions, and higher-order functions.
+			\item Functions can be passed as arguments, returned as results, and assigned to variables.
+			\item Recursion is preferred over loops for iteration.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Summary}
+		\begin{itemize}
+			\item We explored advanced Elixir concepts by continuing the development of the \texttt{Lottery} module.
+			\item We learned how to save and load data, create a randomized hand, and utilize the pipe operator.
+			\item These concepts further enhance our understanding of functional programming and Elixir's capabilities.
+		\end{itemize}
+	\end{frame}
+	
+\end{document}
+
+
+with the same format as the one I provide before, please make a brand new latex beamer ppt for 10th lessons containing, if the frame got too full, please separate the content to other frame too. I think the average frame should only contain 11 rows max and for the frametitle it can only contain 32 character, if its too long please do: \shortstack{first line \\ second line}. preferably I want the content to be a bit more in detail, for example when I ask for explanations, I prefer it to not only give short description, but instead make it a bit more detailed:
+
+1. Explain about the work flow of saving into DB: user input params > changeset function validate it > if it succeded it will save it to DB, show topic list and success message, else it will show the form and error message. short explanation about what is ecto and what it does mainly changeset and Repo.
+
+2. Update the create function to contain changeset, and give detailed explainations of create function. also explain what will be inserted to DB:
+
+defmodule Discuss.TopicController do
+	use Discuss.web, :controller
+
+	alias Discuss.Topic
+
+	def new(conn, _params) do
+	changeset = Topic.changeset(%Topic{}, %{})
+	render conn, "new.html", changset: changeset
+	end
+
+	def create(conn, %{"topic" => topic}) do
+	  changeset = Topic.changeset(%Topic{}, topic)
+	  case Repo.insert(changset) do
+	    {:ok, _topic} -> IO.inspect(post)
+	    {:error, changeset} -> 
+	      render conn, "new.html", changeset: changeset
+	end
+end
+
+3. Update the new.html.eex to handle the error to add error_tag, please give detailed explanation of the error_tag addition and how it works:
+<%= form_for @changeset, topic_path(@conn, :create), fn f -> %>
+  <div class="form-group">
+    <%= text_input f, :title, placeholder: "Title", class: "form-control" %>
+    <%= error_tag f, :title %>
+  </div>
+  <%= submit "Save Topic", class: "btn btn-primary" %>
+<% end % >
+
+4. add css to the project by adding it to web > static > css > app.css. explain that adding the css here will impact the entire project. the css:
+
+.help-block{
+  color: red;
+  text-transform: capitalize;
+  position: absolute;
+  top: 37px
+}
+
+.form_group{
+  position: relative;
+  margin-bottom: 25px
+}
+
+5. make a page to handle the success case. first step is to update the router. here we break away from the RESTFUL convention and make it so that every time users access /, they will immediately being shown the list of topics. so here we change from get "/", PageController, :index to get "/", TopicController, :index. with the change, we wont use the page_controller, view, model, etc so we can delete it and proceed.
+
+scope "/", Discuss do
+    pipe_through :browser,
+
+    get "/", TopicController, :index
+	get "/topics/new", TopicController, :new
+	post "/topics, TopicController, :create"
+
+end
+
+6. update topic_controller to add index function and explain what it does:
+defmodule Discuss.TopicController do
+	use Discuss.web, :controller
+	  
+	alias Discuss.Topic
+
+	def index(conn, _params) do
+	  topics = Repo.all(Topic)
+	  render conn, "index.html", topics: topics
+	end
+
+	def new(conn, _params) do
+	changeset = Topic.changeset(%Topic{}, %{})
+	render conn, "new.html", changset: changeset
+	end
+
+	def create(conn, %{"topic" => topic}) do
+	  changeset = Topic.changeset(%Topic{}, topic)
+	  case Repo.insert(changset) do
+	    {:ok, _topic} -> IO.inspect(post)
+	    {:error, changeset} -> 
+	      render conn, "new.html", changeset: changeset
+	end
+end
+
+7. now create a new templates in web > templates > topic > index.html. please explain in details:
+
+<h5>Topics</h5>
+
+<ul class = "collection">
+  <%= for topic <- @topics do%>
+    <li class="collection-item"> 
+      <%= topic.title %>
+    </li>
+  <%end%>
+</ul>
+
+8. update the create function, and please explain the create function in detail mainly the part after {:ok, post}
+
+defmodule Discuss.TopicController do
+	use Discuss.web, :controller
+	  
+	alias Discuss.Topic
+
+	def index(conn, _params) do
+	  topics = Repo.all(Topic)
+	  render conn, "index.html", topics: topics
+	end
+
+	def new(conn, _params) do
+	changeset = Topic.changeset(%Topic{}, %{})
+	render conn, "new.html", changset: changeset
+	end
+
+	def create(conn, %{"topic" => topic}) do
+	  changeset = Topic.changeset(%Topic{}, topic)
+	  case Repo.insert(changset) do
+	    {:ok, _topic} -> 
+	      conn
+	      |> put_flash(:info, "Topic Created")
+	      |> redirect(to: topic_path(conn, :index))
+	    {:error, changeset} -> 
+	      render conn, "new.html", changeset: changeset
+	end
+end
+
+9. Add button to web > templates > topic > index.html.eex and please explain what is being done there in detail, mainly the elixir helper module. After that add script tag to use icons to web > templates > layout > app.html.eex: <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+
+<h5>Topics</h5>
+
+<ul class = "collection">
+  <%= for topic <- @topics do%>
+    <li class="collection-item"> 
+      <%= topic.title %>
+    </li>
+  <%end%>
+</ul>
+
+<div class="fixed-action-btn"
+  <%= link to: topic_path(@conn, :new), class: "btn-floating btn-large waves-effect waves-light red do %>
+    <i class="material-icons">add</>
+  <% end %>
+</div>
+
+10. addition of 2 handler to edit and update. update the router.ex and explain the edit part:
+
+scope "/", Discuss do
+  pipe_through :browser 
+  get "/", PageController, :index
+  get "/topics/new", TopicController, :new
+  post "/topics, TopicController, :create"
+  get "/topics/:id/edit" , TopicController, :edit"
+end
+
+
+11. update the topic_controller and explain the edit function in detail:
+
+defmodule Discuss.TopicController do
+	use Discuss.web, :controller
+	  
+	alias Discuss.Topic
+
+	def index(conn, _params) do
+	  topics = Repo.all(Topic)
+	  render conn, "index.html", topics: topics
+	end
+
+	def new(conn, _params) do
+	changeset = Topic.changeset(%Topic{}, %{})
+	render conn, "new.html", changset: changeset
+	end
+
+	def create(conn, %{"topic" => topic}) do
+	  changeset = Topic.changeset(%Topic{}, topic)
+	  case Repo.insert(changset) do
+	    {:ok, _topic} -> 
+	      conn
+	      |> put_flash(:info, "Topic Created")
+	      |> redirect(to: topic_path(conn, :index))
+	    {:error, changeset} -> 
+	      render conn, "new.html", changeset: changeset
+	end
+
+	def edit(conn, %{"id" => topic_id}) do
+	  topic = Repo.get(Topic, topic_id)
+	  changset = Topic.changeset(topic)
+
+ 	  render conn, "edit.html", changeset: changeset, topic:topic
+	end
+end
+
+12. add edit.html.eex to templates > topic. explain it in detail:
+<%= form_for @changeset, topic_path(@conn, :update, @topic), fn f ->
+  <div class = "form-group">
+    <%= text_input f, :title, placeholder: "Title", class: "form-control"%>
+    <%= error_tag f, :title %>
+  </div>
+  <%= submit "Save Topic", class: "btn btn-primary"%>
+<% end %>
+
+13. Update the router to include update route and please explain the addition of put "/topics/:id":
+
+scope "/", Discuss do
+  pipe_through :browser 
+  get "/", PageController, :index
+  get "/topics/new", TopicController, :new
+  post "/topics, TopicController, :create"
+  get "/topics/:id/edit" , TopicController, :edit"
+  put "/topics/:id" , TopicController, :update"
+end
+
+14. update the topic_controller to include update function. please explain it in detail:
+
+defmodule Discuss.TopicController do
+	use Discuss.web, :controller
+	  
+	alias Discuss.Topic
+
+	def index(conn, _params) do
+	  topics = Repo.all(Topic)
+	  render conn, "index.html", topics: topics
+	end
+
+	def new(conn, _params) do
+	changeset = Topic.changeset(%Topic{}, %{})
+	render conn, "new.html", changset: changeset
+	end
+
+	def create(conn, %{"topic" => topic}) do
+	  changeset = Topic.changeset(%Topic{}, topic)
+	  case Repo.insert(changset) do
+	    {:ok, _topic} -> 
+	      conn
+	      |> put_flash(:info, "Topic Created")
+	      |> redirect(to: topic_path(conn, :index))
+	    {:error, changeset} -> 
+	      render conn, "new.html", changeset: changeset
+	end
+
+	def edit(conn, %{"id" => topic_id}) do
+	  topic = Repo.get(Topic, topic_id)
+	  changset = Topic.changeset(topic)
+
+ 	  render conn, "edit.html", changeset: changeset, topic:topic
+	end
+
+	def update(conn, %{"id" => topic_id, "topic" => topic}) do
+	  old_topic = Repo.get(Topic, topic_id)
+	  changeset = Topic.changeset(old_topic, topic)
+
+	  case Repo.update(changset) do
+	    {:ok, _topic} ->
+	      conn
+	      |> put_flash(:info, "Topic Updated")
+	      |> redirect(to: topic_path(conn, :index))
+	    {:error, changset} ->
+	      render conn, "edit.html", changeset: changeset, topic: old_topic
+	  end
+	end
+end
+
+15. Now we need to link the index.html to edit pages by editing index.html.eex:
+
+<h5>Topics</h5>
+
+<ul class = "collection">
+  <%= for topic <- @topics do%>
+    <li class="collection-item"> 
+      <%= topic.title %>
+      <div class="right">
+        <%= link "Edit", to: topic_path(@conn, :edit, topic) %>
+      </div>
+    </li>
+  <%end%>
+</ul>
+
+<div class="fixed-action-btn"
+  <%= link to: topic_path(@conn, :new), class: "btn-floating btn-large waves-effect waves-light red do %>
+    <i class="material-icons">add</>
+  <% end %>
+</div>
+
+16. we will be updating router.ex to simplify everything by using resources handler:
+
+scope "/", Discuss do
+  resources "/", TopicController
+end
+
+with the update to the router, we don't need to write a lot of route, instead we can use resource handler. resource handler will help generate all the route as long as we follow RESTFUL convention
+
+17. Now we will update the topic_controller to add delete function. please explain the delete function in detail:
+
+defmodule Discuss.TopicController do
+	use Discuss.web, :controller
+	  
+	alias Discuss.Topic
+
+	def index(conn, _params) do
+	  topics = Repo.all(Topic)
+	  render conn, "index.html", topics: topics
+	end
+
+	def new(conn, _params) do
+	changeset = Topic.changeset(%Topic{}, %{})
+	render conn, "new.html", changset: changeset
+	end
+
+	def create(conn, %{"topic" => topic}) do
+	  changeset = Topic.changeset(%Topic{}, topic)
+	  case Repo.insert(changset) do
+	    {:ok, _topic} -> 
+	      conn
+	      |> put_flash(:info, "Topic Created")
+	      |> redirect(to: topic_path(conn, :index))
+	    {:error, changeset} -> 
+	      render conn, "new.html", changeset: changeset
+	end
+
+	def edit(conn, %{"id" => topic_id}) do
+	  topic = Repo.get(Topic, topic_id)
+	  changset = Topic.changeset(topic)
+
+ 	  render conn, "edit.html", changeset: changeset, topic:topic
+	end
+
+	def update(conn, %{"id" => topic_id, "topic" => topic}) do
+	  old_topic = Repo.get(Topic, topic_id)
+	  changeset = Topic.changeset(old_topic, topic)
+
+	  case Repo.update(changset) do
+	    {:ok, _topic} ->
+	      conn
+	      |> put_flash(:info, "Topic Updated")
+	      |> redirect(to: topic_path(conn, :index))
+	    {:error, changset} ->
+	      render conn, "edit.html", changeset: changeset, topic: old_topic
+	  end
+	end
+	
+	def delete(conn, %{"id", topic_id}) do
+	  Repo.get!(Topic, topic_id) |> Repo.delete!
+	  conn
+	  |> put_flash(:info, "Topic Deleted")
+	  |> redirect(to: topic_path(conn, :index)) 
+	end
+end
+
+18. Now we need to link the index.html to delete link by editing index.html.eex. please explain it:
+
+<h5>Topics</h5>
+
+<ul class = "collection">
+  <%= for topic <- @topics do%>
+    <li class="collection-item"> 
+      <%= topic.title %>
+      <div class="right">
+        <%= link "Edit", to: topic_path(@conn, :edit, topic) %>
+	<%= link "Delete", to: topic_path(@conn, :delete , topic), method: :delete %>
+      </div>
+    </li>
+  <%end%>
+</ul>
+
+<div class="fixed-action-btn"
+  <%= link to: topic_path(@conn, :new), class: "btn-floating btn-large waves-effect waves-light red do %>
+    <i class="material-icons">add</>
+  <% end %>
+</div>

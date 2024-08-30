@@ -1,0 +1,3 @@
+1. kalo misal pake lstlisting error, ganti verbatim, kalo tetep error ganti \texttt{} biar ditampilin sebagai plain text. untuk \texttt, buat newline bisa pake \\
+2. pake ini buat pecah frametitle jadi beberapa baris:\frametitle{\shortstack{text\\text}}
+3. semua lstlisting ato verbatim gak bisa nerima #, jadi kalo gak dihapus, diganti aja, ato jadiin ##

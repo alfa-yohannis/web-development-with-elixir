@@ -1,0 +1,317 @@
+\documentclass[aspectratio=169, table]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage{listings} 
+
+\usetheme{Pradita}
+
+\subtitle{IF140303-Web Application Development}
+
+\title{\LARGE{Session-09:\\ \shortstack{Creating Forms and Routing in Phoenix}}
+	\vspace{20pt}}
+\date[Serial]{\scriptsize {PRU/SPMI/FR-BM-18/0222}}
+\author[Pradita]{\small{\textbf{Alfa Yohannis}}}
+
+\lstdefinelanguage{Elixir} {
+	keywords={def, defmodule, do, end, for, if, else, true, false},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={@moduledoc, iex, Enum, @doc},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	showstringspaces=false
+}
+
+\begin{document}
+	
+	\frame{\titlepage}
+	\begin{frame}
+		\frametitle{Introduction to Phoenix Models}
+		\begin{itemize}
+			\item In Phoenix, models represent data and are linked to a PostgreSQL database.
+			\item Models validate data before it is saved to the database.
+			\item To create a model, use the \texttt{use Discuss.Web, :model} macro, which includes functions necessary for model creation.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Model Schema and \\ Changeset Implementation}}
+		\begin{itemize}
+			\item To build a functional model, two main components are essential:
+			\begin{enumerate}
+				\item Schema: Defines how the model relates to the database.
+				\item Changeset: Manages data validation and transformations.
+			\end{enumerate}
+			\item These components ensure that the model accurately represents and validates the data.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Example: Defining a Schema}
+		\begin{lstlisting}[language=Elixir]
+			defmodule Discuss.Topic do
+			use Discuss.Web, :model
+			
+			schema "topics" do
+			field :title, :string
+			end
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{Discuss.Topic}: Defines the model module.
+			\item \texttt{use Discuss.Web, :model}: Adds necessary functionalities to the model.
+			\item \texttt{schema "topics"}: Maps the model to the "topics" table in the database.
+			\item \texttt{field :title, :string}: Defines a string field named \texttt{title}.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{\shortstack{Introducing Changeset \\ for Validation}}
+		\begin{itemize}
+			\item A changeset is used to validate and transform data before saving it.
+			\item For instance, in our example, users must enter a \texttt{title} for the discussion topic.
+			\item The changeset ensures that the \texttt{title} field is present and meets validation rules.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Validation in OOP vs Elixir}
+		\begin{itemize}
+			\item In OOP:
+			\begin{enumerate}
+				\item Create a class and instantiate an object.
+				\item Update the object's values.
+				\item Validate the object's state.
+				\item If valid, save to the database.
+			\end{enumerate}
+			\item In Elixir:
+			\begin{enumerate}
+				\item No classes; data is passed through multiple functions.
+				\item Values are transformed and validated functionally.
+				\item Default values are set using \texttt{\\} in function parameters.
+			\end{enumerate}
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Example: Implementing \\ Changeset in Elixir}}
+		\begin{lstlisting}[language=Elixir]
+			defmodule Discuss.Topic do
+			use Discuss.Web, :model
+			
+			schema "topics" do
+			field :title, :string
+			end
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Example: Implementing \\ Changeset in Elixir}}
+		\begin{lstlisting}[language=Elixir]
+			def changeset(struct, params \\ %{}) do
+			struct
+			|> cast(params, [:title])
+			|> validate_required([:title])
+			end
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{changeset/2}:
+			\begin{enumerate}
+				\item Takes a struct and parameters.
+				\item Uses \texttt{cast} to extract the relevant fields.
+				\item Validates that the \texttt{title} field is present using \texttt{validate\_required}.
+			\end{enumerate}
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Summary}
+		\begin{itemize}
+			\item Phoenix models are integral for linking to databases and validating data.
+			\item The model schema defines the structure of the model and its database relations.
+			\item Changesets provide a functional way to validate and transform data.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{IEx and Understanding Changeset}
+		\begin{itemize}
+			\item \texttt{Discuss.Web, :model} automatically creates our struct.
+			\item \texttt{iex>} allows interactive exploration of changesets.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Exploring Changesets with IEx}
+		\texttt{To simulate how the program works, we will execute some iex command}
+		\begin{lstlisting}[language=Elixir]
+			iex> struct = %Discuss.Topic{}
+			iex> params = %{title: "Great JS"}
+			iex> Discuss.Topic.changeset(struct, params)
+			%Discuss.Topic{
+				__meta__: #Ecto.Schema.Metadata<:built, "topics">,
+				id: nil,
+				title: "Great JS"
+			}
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Exploring Changesets with IEx}
+		\begin{lstlisting}[language=Elixir]
+			iex> Discuss.Topic.changeset(struct, %{})
+			{:error, changeset} = 
+			%Discuss.Topic{
+				__meta__: #Ecto.Schema.Metadata<:built, "topics">,
+				id: nil,
+				title: nil
+			}
+		\end{lstlisting}
+		\begin{itemize}
+			\item Here we create a Discuss.Topic struct and params to input the title
+			\item The first command successfully validates and casts the title.
+			\item The second command fails due to missing required fields.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Linking Model to\\TopicController}}
+		\begin{itemize}
+			\item \texttt{alias Discuss.Topic} allows shorthand for referencing the model.
+			\item \texttt{changeset = Topic.changeset(\%Topic\{\}, \%\{\})} prepares a blank form for a new topic.
+		\end{itemize}
+		\begin{lstlisting}[language=Elixir]
+			defmodule Discuss.TopicController do
+			use Discuss.Web, :controller
+			
+			alias Discuss.Topic
+			
+			def new(conn, _params) do
+			changeset = Topic.changeset(%Topic{}, %{})
+			...
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Creating TopicView and Template}
+		\begin{itemize}
+			\item The \texttt{TopicView} helps render the view layer.
+			\item The \texttt{new.html.eex} file generates the HTML for the new topic form.
+		\end{itemize}
+		\begin{lstlisting}[language=Elixir]
+			defmodule Discuss.TopicView do
+			use Discuss.Web, :view
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item {Now we will write the new.html.eex with:\\}
+			\texttt{<h1>New Test Form</h1>}
+			\item when we access it \texttt{ localhost:4000/topics/new} it will give error as render function has not been implemented
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Adding Render\\to TopicController}}
+		\begin{itemize}
+			\item The \texttt{render/3} function is necessary to display the form.
+			\item The \texttt{changeset} is passed to the view for rendering.
+		\end{itemize}
+		\begin{lstlisting}[language=Elixir]
+			def new(conn, _params) do
+			changeset = Topic.changeset(%Topic{}, %{})
+			render conn, "new.html", changeset: changeset
+			end
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Elixir Helpers for HTML Forms}
+		\begin{itemize}
+			\item \texttt{form\_for/4}: Builds an HTML form using an Ecto Changeset. It takes a changeset, the form action, and a function to define form elements.
+			\item \texttt{text\_input/4}: Creates a text input field within a form. It requires the form builder, field name, and optional attributes like placeholder and class.
+			\item \texttt{<\%= \%>}: Inserts Elixir code into an EEx template to generate HTML output.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Using Elixir Helpers\\in HTML Forms}}
+		\begin{lstlisting}[language=Elixir]
+			<%= form_for @changeset, topic_path(@conn, :create), fn f -> %>
+			<div class="form-group">
+			<%= text_input f, :title, placeholder: "Title", class: "form-control" %>
+			</div>
+			<%= submit "Save Topic", class: "btn btn-primary" %>
+			<% end %>
+		\end{lstlisting}
+		\begin{itemize}
+			\item Generates a form and inputs, enhancing readability and maintainability.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Updating Router for Post Handling}
+		\begin{itemize}
+			\item **Problem:** Missing post handler for topic creation.
+			\item **Solution:** Update the router.ex file.
+			\item **Router Configuration:**
+			\begin{itemize}
+				\item \texttt{scope "/", Discuss do}: Defines a scope for routes under the root path.
+				\item \texttt{pipe\_through :browser}: Applies the `browser` pipeline to all routes in the scope.
+				\item \texttt{get "/", PageController, :index}: Maps the root path to the `index` action of `PageController`.
+				\item \texttt{get "/topics/new", TopicController, :new}: Maps the `/topics/new` path to the `new` action of `TopicController`.
+				\item \texttt{post "/topics", TopicController, :create}: Maps the `/topics` path to the `create` action of `TopicController` for handling form submissions.
+			\end{itemize}
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{\shortstack{Updating TopicController\\with Create Action}}
+		\begin{itemize}
+			\item \texttt{create/2} handles form submissions and extracts parameters.
+			\item Pattern matching extracts \texttt{topic} from the submitted params.
+		\end{itemize}
+		\begin{lstlisting}[language=Elixir]
+			def create(conn, %{"topic" => topic}) do
+			end
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Exploring Phoenix Routes with IEx}
+		\begin{itemize}
+			\item Use \texttt{iex> mix phoenix.routes} to list all routes.
+			\item Provides a clear overview of available routes and their corresponding actions.
+		\end{itemize}
+		\begin{lstlisting}[language=Elixir]
+			iex> mix phoenix.routes
+			Helper            Path                     Controller
+			page_path         GET   /                  PageController :index
+			topic_path        GET   /topics/new        TopicController :new
+			topic_path        POST  /topics            TopicController :create
+		\end{lstlisting}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Summary}
+		\begin{itemize}
+			\item We explored Phoenix models, schemas, and changesets.
+			\item We linked models to controllers and created views and templates.
+			\item We examined routing, form creation, and handling form submissions.
+			\item Understanding these concepts is crucial for building functional web applications with Phoenix.
+		\end{itemize}
+	\end{frame}
+	
+\end{document}

@@ -1,0 +1,280 @@
+\documentclass[aspectratio=169, table]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage{listings} 
+
+\usetheme{Pradita}
+
+\subtitle{IF140303-Web Application Development}
+
+\title{\LARGE{Session-02:\\ Elixir's pattern matching }
+	\vspace{20pt}}
+\date[Serial]{\scriptsize {PRU/SPMI/FR-BM-18/0222}}
+\author[Pradita]{\small{\textbf{Alfa Yohannis}}}
+
+\lstdefinelanguage{Elixir} {
+	keywords={def, defmodule, do, end, for, if, else, true, false},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={@moduledoc, iex, Enum, @doc},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	showstringspaces=false
+}
+
+\begin{document}
+	
+	\frame{\titlepage}
+	
+	\begin{frame}
+		\frametitle{Recap: Function Documentation and Arity}
+		\begin{itemize}
+			\item In Elixir, the function name followed by a slash and number indicates the arity, or the number of arguments the function takes.
+			\item \texttt{function name/number} notation helps in distinguishing between different functions with the same name but different arities.
+			\item Example: \texttt{greet/0}, \texttt{generate\_pool/0}, \texttt{contains?/2}, \texttt{distribute/2}.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Introduction to Advanced Concepts}
+		\begin{itemize}
+			\item This session covers more advanced Elixir concepts within the context of a Lottery module.
+			\item We’ll explore how to save and load data, and how to create more complex operations like creating a randomized hand from the lottery pool.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Saving the Lottery Pool to a File}
+		\begin{lstlisting}[language=Elixir]
+			def save_pool(pool, filename) do
+			binary = :erlang.term_to_binary(pool)
+			File.write(filename, binary)
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{save\_pool/2} saves the lottery pool to a specified file.
+			\item Converts the pool to binary using \texttt{:erlang.term\_to\_binary/1}.
+			\item Writes the binary data to the file with \texttt{File.write/2}.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Loading the Lottery Pool from a File}
+		\begin{lstlisting}[language=Elixir]
+			def load_pool(filename) do
+			case File.read(filename) do
+			{:ok, binary} -> :erlang.binary_to_term(binary)
+			{:error, _reason} -> "That file does not exist"
+			end
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{load\_pool/1} loads the lottery pool from a specified file.
+			\item Reads the binary data from the file using \texttt{File.read/1}.
+			\item Converts the binary data back into the original list with \texttt{:erlang.binary\_to\_term/1}.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Creating a Randomized Hand}
+		\begin{lstlisting}[language=Elixir]
+			def create_hand(draw_size) do
+			Lottery.generate_pool()
+			|> Lottery.randomize()
+			|> Lottery.distribute(draw_size)
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{create\_hand/1} generates a randomized hand from the lottery pool.
+			\item Combines multiple operations: generating the pool, shuffling, and distributing.
+			\item Utilizes the pipe operator (\texttt{|>}) for chaining functions together.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{The Pipe Operator (\texttt{|>})}
+		\begin{itemize}
+			\item The pipe operator allows for chaining function calls in a clear and readable manner.
+			\item It passes the result of the expression on the left as the first argument to the function on the right.
+			\item Enhances code readability, especially when working with multiple transformations or operations.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Recap: Functional Programming Concepts}
+		\begin{itemize}
+			\item Functional programming emphasizes immutability, pure functions, and higher-order functions.
+			\item Functions can be passed as arguments, returned as results, and assigned to variables.
+			\item Recursion is preferred over loops for iteration.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Summary}
+		\begin{itemize}
+			\item We explored advanced Elixir concepts by continuing the development of the \texttt{Lottery} module.
+			\item We learned how to save and load data, create a randomized hand, and utilize the pipe operator.
+			\item These concepts further enhance our understanding of functional programming and Elixir's capabilities.
+		\end{itemize}
+	\end{frame}
+	
+\end{document}
+
+
+with the same format as the one I provide before, please make a brand new latex beamer ppt for 11th lessons containing, if the frame got too full, please separate the content to other frame too. I think the average frame should only contain 11 rows max and for the frametitle it can only contain 32 character, if its too long please do: \shortstack{first line \\ second line}. preferably I want the content to be a bit more in detail, for example when I ask for explanations, I prefer it to not only give short description, but instead make it a bit more detailed:
+
+1. Explain that we will apply authentication by using GitHub. the oauth flow: at the web page header click "login with GitHub" button > redirect to GitHub.com > click authorize the website > redirect back to our web along with new url containing the authorization code for example: https://www.discuss.com/auth/signin?provider=github&code=12345 > use "code" to get user detail > create new "user", save in DB > user loged in.
+
+2. Explain that we will use a helper library "urberauth" to handle the oauth. we will make a new controller to handle oauth. when the user click on login with GitHub, it will run the controller along with the uberauth function > redirect to GitHub > receive the request from GitHub using callback function in the new controller.
+
+3. to install the dependencies open: web > mix.exs and inside deps function, add this: {:ueberauth, "~> 0.3"}, {:ueberauth_github, "~> 0.4"}]. inside application function add: :ueberauth, :ueberauth_github to ensure that when the web starts, the ueberauth will be started too. we will install the general ueberauth and its github's specific version too. after the steps above, run mix deps.get to install it based on the stated dependencies.
+
+4. Go to GitHub to generate API key to enable the oauth. steps: go to profile > settings > Developer setttings > oauth applications > register application > fill out the form(application name, homepage url, application description, authorization callback url). for authorization callback url, fill it with the url we want the users to comeback to after oauth. after all steps done, generate it.
+
+5. to include the API key for ueberauth edit: config > config.exs. please explain what it does in details:
+
+config :ueberauth, Ueberauth,
+  providers: [
+    GitHub: {Ueberauth.Strategy.Github, [] }
+  ]
+
+config :ueberauth, Ueberauth.Strategy.Github.OAuth,
+  client_id: <your generated client ID>
+  client_secret: <your generated secret ID>
+
+it is recommended to hide our API key if we ever upload the code to github
+
+6. Create a controller in web > controllers > auth_controller.ex. please explain it:
+
+def module Discuss.AuthController do
+  use Discuss.Web, :controller
+  plug Ueberauth
+
+  def callback(conn, params) do
+    IO.inspect(conn.assing)
+    IO.inspect(params)
+  end
+end
+
+If we access auth/GitHub now, it will return these in the commandline: IO.inspect(conn.assign) returns users data, example: email, username, name, token(to interact with the user's GitHub data), etc. IO.inspect(params) returns code and provider
+
+7. update the router.ex to contain route for auth. please explain in details  the scope and pipe_trough keyword and what it does, also the addition of scope "/auth" and its contents: 
+
+scope "/", Discuss do
+  pipe_through :browser
+
+  resources "/", TopicController
+end
+
+scope "/auth", Discuss do
+  pipe_through :browser
+  
+  get "/:provider", AuthController, :request
+  get "/:provider/callback", AuthController, :request
+end
+
+8. generate migrations file for users with mix ecto.gen.migration add_users. Please explain the contents:
+
+defmodule Discuss.Repo.Migrations.AddUsers do
+  use Ecto.migration
+  def change do
+    create table(:users) do
+      add :email, :string
+      add :provider, :string
+      add :token, :string
+      timestamps()
+end
+
+9. we will make a models for user in web > models > user.ex. please explain it in detail:
+defmodule Discuss.User do
+  use Discuss.Web, :model
+
+  schema "users" do
+    field :email, string
+    field :provider, string
+    field :token, string
+    timestamps()
+  end
+  
+  def changeset(struct, params \\ %{}) do
+    struct
+    |> cast(params, [:email, :provider, :token])
+    |> validate_required([:email, :provider, :token])
+  end
+end
+
+10. Update the auth_controller. please explain it in details:
+    
+def module Discuss.AuthController do
+  use Discuss.Web, :controller
+  plug Ueberauth
+
+  alias Discuss.User
+
+  def callback(%{assigns: %{ueberauth_auth: auth}} = conn, params) do
+    user_params = %{token: auth.credentials.token, email: auth.info.email, provider: "github"}
+    changeset = User.changeset(%User{}, user_params)
+
+    insert_or_update_user(changeset)
+  end
+
+  defp insert_or_update_user(changeset) do
+    case Repo.get_by(User, email: changeset.changes.email) do
+      nil -> 
+        Repo.insert(changeset)
+      user ->
+        {:ok, user}
+  end
+end
+
+11. Give short explanation of cookies, now explain the flow where the same users won't need be registered multiple times: User Oauths with GitHub > we insert record into DB > Database record gets on ID > Put ID on user's cookie > Followup request will use cookies to access our web
+
+12. Update the auth_controller to include signin function. please explain it in details:
+    
+def module Discuss.AuthController do
+  use Discuss.Web, :controller
+  plug Ueberauth
+
+  alias Discuss.User
+
+  def callback(%{assigns: %{ueberauth_auth: auth}} = conn, params) do
+    user_params = %{token: auth.credentials.token, email: auth.info.email, provider: "github"}
+    changeset = User.changeset(%User{}, user_params)
+
+    signin(conn, changeset)
+  end
+
+  defp signin(conn, changeset) do
+    case insert_or_update_user(changeset) do
+      {:ok, user} ->
+        conn
+        |> put_flash(:info, "Welcome back!")
+        |> put_session(:user_id, user.id)
+        |> redirect(to: topic_path(conn, :index))
+      {:error, _reason} ->
+        conn
+        |> put_flash(:error, "Error signin in")
+        |> redirect(to: topic_path(conn, :index))
+    end
+  end
+
+  defp insert_or_update_user(changeset) do
+    case Repo.get_by(User, email: changeset.changes.email) do
+      nil -> 
+        Repo.insert(changeset)
+      user ->
+        {:ok, user}
+  end
+end

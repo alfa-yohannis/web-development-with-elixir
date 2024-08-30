@@ -1,0 +1,975 @@
+\documentclass[aspectratio=169, table]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage{listings} 
+
+\usetheme{Pradita}
+
+\subtitle{IF140303-Web Application Development}
+
+\title{\LARGE{Session-13:\\ Adding a Real-Time Comments Section}}
+\date[Serial]{\scriptsize {PRU/SPMI/FR-BM-18/0222}}
+\author[Pradita]{\small{\textbf{Alfa Yohannis}}}
+
+\lstdefinelanguage{Elixir} {
+	keywords={def, defmodule, do, end, for, if, else, true, false},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={@moduledoc, iex, Enum, @doc},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	showstringspaces=false
+}
+
+\begin{document}
+	
+\frame{\titlepage}
+
+\begin{frame}
+	\frametitle{Overview: Real-Time Comments Section}
+	\begin{itemize}
+		\item In this lesson, we will create a comments section that updates in real-time, much like a live chat.
+		\item We will utilize WebSockets to achieve this functionality.
+		\item The flow: 
+		\begin{enumerate}
+			\item User fills out a form and clicks submit.
+			\item WebSocket emits an event.
+			\item Server catches the event, creates the comment, and updates the database.
+			\item Server emits an event with the updated list of comments.
+			\item All connected users see the new comment appear immediately.
+		\end{enumerate}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{What is a WebSocket?}
+	\begin{itemize}
+		\item WebSocket is a communication protocol that provides full-duplex communication channels over a single TCP connection.
+		\item Unlike HTTP, which follows a request-response model, WebSockets allow for continuous communication between the client and the server.
+		\item This is ideal for real-time applications like chat systems, online games, and collaborative tools.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Updating the TopicController: Adding a Show Handler}
+	\begin{itemize}
+		\item To begin, we need to update the \texttt{TopicController} to include a \texttt{show} action.
+		\item The \texttt{show} action retrieves a specific topic from the database and passes it to the \texttt{show.html.eex} template for rendering.
+	\end{itemize}
+	\begin{lstlisting}[language=Elixir]
+defmodule Discuss.TopicController do
+  use Discuss.Web, :controller
+  
+  alias Discuss.Topic
+
+  plug Discuss.Plugs.RequireAuth when action in [:new, :create, :edit, :update, :delete]
+  plug :check_topic_owner when action in [:update, :edit, :delete]
+
+  def show(conn, %{"id" => topic_id}) do
+    topic = Repo.get!(Topic, topic_id)
+    render conn, "show.html", topic: topic
+  end
+end
+	\end{lstlisting}
+	\begin{itemize}
+		\item The \texttt{show} action uses \texttt{Repo.get!/2} to fetch the topic by its ID.
+		\item If the topic exists, it is passed to the \texttt{show.html.eex} template for rendering.
+		\item This ensures that users can view individual topics.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Creating the Show Template}
+	\begin{itemize}
+		\item Next, we create a simple \texttt{show.html.eex} template that displays the title of the topic.
+		\item This template will later be expanded to include the comments section.
+	\end{itemize}
+	\begin{lstlisting}[language=HTML]
+<%= topic.title %>
+	\end{lstlisting}
+	\begin{itemize}
+		\item This code displays the title of the current topic.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Updating the Index Template: Making Topics Clickable}
+	\begin{itemize}
+		\item We will now update the \texttt{index.html.eex} template to make the list of topics clickable.
+		\item Each topic title will link to the \texttt{show.html.eex} template for that specific topic.
+	\end{itemize}
+	\begin{lstlisting}[language=HTML]
+<h5>Topics</h5>
+
+<ul class="collection">
+  <%= for topic <- @topics do %>
+    <li class="collection-item">
+      <%= link topic.title, to: topic_path(@conn, :show, topic) %>
+
+      <%= if @conn.assigns.user.id == topic.user_id do %>
+        <div class="right">
+          <%= link "Edit", to: topic_path(@conn, :edit, topic) %>
+          <%= link "Delete", to: topic_path(@conn, :delete, topic), method: :delete %>
+        </div>
+      <% end %>
+    </li>
+  <% end %>
+</ul>
+
+<div class="fixed-action-btn">
+  <%= link to: topic_path(@conn, :new), class: "btn-floating btn-large waves-effect waves-light red" do %>
+    <i class="material-icons">add</i>
+  <% end %>
+</div>
+	\end{lstlisting}
+	\begin{itemize}
+		\item This makes the topics clickable, allowing users to navigate to individual topic pages.
+		\item The \texttt{if} condition checks if the logged-in user is the owner of the topic, showing edit and delete options if true.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Creating the Comments Table: Migration}
+	\begin{itemize}
+		\item To store comments, we need to create a new database table using a migration.
+		\item We will generate a migration to add the comments table and run it to update the database schema.
+	\end{itemize}
+	\begin{lstlisting}[language=Elixir]
+defmodule Discuss.Repo.Migrations.AddComments do
+  use Ecto.Migration
+
+  def change do
+    create table(:comments) do
+      add :content, :string
+      add :user_id, references(:users)
+      add :topic_id, references(:topics)
+      timestamps()
+    end
+  end
+end
+	\end{lstlisting}
+	\begin{itemize}
+		\item The migration creates a \texttt{comments} table with \texttt{content}, \texttt{user\_id}, and \texttt{topic\_id} fields.
+		\item It also includes \texttt{timestamps}, which automatically track when comments are created and updated.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Creating the Comment Model}
+	\begin{itemize}
+		\item Next, we create the \texttt{Comment} model to interact with the comments table in the database.
+		\item This model will include schema definitions, associations, and a changeset function to validate data.
+	\end{itemize}
+	\begin{lstlisting}[language=Elixir]
+defmodule Discuss.Comment do
+  use Discuss.Web, :model
+
+  schema "comments" do
+    field :content, :string
+    belongs_to :user, Discuss.User
+    belongs_to :topic, Discuss.Topic
+    timestamps()
+  end
+
+  def changeset(struct, params \\ %{}) do
+    struct
+    |> cast(params, [:content])
+    |> validate_required([:content])
+  end
+end
+	\end{lstlisting}
+	\begin{itemize}
+		\item The \texttt{Comment} schema defines the structure of a comment, including its content and associations with users and topics.
+		\item The \texttt{changeset} function validates that the \texttt{content} field is present before saving to the database.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Updating the Topic and User Models}
+	\begin{itemize}
+		\item To establish associations between topics, users, and comments, we need to update the \texttt{Topic} and \texttt{User
+
+
+------------part 2-----------
+
+\begin{frame}{\shortstack{Updating socket.js \\ in web > static > js}}
+We can delete the comments in \texttt{socket.js}, and here are the contents:
+
+\begin{lstlisting}[language=javascript]
+import {Socket} from "phoenix"
+let socket = new Socket("/socket", {params: {token: windows.userToken}})
+
+socket.connect()
+
+let channel = socket.channel("comments:1", {})
+channel.join()
+  .receive("ok", resp => {console.log("Joined successfully", resp)})
+  .receive("error", resp => {console.log("Unable to join", resp)})
+
+export default socket
+\end{lstlisting}
+
+\begin{itemize}
+    \item \texttt{Socket} is imported from the Phoenix framework to create a new WebSocket connection.
+    \item \texttt{socket.connect()} establishes the WebSocket connection to the server.
+    \item \texttt{channel} is initialized for the \texttt{"comments:1"} topic, which represents a specific topic's comments.
+    \item The \texttt{join()} function connects the client to the channel, with responses logged on success or failure.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\shortstack{Updating user\_socket.ex \\ in web > channels}}
+We can delete the comments in \texttt{user\_socket.ex}, and here are the contents:
+
+\begin{lstlisting}[language=elixir]
+defmodule Discuss.UserSocket do
+  use Phoenix.Socket
+
+  channel "comments:*", Discuss.CommentsChannel
+
+  transport :websocket, Phoenix.Transport.WebSocket
+
+  def connect(_params, socket) do
+    {:ok, socket}
+  end
+
+  def id(_socket), do: nil
+end
+\end{lstlisting}
+
+\begin{itemize}
+    \item \texttt{Discuss.UserSocket} defines how the socket should behave and what channels it connects to.
+    \item The \texttt{channel "comments:*"} declaration routes any topic under "comments" to \texttt{Discuss.CommentsChannel}.
+    \item The \texttt{transport :websocket} directive sets up WebSocket as the transport layer.
+    \item The \texttt{connect/2} function accepts the socket connection, and \texttt{id/1} returns \texttt{nil} to make this socket anonymous.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\shortstack{Creating CommentsChannel \\ in web > channels}}
+Create \texttt{comments\_channel.ex} under \texttt{web > channels}, with the following contents:
+
+\begin{lstlisting}[language=elixir]
+defmodule Discuss.CommentsChannel do
+  use Discuss.Web, :channel
+
+  def join(name, _params, socket) do
+    {:ok, %{hey: "there"}, socket}
+  end
+
+  def handle_in() do
+  end
+end
+\end{lstlisting}
+
+\begin{itemize}
+    \item \texttt{Discuss.CommentsChannel} is the Elixir module handling the "comments" channel.
+    \item The \texttt{join/3} function is called when a client joins the channel, returning an acknowledgment message.
+    \item The \texttt{handle\_in/3} function is a placeholder for handling incoming events, to be filled out later.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Updating app.js}
+We update \texttt{app.js} to include the socket connection:
+
+\begin{lstlisting}[language=javascript]
+import "phoenix_html"
+import "./socket"
+\end{lstlisting}
+
+\begin{itemize}
+    \item \texttt{phoenix\_html} is imported to enable HTML helpers in Phoenix.
+    \item The local \texttt{socket.js} file is imported to manage WebSocket connections.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\shortstack{Explaining the join function \\ in Socket Flow}}
+The join function follows this flow:
+
+\begin{itemize}
+    \item Browser attempts to join a channel with topic \texttt{"comments:1"}.
+    \item The server receives the request in \texttt{UserSocket}, identifies the topic, and forwards the socket to \texttt{CommentsChannel}.
+    \item \texttt{CommentsChannel}'s \texttt{join/3} function is called, processing the request and returning a response map with data.
+    \item The data is sent back to the client browser, indicating success or failure.
+    \item On success, the browser logs the data received from the server.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\shortstack{Updating CommentsChannel \\ to Handle Incoming Events}}
+Update \texttt{comments\_channel.ex} to include a \texttt{handle\_in/3} function:
+
+\begin{lstlisting}[language=elixir]
+defmodule Discuss.CommentsChannel do
+  use Discuss.Web, :channel
+
+  def join(name, _params, socket) do
+    {:ok, %{hey: "there"}, socket}
+  end
+
+  def handle_in(name, message, socket) do
+    {:reply, :ok, socket}
+  end
+end
+\end{lstlisting}
+
+\begin{itemize}
+    \item The \texttt{handle\_in/3} function handles incoming events from the client. 
+    \item \texttt{name} refers to the event's name, and \texttt{message} contains the event's payload.
+    \item The function replies with \texttt{:ok}, signaling the client that the message was successfully processed.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\shortstack{Updating show.html.eex \\ and socket.js}}
+Update \texttt{show.html.eex} and \texttt{socket.js} as follows:
+
+\begin{lstlisting}[language=html]
+<!-- show.html.eex -->
+<%= @topic.title %>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    window.createSocket(<%= @topic.id %>)
+  });
+</script>
+\end{lstlisting}
+
+\begin{lstlisting}[language=javascript]
+// socket.js
+import {Socket} from "phoenix"
+let socket = new Socket("/socket", {params: {token: windows.userToken}})
+
+socket.connect()
+
+const createSocket = (topicId) => {
+  let channel = socket.channel(`comments:${topicId}`, {})
+  channel.join()
+    .receive("ok", resp => {console.log("Joined successfully", resp)})
+    .receive("error", resp => {console.log("Unable to join", resp)})
+}
+
+window.createSocket = createSocket;
+\end{lstlisting}
+
+\begin{itemize}
+    \item \texttt{show.html.eex} is updated to trigger the WebSocket connection when the document is loaded.
+    \item \texttt{socket.js} dynamically joins the channel using the topic's ID.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\shortstack{Updating CommentsChannel \\ for Database Integration}}
+We update \texttt{comments\_channel.ex} to integrate with the database:
+
+\begin{lstlisting}[language=elixir]
+defmodule Discuss.CommentsChannel do
+  use Discuss.Web, :channel
+  alias Discuss.Topic
+
+  def join("comments:" <> topic_id, _params, socket) do
+    topic_id = String.to_integer(topic_id)
+    topic = Repo.get(Topic, topic_id)
+
+    {:ok, %{}, socket}
+  end
+
+  def handle_in(name, %{"content" => content}, socket) do
+    {:reply, :ok, socket}
+  end
+end
+\end{lstlisting}
+
+\begin{itemize}
+    \item The \texttt{join/3} function now retrieves the topic from the database using \texttt{Repo.get/2}.
+    \item The topic ID is parsed from the channel name, ensuring that the correct topic is referenced.
+    \item The \texttt{handle\_in/3} function is prepared to handle incoming comments, though it currently just acknowledges them.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\shortstack{Updating show.html.eex \\ with Comment Form}}
+We update \texttt{show.html.eex} to include a comment form:
+
+\begin{lstlisting}[language=html]
+<!-- show.html.eex -->
+<h5> <%= @topic.title %> </h5>
+
+<div class="input-field">
+  <textarea class="materialize-textarea"></textarea>
+  <button class="btn">Add Comment</button>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    window.createSocket(<%= @topic.id %>)
+  });
+</script>
+\end{lstlisting}
+
+\begin{itemize}
+    \item The topic title is displayed using \texttt{@topic.title}.
+    \item A form is added with a text area for comments and a button to submit them.
+    \item The script ensures that the WebSocket connection is created when the page loads, passing the topic ID.
+\end{itemize}
+\end{frame}
+
+
+-----------------part 3----------------
+
+\begin{frame}{\shortstack{Updating \texttt{socket.js} \\ (Adding Comment Push Functionality)}}
+\begin{lstlisting}[language=JavaScript, basicstyle=\ttfamily\scriptsize, breaklines=true]
+import {Socket} from "phoenix"
+let socket = new Socket("/socket", {params: {token: window.userToken}})
+
+socket.connect()
+
+const createSocket = () => {
+  let channel = socket.channel('comments:${topicId}', {})
+  channel.join()
+    .receive("ok", resp => {console.log("Joined successfully", resp);
+    })
+    .receive("error", resp => {console.log("Unable to join", resp);
+    });
+  document.querySelector('button').addEventListener('click', () => {
+    const content = document.querySelector('textarea').value;
+    channel.push('comment:add', {content: content});
+  });
+}
+
+window.createSocket = createSocket;
+\end{lstlisting}
+
+\begin{itemize}
+    \item The button click event listener is added to capture the textarea content.
+    \item The content is then pushed to the server via the channel using the \texttt{channel.push} method.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\shortstack{Updating \texttt{CommentsChannel.ex} \\ (Inserting Comments to the Database)}}
+\begin{lstlisting}[language=elixir, basicstyle=\ttfamily\scriptsize, breaklines=true]
+defmodule Discuss.CommentsChannel do 
+  use Discuss.Web, :channel
+  alias Discuss.{Topic, Comment}
+  
+  def join("comments:" <> topic_id, _params, socket) do
+    topic_id = String.to_integer(topic_id)
+    topic = Repo.get(Topic, topic_id)
+
+    {:ok, %{}, assign(socket, :topic, topic)}
+  end
+
+  def handle_in("comment:add", %{"content" => content}, socket) do
+    topic = socket.assigns.topic
+    changeset = topic
+      |> build_assoc(:comments)
+      |> Comment.changeset(%{content: content})
+
+    case Repo.insert(changeset) do
+      {:ok, comment} ->
+        {:reply, :ok, socket}
+      {:error, _reason} ->
+        {:reply, {:error, %{errors: changeset}}, socket}
+    end
+  end
+end
+\end{lstlisting}
+
+\begin{itemize}
+    \item The \texttt{handle_in} function listens for incoming events with the name \texttt{"comment:add"}.
+    \item The comment content is saved in the database via the \texttt{Repo.insert} function.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\shortstack{Flow of Joining a Channel and Receiving Comments}}
+\begin{enumerate}
+    \item Browser: Start up client app with \texttt{topic\_id = 1} and join channel with \texttt{"comments:1"}.
+    \item Server: The socket is forwarded to \texttt{CommentsChannel}.
+    \item Server: The server sends back a list of comments.
+    \item Browser: JavaScript app renders the list of comments in the browser.
+\end{enumerate}
+\end{frame}
+
+\begin{frame}{\shortstack{Updating \texttt{CommentsChannel.ex} \\ (Preloading Comments)}}
+\begin{lstlisting}[language=elixir, basicstyle=\ttfamily\scriptsize, breaklines=true]
+defmodule Discuss.CommentsChannel do 
+  use Discuss.Web, :channel
+  alias Discuss.{Topic, Comment}
+  
+  def join("comments:" <> topic_id, _params, socket) do
+    topic_id = String.to_integer(topic_id)
+    topic = Topic 
+      |> Repo.get(topic_id)
+      |> Repo.preload(:comments)
+
+    {:ok, %{comments: topic.comments}, assign(socket, :topic, topic)}
+  end
+
+  def handle_in("comment:add", %{"content" => content}, socket) do
+    topic = socket.assigns.topic
+    changeset = topic
+      |> build_assoc(:comments)
+      |> Comment.changeset(%{content: content})
+
+    case Repo.insert(changeset) do
+      {:ok, comment} ->
+        {:reply, :ok, socket}
+      {:error, _reason} ->
+        {:reply, {:error, %{errors: changeset}}, socket}
+    end
+  end
+end
+\end{lstlisting}
+
+\begin{itemize}
+    \item The \texttt{Repo.preload(:comments)} function preloads the associated comments when the topic is fetched.
+    \item This ensures that when the channel is joined, the existing comments are loaded and sent to the client.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\shortstack{Updating \texttt{Comment.ex} Model \\ (Adding Poison Encoder)}}
+\begin{lstlisting}[language=elixir, basicstyle=\ttfamily\scriptsize, breaklines=true]
+defmodule Discuss.Comment do
+  use Discuss.Web, :model
+
+  @derive {Poison.Encoder, only: [:content]}
+
+  schema "comments" do
+    field :content, :string
+    belongs_to :user, Discuss.User
+    belongs_to :topic, Discuss.Topic
+    timestamps()
+  end
+  
+  def changeset(struct, params \\ %{}) do
+    struct
+    |> cast(params, [:content])
+    |> validate_required([:content])
+  end
+end 
+\end{lstlisting}
+
+\begin{itemize}
+    \item The \texttt{@derive} attribute automatically encodes the \texttt{content} field of the comment as JSON using the Poison library.
+    \item This allows the comment data to be easily sent to the frontend.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\shortstack{Updating \texttt{socket.js} \\ (Rendering Comments)}}
+\begin{lstlisting}[language=JavaScript, basicstyle=\ttfamily\scriptsize, breaklines=true]
+import {Socket} from "phoenix"
+let socket = new Socket("/socket", {params: {token: window.userToken}})
+
+socket.connect()
+
+const createSocket = () => {
+  let channel = socket.channel(`comments:${topicId}`, {})
+  channel.join()
+    .receive("ok", resp => {
+      renderComments(resp.comments);
+    })
+    .receive("error", resp => {console.log("Unable to join", resp);
+    });
+
+  document.querySelector('button').addEventListener('click', () => {
+    const content = document.querySelector('textarea').value;
+    channel.push('comment:add', {content: content});
+  });
+};
+
+function renderComments(comments){
+  const renderedComments = comments.map(comment => {
+    return `
+      <li class="collection-item">
+        ${comment.content}
+      </li>
+    `;
+  });
+
+  document.querySelector('.collection').innerHTML = renderedComments.join('');
+}
+
+window.createSocket = createSocket;
+\end{lstlisting}
+
+\begin{itemize}
+    \item The \texttt{renderComments} function dynamically renders a list of comments in the browser by inserting them into the DOM.
+    \item The response from the channel join event contains the list of comments, which is passed to \texttt{renderComments}.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\shortstack{Updating \texttt{show.html.eex} \\ (Rendering Comments in the View)}}
+\begin{lstlisting}[language=html, basicstyle=\ttfamily\scriptsize, breaklines=true]
+<h5> <%= @topic.title %> </h5>
+
+<div class="input-field">
+  <textarea class="materialize-textarea"></textarea>
+  <button class="btn">Add Comment</button>
+  <ul class="collection">
+  </ul>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    window.createSocket(<%= @topic.id %>)
+  }); 
+</script>
+\end{lstlisting}
+
+\begin{itemize}
+    \item The \texttt{show.html.eex} template has been updated to include an unordered list with the class \texttt{"collection"}.
+    \item This is where the dynamically rendered comments will be inserted by the \texttt{renderComments} function.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\shortstack{Updating \texttt{CommentsChannel.ex} \\ (Broadcasting New Comments)}}
+\begin{lstlisting}[language=elixir, basicstyle=\ttfamily\scriptsize, breaklines=true]
+defmodule Discuss.CommentsChannel do 
+  use Discuss.Web, :channel
+  alias Discuss.{Topic, Comment}
+  
+  def join("comments:" <> topic_id, _params, socket) do
+    topic_id = String.to_integer(topic_id)
+    topic = Topic 
+      |> Repo.get(topic_id)
+      |> Repo.preload(:comments)
+
+    {:ok, %{comments: topic.comments}, assign(socket, :topic, topic)}
+  end
+
+  def handle_in("comment:add", %{"content" => content}, socket) do
+    topic = socket.assigns.topic
+    changeset = topic
+      |> build_assoc(:comments)
+      |> Comment.changeset(%{content: content})
+
+    case Repo.insert(changeset) do
+      {:ok, comment} ->
+        broadcast!(socket, "comments:#{socket.assigns.topic.id}:new", %{comment: comment})
+        {:reply, :ok, socket} 
+      {:error, _reason} ->
+        {:reply, {:error, %{errors: changeset}}, socket}
+    end
+  end
+end
+\end{lstlisting}
+
+\begin{itemize}
+    \item The \texttt{broadcast!} function broadcasts the new comment to all clients connected to the channel.
+    \item The broadcasted message is received by the JavaScript client and rendered in real-time.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\shortstack{Updating \texttt{socket.js} \\ (Receiving New Comments)}}
+\begin{lstlisting}[language=JavaScript, basicstyle=\ttfamily\scriptsize, breaklines=true]
+import {Socket} from "phoenix"
+let socket = new Socket("/socket", {params: {token: window.userToken}})
+
+socket.connect()
+
+const createSocket = () => {
+  let channel = socket.channel(`comments:${topicId}`, {})
+  channel.join()
+    .receive("ok", resp => {
+      renderComments(resp.comments);
+    })
+    .receive("error", resp => {console.log("Unable to join", resp);
+    });
+
+  document.querySelector('button').addEventListener('click', () => {
+    const content = document.querySelector('textarea').value;
+    channel.push('comment:add', {content: content});
+  });
+
+  channel.on(`comments:${topicId}:new`, renderComment);
+};
+
+function renderComment(comment){
+  const renderedComment = `
+    <li class="collection-item">
+      ${comment.content}
+    </li>
+  `;
+  document.querySelector('.collection').innerHTML += renderedComment;
+}
+
+function renderComments(comments){
+  const renderedComments = comments.map(comment => {
+    return `
+      <li class="collection-item">
+        ${comment.content}
+      </li>
+    `;
+  });
+
+  document.querySelector('.collection').innerHTML = renderedComments.join('');
+}
+
+window.createSocket = createSocket;
+\end{lstlisting}
+
+\begin{itemize}
+    \item The \texttt{channel.on} function listens for broadcasted messages.
+    \item When a new comment is broadcasted, the \texttt{renderComment} function dynamically inserts it into the DOM.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Conclusion}
+\begin{itemize}
+    \item We have covered the full cycle of joining channels, pushing comments, broadcasting, and rendering in real-time.
+    \item This implementation allows for real-time comment functionality in our Phoenix application.
+\end{itemize}
+\end{frame}
+
+\end{document}
+
+
+--------------- part 4 -----------------
+
+
+\documentclass{beamer}
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+
+\lstset{
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\color{blue},
+  commentstyle=\color{mygreen},
+  stringstyle=\color{mymauve},
+  breaklines=true,
+}
+
+\begin{document}
+
+\begin{frame}{\shortstack{Updating \texttt{socket.js} \\ (Adding Another Event Listener)}}
+\begin{lstlisting}[language=JavaScript, basicstyle=\ttfamily\scriptsize, breaklines=true]
+import {Socket} from "phoenix"
+let socket = new Socket("/socket", {params: {token: window.userToken}})
+
+socket.connect()
+
+const createSocket = () => {
+  let channel = socket.channel(`comments:${topicId}`, {})
+  channel.join()
+    .receive("ok", resp => {
+      renderComments(resp.comments);
+    })
+    .receive("error", resp => {console.log("Unable to join", resp);
+    });
+
+  channel.on(`comments:${topicId}:new`, renderComment);
+
+  document.querySelector('button').addEventListener('click', () => {
+    const content = document.querySelector('textarea').value;
+    channel.push('comment:add', {content: content});
+  });
+
+  // Adding another event listener for 'Enter' key press
+  document.querySelector('textarea').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      const content = document.querySelector('textarea').value;
+      channel.push('comment:add', {content: content});
+      event.preventDefault();
+    }
+  });
+};
+
+function renderComments(comments){
+  const renderedComments = comments.map(comment => {
+    return commentTemplate(comment)
+  });
+
+  document.querySelector('.collection').innerHTML = renderedComments.join('');
+}
+
+function renderComment(event){
+  const renderedComment = commentTemplate(event.comment)
+  document.querySelector('.collection').innerHTML += renderedComment;
+}
+
+function commentTemplate(comment){
+  return `
+    <li class="collection-item">
+      ${comment.content}
+    </li>
+  `;
+}
+
+window.createSocket = createSocket;
+\end{lstlisting}
+\begin{itemize}
+    \item This update introduces an event listener that submits a comment when the 'Enter' key is pressed.
+    \item It improves usability, allowing users to send comments using the keyboard, which can speed up interaction.
+    \item The `event.preventDefault()` ensures the 'Enter' key doesn’t trigger a line break.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Authentication with Sockets}
+\begin{itemize}
+    \item **Server-Side:**
+        \begin{itemize}
+            \item The server generates a unique token for the user upon login.
+            \item This token is embedded in the HTML layout, accessible via `window.userToken`.
+        \end{itemize}
+    \item **Client-Side:**
+        \begin{itemize}
+            \item The client retrieves the HTML file and initializes the socket connection.
+            \item The token is sent as a parameter when the socket boots up.
+        \end{itemize}
+    \item **Server-Side Verification:**
+        \begin{itemize}
+            \item The server verifies the token and retrieves the associated user.
+            \item If valid, the user is added to the socket, enabling user-specific functionalities.
+        \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\shortstack{Updating \texttt{app.html.eex} \\ (Applying Unique Token for Authentication)}}
+\begin{lstlisting}[language=HTML, basicstyle=\ttfamily\scriptsize, breaklines=true]
+<head>
+  <title>Hello Discuss!</title>
+  ...
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <script>
+    <%= if @conn.assigns.user do %>
+      window.userToken = "<%= Phoenix.Token.sign(Discuss.Endpoint, "key", @conn.assigns.user.id) %>"
+    <% end %>
+  </script>
+  ...
+</head>
+\end{lstlisting}
+\begin{itemize}
+    \item This script tag conditionally sets `window.userToken` only if a user is assigned to the connection (`@conn.assigns.user`).
+    \item The `Phoenix.Token.sign` function creates a signed token using the user's ID and a secret key.
+    \item This token is later used by the client to authenticate socket connections.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\shortstack{Updating \texttt{user\_socket.ex} \\ (Enabling Token Authentication)}}
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\scriptsize, breaklines=true]
+defmodule Discuss.UserSocket do
+  use Phoenix.Socket
+
+  channel "comments:*", Discuss.CommentsChannel
+
+  transport :websocket, Phoenix.Transport.WebSocket
+
+  def connect(%{"token" => token}, socket) do
+    case Phoenix.Token.verify(socket, "key", token) do
+      {:ok, user_id} -> 
+        {:ok, assign(socket, :user_id, user_id)}
+      {:error, _error} ->
+        :error
+    end
+  end
+
+  def id(_socket), do: nil
+end
+\end{lstlisting}
+\begin{itemize}
+    \item The `connect` function verifies the token passed from the client.
+    \item If verification succeeds, the user's ID is extracted and assigned to the socket.
+    \item This enables the application to maintain a user’s state across the socket connection.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\shortstack{Updating \texttt{CommentsChannel} \\ (Handling Associations with \texttt{build\_assoc})}}
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\scriptsize, breaklines=true]
+defmodule Discuss.CommentsChannel do 
+  use Discuss.Web, :channel
+  alias Discuss.{Topic, Comment}
+  
+  def join("comments:" <> topic_id, _params, socket) do
+    topic_id = String.to_integer(topic_id)
+    topic = Topic 
+      |> Repo.get(topic_id)
+      |> Repo.preload(:comments)
+
+    {:ok, %{comments: topic.comments}, assign(socket, :topic, topic)}
+  end
+
+  def handle_in("comment:add", %{"content" => content}, socket) do
+    topic = socket.assigns.topic
+    user_id = socket.assigns.user_id
+
+    changeset = topic
+      |> build_assoc(:comments, user_id: user_id)
+      |> Comment.changeset(%{content: content})
+
+    case Repo.insert(changeset) do
+      {:ok, comment} ->
+        broadcast!(socket, "comments:#{socket.assigns.topic.id}:new", %{comment: comment})
+        {:reply, :ok, socket} 
+      {:error, _reason} ->
+        {:reply, {:error, %{errors: changeset}}, socket}
+    end
+  end
+end
+\end{lstlisting}
+\begin{itemize}
+    \item The `build_assoc` function creates an association between the `topic` and the new `comment`, including the `user_id`.
+    \item It simplifies the process of associating the comment with both the topic and the user.
+    \item A limitation of `build_assoc` is that it can only handle one relationship at a time and cannot be reused for multiple associations.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\shortstack{Using \texttt{Repo.preload} \\ (Loading Associated Data)}}
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\scriptsize, breaklines=true]
+defmodule Discuss.CommentsChannel do 
+  use Discuss.Web, :channel
+  alias Discuss.{Topic, Comment}
+  
+  def join("comments:" <> topic_id, _params, socket) do
+    topic_id = String.to_integer(topic_id)
+    topic = Topic 
+      |> Repo.get(topic_id)
+      |> Repo.preload(comments: [:user])
+
+    {:ok, %{comments: topic.comments}, assign(socket, :topic, topic)}
+  end
+end
+\end{lstlisting}
+\begin{itemize}
+    \item `Repo.preload` is used to load related data from the database, like users associated with comments.
+    \item In this context, it preloads the `user` associated with each `comment` when joining the channel.
+    \item This ensures that the user information is available when broadcasting or rendering comments.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\shortstack{Updating \texttt{comment.ex} \\ (Including User in JSON Encoding)}}
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\scriptsize, breaklines=true]
+defmodule Discuss.Comment do
+  use Discuss.Web, :model
+
+  @derive {Poison.Encoder, only: [:content, :user]}
+
+  schema "comments" do
+    field :content, :string
+    belongs_to :user, Discuss.User
+    belongs_to :topic, Discuss.Topic
+    timestamps()
+  end
+
+  def changeset(struct, params \\ %{}) do
+    struct
+    |> cast(params, [:content])
+    |> validate_required([:content])
+  end
+end
+\end{lstlisting}
+\begin{itemize}
+    \item Adding `@derive {Poison.Encoder, only: [:content, :user]}` allows the `user` association to be included in the JSON encoding of the `comment`.
+    \item This facilitates sending the user's information along with the comment to the client.
+\end{itemize}
+\end{frame}
+
+\end{document}

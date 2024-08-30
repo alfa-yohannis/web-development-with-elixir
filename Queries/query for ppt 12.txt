@@ -1,0 +1,555 @@
+\documentclass[aspectratio=169, table]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage{listings} 
+
+\usetheme{Pradita}
+
+\subtitle{IF140303-Web Application Development}
+
+\title{\LARGE{Session-02:\\ Elixir's pattern matching }
+	\vspace{20pt}}
+\date[Serial]{\scriptsize {PRU/SPMI/FR-BM-18/0222}}
+\author[Pradita]{\small{\textbf{Alfa Yohannis}}}
+
+\lstdefinelanguage{Elixir} {
+	keywords={def, defmodule, do, end, for, if, else, true, false},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={@moduledoc, iex, Enum, @doc},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	showstringspaces=false
+}
+
+\begin{document}
+	
+	\frame{\titlepage}
+	
+	\begin{frame}
+		\frametitle{Recap: Function Documentation and Arity}
+		\begin{itemize}
+			\item In Elixir, the function name followed by a slash and number indicates the arity, or the number of arguments the function takes.
+			\item \texttt{function name/number} notation helps in distinguishing between different functions with the same name but different arities.
+			\item Example: \texttt{greet/0}, \texttt{generate\_pool/0}, \texttt{contains?/2}, \texttt{distribute/2}.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Introduction to Advanced Concepts}
+		\begin{itemize}
+			\item This session covers more advanced Elixir concepts within the context of a Lottery module.
+			\item We’ll explore how to save and load data, and how to create more complex operations like creating a randomized hand from the lottery pool.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Saving the Lottery Pool to a File}
+		\begin{lstlisting}[language=Elixir]
+			def save_pool(pool, filename) do
+			binary = :erlang.term_to_binary(pool)
+			File.write(filename, binary)
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{save\_pool/2} saves the lottery pool to a specified file.
+			\item Converts the pool to binary using \texttt{:erlang.term\_to\_binary/1}.
+			\item Writes the binary data to the file with \texttt{File.write/2}.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Loading the Lottery Pool from a File}
+		\begin{lstlisting}[language=Elixir]
+			def load_pool(filename) do
+			case File.read(filename) do
+			{:ok, binary} -> :erlang.binary_to_term(binary)
+			{:error, _reason} -> "That file does not exist"
+			end
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{load\_pool/1} loads the lottery pool from a specified file.
+			\item Reads the binary data from the file using \texttt{File.read/1}.
+			\item Converts the binary data back into the original list with \texttt{:erlang.binary\_to\_term/1}.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Creating a Randomized Hand}
+		\begin{lstlisting}[language=Elixir]
+			def create_hand(draw_size) do
+			Lottery.generate_pool()
+			|> Lottery.randomize()
+			|> Lottery.distribute(draw_size)
+			end
+		\end{lstlisting}
+		\begin{itemize}
+			\item \texttt{create\_hand/1} generates a randomized hand from the lottery pool.
+			\item Combines multiple operations: generating the pool, shuffling, and distributing.
+			\item Utilizes the pipe operator (\texttt{|>}) for chaining functions together.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{The Pipe Operator (\texttt{|>})}
+		\begin{itemize}
+			\item The pipe operator allows for chaining function calls in a clear and readable manner.
+			\item It passes the result of the expression on the left as the first argument to the function on the right.
+			\item Enhances code readability, especially when working with multiple transformations or operations.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Recap: Functional Programming Concepts}
+		\begin{itemize}
+			\item Functional programming emphasizes immutability, pure functions, and higher-order functions.
+			\item Functions can be passed as arguments, returned as results, and assigned to variables.
+			\item Recursion is preferred over loops for iteration.
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Summary}
+		\begin{itemize}
+			\item We explored advanced Elixir concepts by continuing the development of the \texttt{Lottery} module.
+			\item We learned how to save and load data, create a randomized hand, and utilize the pipe operator.
+			\item These concepts further enhance our understanding of functional programming and Elixir's capabilities.
+		\end{itemize}
+	\end{frame}
+	
+\end{document}
+
+
+with the same format as the one I provide before, please make a brand new latex beamer ppt for 12th lessons containing, if the frame got too full, please separate the content to other frame too. I think the average frame should only contain 11 rows max and for the frametitle it can only contain 32 character, if its too long please do: \shortstack{first line \\ second line}. preferably I want the content to be a bit more in detail, for example when I ask for explanations, I prefer it to not only give short description, but instead make it a bit more detailed:
+
+1. Explain what is a plug. explain about function plug and module plug. Go to web > controllers > create folder plugs > create require_auth.ex. please explain that we are making the plugs to see in the connection object if there is an user ID assign to it, if yes then we will search for the user ID in the database then assign it to a connection object. we are going to make a module plug, it mainly consist of 2 components: init(setup to be called once), call(call with "conn" and must return a value). Please explain what assign keyword do mainly in conn.assign
+
+2. please explain the contents in details:
+
+defmodule.Discuss.Plugs.SetUser do
+  import Plug.Conn
+  import Phoenix.Controller
+
+  alias Discuss.Repo
+  alias Discuss.User
+  alias Discuss.Router.Helpers
+
+  def init(_params) do
+  end
+
+  def call(conn, _params) do
+    user_id = get_session(conn, :user_id)
+    
+    cond do
+      user = user_id && Repo.get(User, user_id) ->
+        assign(conn, :user, user)
+      true ->
+        assign(conn, :user, nil)
+  end
+end
+
+3. Go into router.ex and input the plug "plug Discuss.Plugs.SetUser" to "pipeline :browser do"
+
+4. Go to header(app.html.eex) to add login button and please explain it in detail:
+<body>
+ <nav class="light-blue">
+   <div class="nav-wrapper container">
+     <a href="/" class="brand-logo">Logo</a>
+     <ul class="right">
+       <%= if @conn.assigns[:user] do %>
+         <li>
+           Logout
+         </li>
+       <% else %>
+         <li>
+         <%= link "Sign in with Github", to: session_path(@conn, :
+ request, "github") %>
+         </li>
+       <% end %>
+     </ul>
+   </div>
+ </nav>
+
+5. Update the router.ex to add signout:
+scope "/", Discuss do
+  pipe_through :browser
+
+  resources "/", TopicController
+end
+
+scope "/auth", Discuss do
+  pipe_through :browser
+  
+  get "/signout", AuthController, :signout
+  get "/:provider", AuthController, :request
+  get "/:provider/callback", AuthController, :request
+end
+
+6. Update the auth_controller to include signout function. please explain it in details:
+    
+def module Discuss.AuthController do
+  use Discuss.Web, :controller
+  plug Ueberauth
+
+  alias Discuss.User
+
+  def callback(%{assigns: %{ueberauth_auth: auth}} = conn, params) do
+    user_params = %{token: auth.credentials.token, email: auth.info.email, provider: "github"}
+    changeset = User.changeset(%User{}, user_params)
+
+    signin(conn, changeset)
+  end
+
+  def signout(conn, changeset) do
+    conn
+    |> configure_session(drop: true)
+    |> redirect(to: topic_path(conn, :index))
+  end
+
+  defp signin(conn, changeset) do
+    case insert_or_update_user(changeset) do
+      {:ok, user} ->
+        conn
+        |> put_flash(:info, "Welcome back!")
+        |> put_session(:user_id, user.id)
+        |> redirect(to: topic_path(conn, :index))
+      {:error, _reason} ->
+        conn
+        |> put_flash(:error, "Error signin in")
+        |> redirect(to: topic_path(conn, :index))
+    end
+  end
+
+  defp insert_or_update_user(changeset) do
+    case Repo.get_by(User, email: changeset.changes.email) do
+      nil -> 
+        Repo.insert(changeset)
+      user ->
+        {:ok, user}
+  end
+end
+
+7. Go to header(app.html.eex) to add logout button and please explain it in detail:
+<body>
+ <nav class="light-blue">
+   <div class="nav-wrapper container">
+     <a href="/" class="brand-logo">Logo</a>
+     <ul class="right">
+       <%= if @conn.assigns[:user] do %>
+         <li>
+         <%= link "Logout", to: session_path(@conn, :signout) %>
+         </li>
+       <% else %>
+         <li>
+         <%= link "Sign in with Github", to: session_path(@conn, :
+ request, "github") %>
+         </li>
+       <% end %>
+     </ul>
+   </div>
+ </nav>
+
+8. We need to add restriction to users so they can only post when they are signed in and only able to edit/delete their own post. To do this we will make another module plug. Go to Web > controllers > plug > create require_auth.ex. Please explain the contents in details, also explains the functions of halt():
+
+defmodue Discuss.Plugs.RequireAuth do
+ use Plug.Conn
+ use Phoenix.Controller
+
+ alias Discuss.Router.Helpers
+
+ def init(_params) do
+ end
+ 
+ def call(conn, _params) do
+  if conn.assigns[:user] do
+   conn
+  else
+   conn
+   |> put_flash(:error, "You must be logged in.")
+   |> redirect(to: Helpers.topic_path(conn, :index))
+   |> halt()
+  end
+ end
+end
+
+9. Now we will update the topic_controller to add the RequireAuth plug. please explain the aaddition of plug Discuss.Plugs.RequireAuth function in detail:
+
+defmodule Discuss.TopicController do
+	use Discuss.web, :controller
+	  
+	alias Discuss.Topic
+
+	plug Discuss.Plugs.RequireAuth when action in [:new, :create, :edit, :update, :delete]
+
+	def index(conn, _params) do
+	  topics = Repo.all(Topic)
+	  render conn, "index.html", topics: topics
+	end
+
+	def new(conn, _params) do
+	changeset = Topic.changeset(%Topic{}, %{})
+	render conn, "new.html", changset: changeset
+	end
+
+	def create(conn, %{"topic" => topic}) do
+	  changeset = Topic.changeset(%Topic{}, topic)
+	  case Repo.insert(changset) do
+	    {:ok, _topic} -> 
+	      conn
+	      |> put_flash(:info, "Topic Created")
+	      |> redirect(to: topic_path(conn, :index))
+	    {:error, changeset} -> 
+	      render conn, "new.html", changeset: changeset
+	end
+
+	def edit(conn, %{"id" => topic_id}) do
+	  topic = Repo.get(Topic, topic_id)
+	  changset = Topic.changeset(topic)
+
+ 	  render conn, "edit.html", changeset: changeset, topic:topic
+	end
+
+	def update(conn, %{"id" => topic_id, "topic" => topic}) do
+	  old_topic = Repo.get(Topic, topic_id)
+	  changeset = Topic.changeset(old_topic, topic)
+
+	  case Repo.update(changset) do
+	    {:ok, _topic} ->
+	      conn
+	      |> put_flash(:info, "Topic Updated")
+	      |> redirect(to: topic_path(conn, :index))
+	    {:error, changset} ->
+	      render conn, "edit.html", changeset: changeset, topic: old_topic
+	  end
+	end
+	
+	def delete(conn, %{"id", topic_id}) do
+	  Repo.get!(Topic, topic_id) |> Repo.delete!
+	  conn
+	  |> put_flash(:info, "Topic Deleted")
+	  |> redirect(to: topic_path(conn, :index)) 
+	end
+end
+
+10. Now we will associate the user with Topics. We will do it by doing one to many relationship here one user have a lot of topics by adding user_id as foreign key at Table of Topics. Now we will create a migration add_user_id_to_topics. go to priv > repo > migration > add_user_id_to_topics. because we don't want to create a new table, we will do alter table instead to update it. By doing this, all the previously created topics will have empty user_id column, but it will remain empty before we update the data. migrate it with using "mix ecto.migrate" please explain the contents in detail:
+
+defmodule Discuss.Repo.Migrations.AddUserIdToTopics do
+ use Ecto.Migration
+ def change do
+  alter table(:topics) do
+   add :user_id, references(:users)
+  end
+ end
+end
+
+11. As we have associate the User table with Topics table in database, now we also need to associate their model too. go to web > models > user.ex and topic.ex. please explain the association in detail:
+
+user.ex:
+defmodule Discuss.User do
+  use Discuss.Web, :model
+
+  schema "users" do
+    field :email, string
+    field :provider, string
+    field :token, string
+    has_many :topics, Discuss.Topic
+    timestamps()
+  end
+  
+  def changeset(struct, params \\ %{}) do
+    struct
+    |> cast(params, [:email, :provider, :token])
+    |> validate_required([:email, :provider, :token])
+  end
+end
+
+topic.ex:
+defmodule Discuss.Topic do
+ use Discuss.Web, :model
+
+ schema "topics" do
+  field :title, :string
+  belongs_to :user, Discuss.User
+ end
+
+ def changeset(struct, params \\ %{}) do
+  struct
+  |> cast(params, [:title])
+  |> validate_required([:title])
+ end
+end 
+
+12. Now we will update the topic_controller, specifically create function to associate the topic to a user when a topic is created by using ecto built in function(assoc, build_assoc). Please explain the association part in detail:
+
+defmodule Discuss.TopicController do
+	use Discuss.web, :controller
+	  
+	alias Discuss.Topic
+
+	plug Discuss.Plugs.RequireAuth when action in [:new, :create, :edit, :update, :delete]
+
+	def index(conn, _params) do
+	  topics = Repo.all(Topic)
+	  render conn, "index.html", topics: topics
+	end
+
+	def new(conn, _params) do
+	changeset = Topic.changeset(%Topic{}, %{})
+	render conn, "new.html", changset: changeset
+	end
+
+	def create(conn, %{"topic" => topic}) do
+	  changeset = conn.assigns.user
+	    |> build_assoc(:topics)
+	    |> Topic.changeset(topic)
+
+	  case Repo.insert(changset) do
+	    {:ok, _topic} -> 
+	      conn
+	      |> put_flash(:info, "Topic Created")
+	      |> redirect(to: topic_path(conn, :index))
+	    {:error, changeset} -> 
+	      render conn, "new.html", changeset: changeset
+	end
+
+	def edit(conn, %{"id" => topic_id}) do
+	  topic = Repo.get(Topic, topic_id)
+	  changset = Topic.changeset(topic)
+
+ 	  render conn, "edit.html", changeset: changeset, topic:topic
+	end
+
+	def update(conn, %{"id" => topic_id, "topic" => topic}) do
+	  old_topic = Repo.get(Topic, topic_id)
+	  changeset = Topic.changeset(old_topic, topic)
+
+	  case Repo.update(changset) do
+	    {:ok, _topic} ->
+	      conn
+	      |> put_flash(:info, "Topic Updated")
+	      |> redirect(to: topic_path(conn, :index))
+	    {:error, changset} ->
+	      render conn, "edit.html", changeset: changeset, topic: old_topic
+	  end
+	end
+	
+	def delete(conn, %{"id", topic_id}) do
+	  Repo.get!(Topic, topic_id) |> Repo.delete!
+	  conn
+	  |> put_flash(:info, "Topic Deleted")
+	  |> redirect(to: topic_path(conn, :index)) 
+	end
+end
+
+13. To make sure the user can only see Edt and Delete button on the post they create. To do that we wil add if statements in: go to web > templates > topic > index.html.eex. Please explain in detail if statement and what it does. the contents:
+
+<h5>Topics</h5>
+
+<ul class = "collection">
+  <%= for topic <- @topics do%>
+    <li class="collection-item"> 
+      <%= topic.title %>
+
+      <%= if @conn.assigns.user.id == topic.user_id do%>
+        <div class="right">
+          <%= link "Edit", to: topic_path(@conn, :edit, topic) %>
+	  <%= link "Delete", to: topic_path(@conn, :delete , topic), method: :delete %>
+        </div>
+      <% end %>
+    </li>
+  <%end%>
+</ul>
+
+<div class="fixed-action-btn"
+  <%= link to: topic_path(@conn, :new), class: "btn-floating btn-large waves-effect waves-light red do %>
+    <i class="material-icons">add</>
+  <% end %>
+</div>
+
+14. Create a new plug to refuse update, edit, and delete request from users that are not the owner of the post, because even though they cannot see the button, they can still forcibly access it through URL. Update the topic_controller.ex. Please explain the update in details:
+
+defmodule Discuss.TopicController do
+	use Discuss.web, :controller
+	  
+	alias Discuss.Topic
+
+	plug Discuss.Plugs.RequireAuth when action in [:new, :create, :edit, :update, :delete]
+	plug :check_topic_owner when action in [:update, :edit, :delete]
+
+	def index(conn, _params) do
+	  topics = Repo.all(Topic)
+	  render conn, "index.html", topics: topics
+	end
+
+	def new(conn, _params) do
+	changeset = Topic.changeset(%Topic{}, %{})
+	render conn, "new.html", changset: changeset
+	end
+
+	def create(conn, %{"topic" => topic}) do
+	  changeset = conn.assigns.user
+	    |> build_assoc(:topics)
+	    |> Topic.changeset(topic)
+
+	  case Repo.insert(changset) do
+	    {:ok, _topic} -> 
+	      conn
+	      |> put_flash(:info, "Topic Created")
+	      |> redirect(to: topic_path(conn, :index))
+	    {:error, changeset} -> 
+	      render conn, "new.html", changeset: changeset
+	end
+
+	def edit(conn, %{"id" => topic_id}) do
+	  topic = Repo.get(Topic, topic_id)
+	  changset = Topic.changeset(topic)
+
+ 	  render conn, "edit.html", changeset: changeset, topic:topic
+	end
+
+	def update(conn, %{"id" => topic_id, "topic" => topic}) do
+	  old_topic = Repo.get(Topic, topic_id)
+	  changeset = Topic.changeset(old_topic, topic)
+
+	  case Repo.update(changset) do
+	    {:ok, _topic} ->
+	      conn
+	      |> put_flash(:info, "Topic Updated")
+	      |> redirect(to: topic_path(conn, :index))
+	    {:error, changset} ->
+	      render conn, "edit.html", changeset: changeset, topic: old_topic
+	  end
+	end
+	
+	def delete(conn, %{"id", topic_id}) do
+	  Repo.get!(Topic, topic_id) |> Repo.delete!
+	  conn
+	  |> put_flash(:info, "Topic Deleted")
+	  |> redirect(to: topic_path(conn, :index)) 
+	end
+
+	def check_topic_owner(conn, _params) do
+	  %{params: %{"id" => topic_id}} = conn
+
+	  if Repo.get(Topic, topic_id).user_id = conn.assigns.user.id do
+	    conn
+	  else
+	    conn
+	    |> put_flas(:error, "You cannot edit that")
+	    |> redirect(to: topic_path(conn, :index))
+	    |> halt()
+	end
+end
