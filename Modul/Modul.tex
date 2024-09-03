@@ -1,0 +1,89 @@
+\documentclass{book}
+
+\usepackage[a4paper,margin=3cm]{geometry}
+\usepackage{cite} % for IEEE-style citations
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+\usepackage{graphicx}
+
+\lstdefinelanguage{Elixir} {
+	keywords={def, defmodule, do, end, for, if, else, true, false},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={@spec, @moduledoc, iex, Enum, @doc},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	showstringspaces=false
+}
+
+\lstdefinelanguage{bash} {
+	keywords={},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	showstringspaces=false
+}
+
+\begin{document}
+		
+	\begin{titlepage}
+		\centering
+		\vspace*{1cm}
+		
+		\Huge
+		\textbf{IF140303 - Modul Praktikum Pengembangan Aplikasi Web}
+		
+		\vspace{0.5cm}
+		
+		\LARGE
+		Universitas Pradita
+		
+		\vspace{1.5cm}
+		
+		\textit{Powered by ChatGPT}
+		
+		\vspace{2cm}
+		
+		\textbf{Alfa Yohannis, Julian Yang}
+		
+		\vspace{0.8cm}
+		
+		\today
+		
+		\vfill
+	\end{titlepage}
+	
+	% Contents Page
+	\tableofcontents
+	
+	
+	\include{Pertemuan01.tex}
+		
+\end{document}

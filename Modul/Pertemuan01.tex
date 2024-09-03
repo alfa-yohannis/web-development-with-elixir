@@ -1,0 +1,668 @@
+
+\chapter{Pengenalan Elixir}
+
+\section{Elixir}
+
+Elixir adalah bahasa pemrograman fungsional yang dirancang untuk membangun aplikasi yang scalable dan maintainable. Dikembangkan oleh José Valim, Elixir berjalan di atas Erlang Virtual Machine (BEAM) dan memanfaatkan keunggulan teknologi Erlang untuk manajemen proses dan concurrent programming. Bahasa ini sering digunakan dalam pengembangan aplikasi berskala besar, seperti sistem web yang memerlukan performa tinggi dan kemampuan untuk menangani banyak koneksi secara bersamaan.
+
+\subsection{Mengapa Elixir Ada}
+
+Elixir diciptakan untuk mengatasi beberapa keterbatasan yang ada pada bahasa pemrograman lain, khususnya dalam konteks aplikasi yang memerlukan skalabilitas tinggi dan keandalan yang kuat. Berikut adalah beberapa alasan utama mengapa Elixir dikembangkan:
+
+\begin{itemize}
+	\item \textbf{Mengatasi Keterbatasan Bahasa Lain:} José Valim, pengembang Elixir, merasa bahwa bahasa pemrograman yang ada saat itu tidak sepenuhnya memenuhi kebutuhan aplikasi modern yang memerlukan concurrency, fault tolerance, dan scalability. Elixir dirancang untuk mengatasi kekurangan ini dengan memanfaatkan kekuatan Erlang.
+	
+	\item \textbf{Memanfaatkan Infrastruktur Erlang:} Elixir dibangun di atas Erlang Virtual Machine (BEAM), yang sudah terbukti andal dalam menangani aplikasi dengan banyak koneksi secara bersamaan dan dalam situasi yang memerlukan toleransi kesalahan. Dengan memanfaatkan BEAM, Elixir mewarisi kekuatan concurrency dan fault tolerance dari Erlang, tetapi dengan sintaksis yang lebih modern dan fitur tambahan.
+	
+	\item \textbf{Produktivitas Pengembang:} Elixir dirancang untuk meningkatkan produktivitas pengembang dengan menyediakan fitur-fitur seperti metaprogramming dan sintaksis yang bersih dan intuitif. Ini memungkinkan pengembang untuk menulis kode yang lebih mudah dibaca dan dikelola, serta mempercepat pengembangan aplikasi.
+	
+	\item \textbf{Pengembangan Aplikasi Web Modern:} Seiring dengan meningkatnya kebutuhan untuk aplikasi web yang real-time dan dinamis, Elixir menawarkan solusi yang efektif dengan framework seperti Phoenix. Phoenix mendukung real-time communication dan pengembangan aplikasi web yang responsif, menjadikannya pilihan yang menarik untuk pengembangan web modern.
+	
+	\item \textbf{Kebutuhan Scalability dan Fault Tolerance:} Dalam dunia teknologi yang terus berkembang, aplikasi perlu mampu menanggapi peningkatan beban kerja dan potensi kegagalan sistem. Elixir memberikan alat dan struktur untuk membangun aplikasi yang dapat dengan mudah diskalakan dan dikelola, bahkan dalam lingkungan yang penuh tantangan.
+\end{itemize}
+
+Dengan mengatasi masalah-masalah ini, Elixir menyediakan platform yang kuat dan fleksibel untuk pengembangan aplikasi yang memerlukan performa tinggi, keandalan, dan kemudahan dalam pengelolaan.
+
+
+\subsection{Sejarah Elixir}
+
+Elixir dikembangkan oleh José Valim dan pertama kali diperkenalkan pada tahun 2011. Valim, yang sebelumnya dikenal sebagai kontributor utama untuk framework web Ruby on Rails, memiliki visi untuk menciptakan bahasa pemrograman yang menggabungkan kekuatan concurrency dan fault tolerance dari Erlang dengan sintaksis modern dan fitur-fitur baru yang mendukung produktivitas pengembang.
+
+Beberapa tonggak penting dalam sejarah Elixir adalah:
+
+\begin{itemize}
+	\item \textbf{2011:} José Valim mengumumkan Elixir sebagai proyek open-source. Tujuan awalnya adalah untuk mengatasi keterbatasan bahasa pemrograman yang ada, dengan memanfaatkan infrastruktur Erlang untuk membangun aplikasi yang lebih scalable dan maintainable.
+	
+	\item \textbf{2014:} Elixir mencapai versi 1.0, menandakan kestabilan dan kematangan bahasa tersebut untuk digunakan dalam produksi. Versi ini memperkenalkan berbagai fitur penting serta integrasi dengan alat dan library yang mendukung pengembangan aplikasi modern.
+	
+	\item \textbf{2015:} Framework web Phoenix, yang dibangun dengan Elixir, diluncurkan. Phoenix menawarkan fitur-fitur canggih seperti live view dan real-time capabilities, menjadikannya pilihan populer untuk pengembangan aplikasi web yang dinamis dan interaktif.
+	
+	\item \textbf{2018:} Elixir semakin banyak diadopsi dalam berbagai sektor industri, dari fintech hingga telekomunikasi, berkat kemampuannya dalam menangani beban kerja tinggi dan memastikan keandalan sistem. Komunitas Elixir terus berkembang dengan dukungan dari berbagai konferensi, meetup, dan kontribusi komunitas.
+	
+	\item \textbf{2021 dan seterusnya:} Elixir terus berkembang dengan pembaruan dan peningkatan, memperkenalkan fitur-fitur baru seperti improved tooling, pengembangan library, dan dukungan untuk teknologi terbaru. Komunitas Elixir terus aktif, mendukung adopsi dan perkembangan bahasa ini di berbagai aplikasi dan industri.
+\end{itemize}
+
+Dengan latar belakang sejarah ini, Elixir telah berkembang menjadi bahasa pemrograman yang solid dan inovatif, menawarkan solusi yang kuat untuk tantangan dalam pengembangan aplikasi modern.
+
+
+\subsection{Keunggulan Elixir}
+
+\begin{itemize}
+	\item \textbf{Concurrency dan Parallelism:} Elixir menyediakan model concurrency yang kuat dan efisien melalui aktor (processes) yang ringan dan dapat berkomunikasi satu sama lain dengan menggunakan message passing. Ini memungkinkan aplikasi untuk menangani ribuan proses secara bersamaan dengan efisiensi tinggi.
+	
+	\item \textbf{Fault Tolerance:} Mengadopsi prinsip "let it crash" dari Erlang, Elixir memungkinkan penanganan kesalahan yang robust dengan strategi supervision tree. Hal ini memastikan bahwa aplikasi tetap beroperasi meskipun beberapa bagian mengalami kegagalan.
+	
+	\item \textbf{Scalability:} Elixir dirancang untuk mendukung scaling horizontal dan vertikal dengan mudah. Sistem yang dibangun dengan Elixir dapat berjalan pada berbagai node dan terdistribusi, serta mampu mengelola beban kerja yang meningkat.
+	
+	\item \textbf{Metaprogramming:} Elixir mendukung metaprogramming, yang memungkinkan developer untuk menulis kode yang menghasilkan kode lain pada saat kompilasi. Ini memberikan fleksibilitas dan kemampuan untuk mengembangkan DSL (Domain Specific Languages) serta memperluas bahasa sesuai kebutuhan.
+	
+	\item \textbf{Pengembangan Web:} Elixir sering digunakan dalam pengembangan aplikasi web modern dengan framework seperti Phoenix, yang menyediakan fitur-fitur canggih seperti real-time communication (WebSocket) dan komponen komputasi yang terdistribusi.
+\end{itemize}
+
+\subsection{Kelemahan Elixir}
+
+Meskipun Elixir menawarkan banyak keunggulan, ada beberapa kelemahan yang perlu diperhatikan:
+
+\begin{itemize}
+	\item \textbf{Kurva Belajar:} Bagi pengembang yang tidak familiar dengan pemrograman fungsional atau Erlang, Elixir dapat memiliki kurva belajar yang curam. Konsep-konsep seperti immutability, recursion, dan model concurrency mungkin memerlukan waktu untuk dipahami dan diterapkan secara efektif.
+	
+	\item \textbf{Ekosistem yang Terbatas:} Meskipun ekosistem Elixir berkembang pesat, masih terdapat beberapa kekurangan dalam hal library dan alat dibandingkan dengan bahasa pemrograman yang lebih mapan seperti JavaScript atau Python. Hal ini dapat mempengaruhi ketersediaan solusi atau integrasi dengan alat pihak ketiga.
+	
+	\item \textbf{Kinerja untuk Tugas CPU-Intensif:} Walaupun Elixir sangat baik dalam menangani concurrency dan I/O-bound tasks, kinerjanya dalam tugas CPU-intensive dapat menjadi masalah. Aplikasi yang memerlukan perhitungan berat atau algoritma kompleks mungkin tidak seefisien dalam Elixir jika dibandingkan dengan bahasa pemrograman lain yang lebih dioptimalkan untuk kinerja tersebut.
+	
+	\item \textbf{Komunitas dan Dokumentasi:} Meskipun komunitas Elixir aktif dan mendukung, dokumentasi dan sumber daya pembelajaran mungkin tidak sebanyak yang tersedia untuk bahasa pemrograman yang lebih populer. Hal ini dapat membuat pengembang baru merasa kesulitan untuk menemukan informasi atau dukungan yang mereka butuhkan.
+	
+	\item \textbf{Integrasi dengan Sistem Lama:} Mengintegrasikan Elixir dengan sistem lama atau infrastruktur yang tidak dirancang untuk mendukung aplikasi berbasis Elixir bisa menjadi tantangan. Hal ini sering kali memerlukan usaha tambahan dalam hal integrasi dan pemeliharaan.
+\end{itemize}
+
+Memahami kelemahan ini penting bagi pengembang untuk membuat keputusan yang terinformasi tentang penggunaan Elixir dalam proyek mereka dan untuk mengelola potensi masalah yang mungkin muncul.
+
+\section{Instalasi Elixir}
+
+Untuk mulai menggunakan Elixir, Anda perlu menginstalnya di sistem operasi yang Anda gunakan. Berikut adalah panduan untuk menginstal Elixir di Windows, Mac, dan Ubuntu/Linux.
+
+\subsection{Instalasi di Windows}
+
+\begin{enumerate}
+\item Kunjungi halaman [download Elixir](https://elixir-lang.org/install.html) dan unduh installer Windows yang sesuai.
+\item Jalankan installer yang telah diunduh dan ikuti petunjuk di layar untuk menyelesaikan instalasi.
+\item Setelah instalasi selesai, buka Command Prompt atau PowerShell dan verifikasi instalasi dengan menjalankan perintah berikut:
+\begin{lstlisting}[language=bash]
+	elixir --version
+\end{lstlisting}
+\end{enumerate}
+
+\subsection{Instalasi di Mac}
+
+\begin{enumerate}
+\item Pastikan Anda memiliki [Homebrew](https://brew.sh/) terinstal. Jika belum, instal Homebrew dengan perintah berikut di Terminal:
+\begin{lstlisting}[language=bash]
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com
+/Homebrew/install/HEAD/install.sh)"
+\end{lstlisting}
+\item Instal Elixir menggunakan Homebrew dengan perintah berikut:
+\begin{lstlisting}[language=bash]
+brew install elixir
+\end{lstlisting}
+\item Setelah instalasi selesai, verifikasi dengan menjalankan perintah berikut di Terminal:
+\begin{lstlisting}[language=bash]
+elixir --version
+\end{lstlisting}
+\end{enumerate}
+
+\subsection{Instalasi di Ubuntu/Linux}
+
+\begin{enumerate}
+\item Tambahkan repositori Elixir dan instal paket yang diperlukan dengan perintah berikut:
+\begin{lstlisting}[language=bash]
+sudo apt update
+sudo apt install -y esl-erlang
+sudo apt install -y elixir
+\end{lstlisting}
+\item Setelah instalasi selesai, verifikasi dengan menjalankan perintah berikut di Terminal:
+\begin{lstlisting}[language=bash]
+elixir --version
+\end{lstlisting}
+\end{enumerate}
+
+\section{Membuat Proyek Elixir dan Membukanya di VS Code}
+
+Untuk memulai pengembangan dengan Elixir, langkah pertama adalah membuat proyek Elixir baru dan kemudian membuka proyek tersebut di Visual Studio Code (VS Code).
+
+\subsection{Membuat Proyek Elixir Baru}
+
+\begin{enumerate}
+	\item Buka terminal atau command prompt.
+	\item Navigasi ke direktori di mana Anda ingin membuat proyek baru.
+	\item Buat proyek Elixir baru dengan perintah berikut:
+	\begin{lstlisting}[language=bash]
+		mix new nama_proyek
+	\end{lstlisting}
+	\item Masuk ke direktori proyek yang baru dibuat:
+	\begin{lstlisting}[language=bash]
+		cd nama_proyek
+	\end{lstlisting}
+\end{enumerate}
+
+\subsection{Membuka Proyek di Visual Studio Code}
+
+\begin{enumerate}
+	\item Pastikan Anda sudah menginstal [Visual Studio Code](https://code.visualstudio.com/).
+	\item Buka VS Code dan pilih menu \texttt{File > Open Folder}.
+	\item Navigasi ke direktori proyek Elixir yang telah Anda buat, lalu klik \texttt{Open}.
+	\item Alternatifnya, Anda bisa membuka proyek langsung dari terminal dengan perintah berikut:
+	\begin{lstlisting}[language=bash]
+		code .
+	\end{lstlisting}
+	\item Setelah proyek terbuka, Anda dapat mulai mengembangkan kode Elixir di dalamnya.
+\end{enumerate}
+
+Dengan mengikuti langkah-langkah di atas, Anda akan siap untuk memulai pengembangan proyek Elixir menggunakan VS Code.
+
+
+\section{The Lottery Module}
+
+Modul \texttt{Lottery} menyediakan fungsionalitas untuk mengelola sistem undian. Modul ini mencakup fungsi-fungsi untuk membuat, mengacak, memeriksa angka, dan mendistribusikan angka dalam pool undian. Berikut adalah kode lengkap untuk modul \texttt{Lottery}.
+
+\begin{lstlisting}[language=elixir, caption={Complete Lottery Module}]
+	defmodule Lottery do
+	@moduledoc """
+	This module provides functionalities for managing a lottery system.
+	It includes functions for creating, shuffling, checking for numbers, and distributing numbers within the lottery pool.
+	"""
+	
+	@spec greet() :: <<_::80>>
+	@doc """
+	Returns a greeting message.
+	
+	## Examples
+	
+	iex> Lottery.greet()
+	"Good luck!"
+	"""
+	def greet do
+	"Good luck!"
+	end
+	
+	@spec generate_pool() :: [<<_::24, _::_*16>>, ...]
+	@doc """
+	Generates a pool of lottery numbers with different pots.
+	
+	## Returns
+	
+	- A list of lottery numbers with their respective pot numbers.
+	
+	## Examples
+	
+	iex> Lottery.generate_pool()
+	["Number 1 in Pot 1", "Number 2 in Pot 1", ...]
+	"""
+	def generate_pool do
+	numbers = ["Number 1", "Number 2", "Number 3", "Number 4", "Number 5", "Number 6"]
+	pots = ["Pot 1", "Pot 2", "Pot 3", "Pot 4"]
+	
+	# Creates a pool by combining numbers and pots.
+	for pot <- pots, number <- numbers do
+	"#{number} in #{pot}"
+	end
+	end
+	
+	@doc """
+	Randomizes the order of numbers in the pool.
+	
+	## Parameters
+	
+	- pool: The list of lottery numbers to be shuffled.
+	
+	## Returns
+	
+	- A new list with the numbers shuffled.
+	
+	## Examples
+	
+	iex> Lottery.randomize(["Number 1 in Pot 1", "Number 2 in Pot 2"])
+	["Number 2 in Pot 2", "Number 1 in Pot 1"]
+	"""
+	def randomize(pool) do
+	Enum.shuffle(pool)
+	end
+	
+	@spec contains?(any(), any()) :: boolean()
+	@doc """
+	Checks if a specific number is included in the pool.
+	
+	## Parameters
+	
+	- pool: The list of lottery numbers.
+	- number: The number to check for.
+	
+	## Returns
+	
+	- `true` if the number is in the pool, otherwise `false`.
+	
+	## Examples
+	
+	iex> Lottery.contains?(["Number 1 in Pot 1"], "Number 1 in Pot 1")
+	true
+	"""
+	def contains?(pool, number) do
+	Enum.member?(pool, number)
+	end
+	
+	@doc """
+	Distributes the pool into two parts based on the specified draw size.
+	
+	## Parameters
+	
+	- pool: The list of lottery numbers to be split.
+	- draw_size: The number of numbers to include in the first part.
+	
+	## Returns
+	
+	- A tuple with two lists: the first list containing `draw_size` numbers, and the second list containing the remaining numbers.
+	
+	## Examples
+	
+	iex> Lottery.distribute(["Number 1 in Pot 1", "Number 2 in Pot 2"], 1)
+	{["Number 1 in Pot 1"], ["Number 2 in Pot 2"]}
+	"""
+	def distribute(pool, draw_size) do
+	Enum.split(pool, draw_size)
+	end
+	end
+\end{lstlisting}
+
+\section{Panduan Menjalankan Kode Elixir di Command Prompt}
+
+Setelah Anda membuat modul \texttt{Lottery} seperti di atas, Anda dapat menjalankan dan menguji fungsinya menggunakan \texttt{iex} (Interactive Elixir) di command prompt. Berikut adalah langkah-langkahnya:
+
+\subsection{Menjalankan Kode di \texttt{iex}}
+
+\begin{enumerate}
+	\item Buka terminal atau command prompt.
+	\item Navigasi ke direktori tempat file \texttt{lottery.ex} berada. Misalnya:
+	\begin{lstlisting}[language=bash]
+		cd path/to/your/project
+	\end{lstlisting}
+	\item Mulai sesi \texttt{iex} dengan perintah berikut:
+	\begin{lstlisting}[language=bash]
+		iex
+	\end{lstlisting}
+	\item Di dalam sesi \texttt{iex}, muat modul \texttt{Lottery} dengan perintah:
+	\begin{lstlisting}[language=bash]
+		c("lottery.ex") # atau path ke lottery.ex
+	\end{lstlisting}
+	\item Anda sekarang bisa memanggil fungsi-fungsi dalam modul \texttt{Lottery}. Misalnya:
+	\begin{lstlisting}[language=bash]
+		Lottery.greet()
+		Lottery.generate_pool()
+		Lottery.randomize(["Number 1 in Pot 1", "Number 2 in Pot 2"])
+	\end{lstlisting}
+\end{enumerate}
+
+\subsection{Melakukan Reload Setelah Perubahan Kode}
+
+Jika Anda mengubah kode di file \texttt{lottery.ex}, Anda perlu memuat ulang modul tersebut di \texttt{iex} untuk melihat perubahan. Berikut caranya:
+
+\begin{enumerate}
+	\item Simpan perubahan di file \texttt{lottery.ex}.
+	\item Kembali ke sesi \texttt{iex} yang sedang berjalan.
+	\item Muat ulang modul dengan perintah:
+	\begin{lstlisting}[language=bash]
+		r(Lottery)
+	\end{lstlisting}
+	\item Fungsi-fungsi dalam modul \texttt{Lottery} sekarang akan mencerminkan perubahan yang baru saja Anda buat.
+\end{enumerate}
+
+Dengan panduan ini, Anda dapat menjalankan dan menguji modul \texttt{Lottery} serta memperbaruinya secara interaktif di \texttt{iex}.
+
+
+\section{Penjelasan Detail Modul Lottery}
+
+\subsection{Definisi Modul}
+
+Modul \texttt{Lottery} didefinisikan menggunakan kata kunci \texttt{defmodule}. Modul ini bertanggung jawab untuk mengelola sistem undian dan mencakup fungsi-fungsi untuk membuat, mengacak, memeriksa, dan mendistribusikan angka dalam pool undian.
+
+\begin{lstlisting}[language=elixir, caption={Definisi Modul Lottery}]
+	defmodule Lottery do
+	@moduledoc """
+	This module provides functionalities for managing a lottery system.
+	It includes functions for creating, shuffling, checking for numbers, and distributing numbers within the lottery pool.
+	"""
+\end{lstlisting}
+
+\subsection{Fungsi Salam}
+
+Fungsi \texttt{greet/0} mengembalikan pesan salam sederhana. Fungsi ini merupakan contoh dasar dari fungsi tanpa parameter dan memiliki satu nilai balik.
+
+\begin{lstlisting}[language=elixir, caption={Fungsi Salam}]
+	@spec greet() :: <<_::80>>
+	@doc """
+	Returns a greeting message.
+	
+	## Examples
+	
+	iex> Lottery.greet()
+	"Good luck!"
+	"""
+	def greet do
+	"Good luck!"
+	end
+\end{lstlisting}
+
+\subsection{Fungsi Pembentukan Pool}
+
+Fungsi \texttt{generate\_pool/0} menghasilkan pool angka undian yang dikombinasikan dengan nomor pot. Fungsi ini mengembalikan daftar yang setiap angkanya dihubungkan dengan pot.
+
+\begin{lstlisting}[language=elixir, caption={Fungsi Pembentukan Pool}]
+	@spec generate_pool() :: [<<_::24, _::_*16>>, ...]
+	@doc """
+	Generates a pool of lottery numbers with different pots.
+	
+	## Returns
+	
+	- A list of lottery numbers with their respective pot numbers.
+	
+	## Examples
+	
+	iex> Lottery.generate_pool()
+	["Number 1 in Pot 1", "Number 2 in Pot 1", ...]
+	"""
+	def generate_pool do
+	numbers = ["Number 1", "Number 2", "Number 3", "Number 4", "Number 5", "Number 6"]
+	pots = ["Pot 1", "Pot 2", "Pot 3", "Pot 4"]
+	
+	# Creates a pool by combining numbers and pots.
+	for pot <- pots, number <- numbers do
+	"#{number} in #{pot}"
+	end
+	end
+\end{lstlisting}
+
+\subsection{Fungsi Pengacakan}
+
+Fungsi \texttt{randomize/1} menerima pool angka undian dan mengembalikan daftar baru dengan angka yang diacak. Fungsi ini menggunakan \texttt{Enum.shuffle/1} untuk mengacak urutan.
+
+\begin{lstlisting}[language=elixir, caption={Fungsi Pengacakan}]
+	@doc """
+	Randomizes the order of numbers in the pool.
+	
+	## Parameters
+	
+	- pool: The list of lottery numbers to be shuffled.
+	
+	## Returns
+	
+	- A new list with the numbers shuffled.
+	
+	## Examples
+	
+	iex> Lottery.randomize(["Number 1 in Pot 1", "Number 2 in Pot 2"])
+	["Number 2 in Pot 2", "Number 1 in Pot 1"]
+	"""
+	def randomize(pool) do
+	Enum.shuffle(pool)
+	end
+\end{lstlisting}
+
+\subsection{Fungsi Pemeriksaan Angka}
+
+Fungsi \texttt{contains?/2} memeriksa apakah angka tertentu termasuk dalam pool. Fungsi ini mengembalikan \texttt{true} jika angka ditemukan dan \texttt{false} jika tidak.
+
+\begin{lstlisting}[language=elixir, caption={Fungsi Pemeriksaan Angka}]
+	@spec contains?(any(), any()) :: boolean()
+	@doc """
+	Checks if a specific number is included in the pool.
+	
+	## Parameters
+	
+	- pool: The list of lottery numbers.
+	- number: The number to check for.
+	
+	## Returns
+	
+	- `true` if the number is in the pool, otherwise `false`.
+	
+	## Examples
+	
+	iex> Lottery.contains?(["Number 1 in Pot 1"], "Number 1 in Pot 1")
+	true
+	"""
+	def contains?(pool, number) do
+	Enum.member?(pool, number)
+	end
+\end{lstlisting}
+
+\subsection{Fungsi Distribusi}
+
+Fungsi \texttt{distribute/2} membagi pool menjadi dua bagian berdasarkan ukuran undian yang ditentukan. Fungsi ini mengembalikan tuple yang berisi dua daftar: satu dengan angka yang dipilih dan satu lagi dengan angka sisanya.
+
+\begin{lstlisting}[language=elixir, caption={Fungsi Distribusi}]
+	@doc """
+	Distributes the pool into two parts based on the specified draw size.
+	
+	## Parameters
+	
+	- pool: The list of lottery numbers to be split.
+	- draw_size: The number of numbers to include in the first part.
+	
+	## Returns
+	
+	- A tuple with two lists: the first list containing `draw_size` numbers, and the second list containing the remaining numbers.
+	
+	## Examples
+	
+	iex> Lottery.distribute(["Number 1 in Pot 1", "Number 2 in Pot 2"], 1)
+	{["Number 1 in Pot 1"], ["Number 2 in Pot 2"]}
+	"""
+	def distribute(pool, draw_size) do
+	Enum.split(pool, draw_size)
+	end
+\end{lstlisting}
+
+
+
+\section{Latihan}
+\subsection{Latihan 1: Sistem Manajemen Inventaris}
+
+Modul ini mengelola inventaris barang dengan fungsi-fungsi untuk menambahkan barang, menghapus barang, memeriksa ketersediaan barang, dan mendistribusikan barang ke berbagai lokasi.
+
+\begin{lstlisting}[language=Elixir, caption={Modul Manajemen Inventaris}]
+	defmodule Inventory do
+	@moduledoc """
+	Modul ini menyediakan fungsionalitas untuk mengelola sistem inventaris.
+	Ini mencakup fungsi untuk menambahkan barang, menghapus barang, memeriksa ketersediaan barang, dan mendistribusikan barang ke lokasi yang berbeda.
+	"""
+	
+	@spec add_item(String.t(), integer()) :: :ok
+	@doc """
+	Menambahkan barang baru ke inventaris.
+	
+	## Parameter
+	
+	- item: Nama barang.
+	- quantity: Jumlah barang yang akan ditambahkan.
+	
+	## Examples
+	
+	iex> Inventory.add_item("Laptop", 10)
+	:ok
+	"""
+	def add_item(item, quantity) do
+	IO.puts("Menambahkan #{quantity} #{item} ke inventaris.")
+	:ok
+	end
+	
+	@spec remove_item(String.t(), integer()) :: :ok
+	@doc """
+	Menghapus barang dari inventaris.
+	
+	## Parameter
+	
+	- item: Nama barang.
+	- quantity: Jumlah barang yang akan dihapus.
+	
+	## Examples
+	
+	iex> Inventory.remove_item("Laptop", 5)
+	:ok
+	"""
+	def remove_item(item, quantity) do
+	IO.puts("Menghapus #{quantity} #{item} dari inventaris.")
+	:ok
+	end
+	
+	@spec check_availability(String.t()) :: integer()
+	@doc """
+	Memeriksa ketersediaan barang dalam inventaris.
+	
+	## Parameter
+	
+	- item: Nama barang yang ingin diperiksa.
+	
+	## Returns
+	
+	- Jumlah barang yang tersedia.
+	
+	## Examples
+	
+	iex> Inventory.check_availability("Laptop")
+	10
+	"""
+	def check_availability(item) do
+	IO.puts("Memeriksa ketersediaan #{item}.")
+	10
+	end
+	
+	@spec distribute_items([String.t()], String.t()) :: :ok
+	@doc """
+	Mendistribusikan barang ke lokasi yang berbeda.
+	
+	## Parameter
+	
+	- items: Daftar barang yang akan didistribusikan.
+	- location: Lokasi tujuan distribusi.
+	
+	## Examples
+	
+	iex> Inventory.distribute_items(["Laptop", "Mouse"], "Gudang A")
+	:ok
+	"""
+	def distribute_items(items, location) do
+	IO.puts("Mendistribusikan barang ke #{location}.")
+	:ok
+	end
+	end
+\end{lstlisting}
+
+\subsection{Latihan 2: Sistem Pendaftaran Kelas}
+
+Modul ini mengelola pendaftaran siswa untuk kelas dengan fungsi-fungsi untuk mendaftar siswa, membatalkan pendaftaran, memeriksa pendaftaran, dan mengatur jadwal kelas.
+
+\begin{lstlisting}[language=Elixir, caption={Modul Pendaftaran Kelas}]
+	defmodule ClassRegistration do
+	@moduledoc """
+	Modul ini menyediakan fungsionalitas untuk mengelola sistem pendaftaran kelas.
+	Ini mencakup fungsi untuk mendaftar siswa, membatalkan pendaftaran, memeriksa pendaftaran, dan mengatur jadwal kelas.
+	"""
+	
+	@spec register_student(String.t(), String.t()) :: :ok
+	@doc """
+	Mendaftar siswa ke kelas.
+	
+	## Parameter
+	
+	- student: Nama siswa.
+	- class: Nama kelas yang akan diikuti.
+	
+	## Examples
+	
+	iex> ClassRegistration.register_student("Alice", "Matematika")
+	:ok
+	"""
+	def register_student(student, class) do
+	IO.puts("Mendaftar #{student} ke kelas #{class}.")
+	:ok
+	end
+	
+	@spec cancel_registration(String.t(), String.t()) :: :ok
+	@doc """
+	Membatalkan pendaftaran siswa dari kelas.
+	
+	## Parameter
+	
+	- student: Nama siswa.
+	- class: Nama kelas yang akan dibatalkan.
+	
+	## Examples
+	
+	iex> ClassRegistration.cancel_registration("Alice", "Matematika")
+	:ok
+	"""
+	def cancel_registration(student, class) do
+	IO.puts("Membatalkan pendaftaran #{student} dari kelas #{class}.")
+	:ok
+	end
+	
+	@spec check_registration(String.t()) :: [String.t()]
+	@doc """
+	Memeriksa kelas yang diikuti oleh siswa.
+	
+	## Parameter
+	
+	- student: Nama siswa yang ingin diperiksa.
+	
+	## Returns
+	
+	- Daftar kelas yang diikuti oleh siswa.
+	
+	## Examples
+	
+	iex> ClassRegistration.check_registration("Alice")
+	["Matematika", "Fisika"]
+	"""
+	def check_registration(student) do
+	IO.puts("Memeriksa pendaftaran untuk #{student}.")
+	["Matematika", "Fisika"]
+	end
+	
+	@spec schedule_class(String.t(), String.t()) :: :ok
+	@doc """
+	Mengatur jadwal untuk kelas.
+	
+	## Parameter
+	
+	- class: Nama kelas.
+	- schedule: Jadwal kelas.
+	
+	## Examples
+	
+	iex> ClassRegistration.schedule_class("Matematika", "Senin, 09:00")
+	:ok
+	"""
+	def schedule_class(class, schedule) do
+	IO.puts("Mengatur jadwal kelas #{class} ke #{schedule}.")
+	:ok
+	end
+	end
+\end{lstlisting}
+
+
+\section{Soal: Mengembangkan Sistem Kuis dalam Elixir}
+
+Pada latihan ini, Anda diminta untuk membuat sebuah modul Elixir yang bernama \texttt{Quiz} dengan tujuan untuk mengelola sistem kuis. Modul ini harus memiliki fungsi-fungsi berikut:
+
+\begin{enumerate}
+	\item \texttt{generate\_questions/0}: Fungsi ini bertugas untuk menghasilkan daftar pertanyaan kuis. Setiap pertanyaan harus memiliki opsi jawaban yang berbeda-beda.
+	
+	\item \texttt{randomize\_questions/1}: Fungsi ini menerima daftar pertanyaan yang dihasilkan dari fungsi sebelumnya dan mengacak urutan pertanyaan tersebut.
+	
+	\item \texttt{check\_answer/3}: Fungsi ini bertugas untuk memeriksa apakah jawaban yang diberikan oleh peserta kuis sesuai dengan jawaban yang benar. Parameter yang diterima adalah daftar pertanyaan, jawaban peserta, dan jawaban yang benar.
+	
+	\item \texttt{score\_quiz/2}: Fungsi ini menerima daftar jawaban peserta dan daftar jawaban yang benar, kemudian menghitung skor akhir berdasarkan jumlah jawaban yang benar.
+\end{enumerate}
+
+\textbf{Tugas:} Implementasikan modul \texttt{Quiz} dalam bahasa Elixir, dan berikan contoh cara memanggil fungsi-fungsi tersebut di dalam \texttt{iex}.
+
+
+

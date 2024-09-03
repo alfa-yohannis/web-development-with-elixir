@@ -31,10 +31,10 @@
 	\begin{frame}
 		\frametitle{Saving the Pool}
 		\begin{lstlisting}[language=Elixir]
-			def save_pool(pool, filename) do
-			binary = :erlang.term_to_binary(pool)
-			File.write(filename, binary)
-			end
+def save_pool(pool, filename) do{\tiny }
+binary = :erlang.term_to_binary(pool)
+File.write(filename, binary)
+end
 		\end{lstlisting}
 		\begin{itemize}
 			\item \texttt{save\_pool/2} serializes the pool and saves it to a file.
