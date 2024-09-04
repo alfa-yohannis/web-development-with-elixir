@@ -315,6 +315,47 @@ Fungsi \texttt{Enum.reduce/3} secara berulang menerapkan fungsi yang diberikan k
 
 Modul \texttt{Enum} sangat berguna untuk memanipulasi dan bekerja dengan koleksi data di Elixir. Dengan menggunakan fungsi-fungsi seperti \texttt{Enum.shuffle/1}, \texttt{Enum.member?/2}, \texttt{Enum.split/2}, \texttt{Enum.map/2}, \texttt{Enum.filter/2}, dan \texttt{Enum.reduce/3}, Anda dapat melakukan berbagai operasi pada data dengan cara yang efisien dan ekspresif.
 
+\section{Pengulangan dengan \texttt{for} di Elixir}
+
+Elixir menyediakan cara yang sangat elegan dan sederhana untuk melakukan pengulangan dengan menggunakan `for` loop. `for` loop di Elixir dapat digunakan untuk mengiterasi elemen-elemen dalam sebuah list, map, atau struktur lainnya. Selain itu, `for` loop juga dapat digunakan untuk nested looping, yaitu pengulangan bersarang.
+
+\subsection{Single Looping}
+
+Pengulangan tunggal menggunakan `for` di Elixir cukup mudah. Sebagai contoh, kita ingin mengiterasi sebuah list angka dan mengalikan setiap angkanya dengan 2.
+
+\begin{lstlisting}[language=Elixir]
+	numbers = [1, 2, 3, 4, 5]
+	
+	doubled_numbers = for n <- numbers do
+	n * 2
+	end
+	
+	IO.inspect(doubled_numbers)
+	# Output: [2, 4, 6, 8, 10]
+\end{lstlisting}
+
+Dalam contoh di atas, `for n <- numbers` akan mengiterasi setiap elemen dalam list `numbers`, kemudian `n * 2` akan mengalikan setiap elemen dengan 2, dan hasilnya disimpan dalam list baru `doubled\_numbers`.
+
+\subsection{Nested Looping}
+
+`for` loop juga bisa digunakan untuk melakukan pengulangan bersarang (nested loop). Sebagai contoh, kita dapat membuat kombinasi dari dua list yang berbeda.
+
+\begin{lstlisting}[language=Elixir]
+	colors = ["red", "green", "blue"]
+	shapes = ["circle", "square"]
+	
+	combinations = for color <- colors, shape <- shapes do
+	{color, shape}
+	end
+	
+	IO.inspect(combinations)
+	# Output: [{"red", "circle"}, {"red", "square"}, {"green", "circle"}, {"green", "square"}, {"blue", "circle"}, {"blue", "square"}]
+\end{lstlisting}
+
+Dalam contoh di atas, `for color <- colors, shape <- shapes` akan mengiterasi setiap elemen dari list `colors` dan `shapes` untuk menghasilkan semua kombinasi yang mungkin antara warna dan bentuk. Hasilnya disimpan dalam list `combinations`.
+
+Dengan `for` loop, Elixir menawarkan cara yang kuat dan fleksibel untuk mengelola pengulangan, baik untuk kasus tunggal maupun yang lebih kompleks seperti pengulangan bersarang.
+
 \section{The Lottery Module}
 
 Modul \texttt{Lottery} menyediakan fungsionalitas untuk mengelola sistem undian. Modul ini mencakup fungsi-fungsi untuk membuat, mengacak, memeriksa angka, dan mendistribusikan angka dalam pool undian. Berikut adalah kode lengkap untuk modul \texttt{Lottery}.
@@ -650,9 +691,95 @@ Fungsi \texttt{distribute/2} membagi pool menjadi dua bagian berdasarkan ukuran 
 \end{lstlisting}
 
 
-
 \section{Latihan}
-\subsection{Latihan 1: Sistem Manajemen Inventaris}
+
+Bagian ini menyediakan latihan untuk memperdalam pemahaman mengenai String, List, modul `Enum`, serta pengulangan dengan `for` loop di Elixir. Selesaikan latihan di bawah ini dan uji kode yang Anda tulis di lingkungan `iex`.
+
+\subsection{Latihan String}
+
+Buatlah sebuah fungsi \texttt{greet\_person/1} yang menerima sebuah nama dalam bentuk string dan mengembalikan pesan sapaan seperti "Hello, [nama]!".
+
+\begin{lstlisting}[language=Elixir]
+	defmodule StringExercise do
+	def greet_person(name) do
+	"Hello, " <> name <> "!"
+	end
+	end
+	
+	# Contoh penggunaan:
+	StringExercise.greet_person("Elixir")
+	# Output: "Hello, Elixir!"
+\end{lstlisting}
+
+\subsection{Latihan List}
+
+Buatlah sebuah fungsi \texttt{sum\_list/1} yang menerima sebuah list angka dan mengembalikan jumlah dari semua angka tersebut.
+
+\begin{lstlisting}[language=Elixir]
+	defmodule ListExercise do
+	def sum_list(numbers) do
+	Enum.sum(numbers)
+	end
+	end
+	
+	# Contoh penggunaan:
+	ListExercise.sum_list([1, 2, 3, 4, 5])
+	# Output: 15
+\end{lstlisting}
+
+\subsection{Latihan Modul \texttt{Enum}}
+
+Gunakan fungsi \texttt{Enum.shuffle/1} untuk mengacak urutan elemen dalam sebuah list.
+
+\begin{lstlisting}[language=Elixir]
+	defmodule EnumExercise do
+	def shuffle_list(list) do
+	Enum.shuffle(list)
+	end
+	end
+	
+	# Contoh penggunaan:
+	EnumExercise.shuffle_list([1, 2, 3, 4, 5])
+	# Output: [3, 5, 1, 4, 2] (urutan dapat berbeda setiap kali)
+\end{lstlisting}
+
+\subsection{Latihan \texttt{for} Loop Tunggal}
+
+Buatlah sebuah \texttt{for} loop yang mengiterasi angka dari 1 hingga 10 dan mencetak angka-angka tersebut.
+
+\begin{lstlisting}[language=Elixir]
+	for n <- 1..10 do
+	IO.puts(n)
+	end
+	
+	# Output:
+	# 1
+	# 2
+	# 3
+	# 4
+	# 5
+	# 6
+	# 7
+	# 8
+	# 9
+	# 10
+\end{lstlisting}
+
+\subsection{Latihan \texttt{for} Loop Bersarang}
+
+Buatlah sebuah \texttt{for} loop bersarang yang menghasilkan semua pasangan karakter dari dua list huruf.
+
+
+\begin{lstlisting}[language=Elixir]
+	for letter1 <- ["A", "B", "C"], letter2 <- ["X", "Y", "Z"] do
+	{letter1, letter2}
+	end
+	
+	# Output:
+	# [{"A", "X"}, {"A", "Y"}, {"A", "Z"}, {"B", "X"}, {"B", "Y"}, {"B", "Z"}, {"C", "X"}, {"C", "Y"}, {"C", "Z"}]
+\end{lstlisting}
+
+\subsection{Latihan Membuat Sistem Manajemen Inventaris}
 
 Modul ini mengelola inventaris barang dengan fungsi-fungsi untuk menambahkan barang, menghapus barang, memeriksa ketersediaan barang, dan mendistribusikan barang ke berbagai lokasi.
 
@@ -744,7 +871,7 @@ Modul ini mengelola inventaris barang dengan fungsi-fungsi untuk menambahkan bar
 	end
 \end{lstlisting}
 
-\subsection{Latihan 2: Sistem Pendaftaran Kelas}
+\subsection{Latihan Membuat Sistem Pendaftaran Kelas}
 
 Modul ini mengelola pendaftaran siswa untuk kelas dengan fungsi-fungsi untuk mendaftar siswa, membatalkan pendaftaran, memeriksa pendaftaran, dan mengatur jadwal kelas.
 
