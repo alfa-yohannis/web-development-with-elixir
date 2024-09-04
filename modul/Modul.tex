@@ -6,9 +6,11 @@
 \usepackage{xcolor}
 \usepackage[hidelinks]{hyperref}
 \usepackage{graphicx}
+\usepackage{tikz}
 
 \lstdefinelanguage{Elixir} {
 	keywords={def, defmodule, do, end, for, if, else, true, false},
+	language=ruby,
 	basicstyle=\ttfamily\small,
 	keywordstyle=\color{blue}\bfseries,
 	ndkeywords={@spec, @moduledoc, iex, Enum, @doc},
@@ -85,5 +87,9 @@
 	
 	
 	\include{Pertemuan01.tex}
+	\include{Pertemuan02.tex}
+	
+	\appendix
+	\include{appendixA.tex}
 		
 \end{document}

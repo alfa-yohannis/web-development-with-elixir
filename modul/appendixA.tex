@@ -1,0 +1,16 @@
+
+\chapter{Penjelasan Perintah Mix untuk Mengelola Dependencies}
+
+Pada bagian ini, akan dijelaskan dua perintah penting dalam Elixir yang digunakan untuk mengelola dependencies dalam proyek menggunakan \texttt{mix}.
+
+\section{\texttt{mix deps.unlock --all}}
+
+Perintah \texttt{mix deps.unlock --all} digunakan untuk membuka kunci (unlock) semua dependencies dalam proyek Elixir. Ketika dependencies diinstal, versi spesifik dari setiap dependency akan dikunci di dalam file \texttt{mix.lock}. Perintah ini berguna ketika Anda ingin memperbarui atau menghapus dependencies tanpa terikat pada versi yang sudah dikunci. Dengan membuka kunci semua dependencies, proyek dapat melakukan upgrade ke versi terbaru dari dependencies yang sesuai dengan spesifikasi di \texttt{mix.exs}.
+
+\section{\texttt{mix deps.update --all}}
+
+Perintah \texttt{mix deps.update --all} digunakan untuk memperbarui semua dependencies dalam proyek Elixir ke versi terbaru yang kompatibel berdasarkan spesifikasi di \texttt{mix.exs}. Perintah ini akan mengunduh versi terbaru dari setiap dependency yang tersedia dan memperbarui file \texttt{mix.lock} dengan informasi versi yang baru. Ini sangat berguna ketika Anda ingin memastikan proyek menggunakan versi dependencies yang paling up-to-date untuk mendapatkan fitur terbaru dan perbaikan bug.
+
+\section{Kapan Menggunakan Perintah Ini?}
+
+Perintah \texttt{mix deps.unlock --all} diikuti oleh \texttt{mix deps.update --all} biasanya digunakan bersama ketika Anda ingin menghapus semua pembatasan versi dari dependencies yang ada dan memperbarui semuanya ke versi terbaru. Langkah ini sering diambil ketika terjadi masalah kompatibilitas dengan versi dependencies atau ketika ada pembaruan besar yang perlu diadopsi dalam proyek.
