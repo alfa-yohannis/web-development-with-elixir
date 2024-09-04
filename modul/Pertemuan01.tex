@@ -159,6 +159,161 @@ Untuk memulai pengembangan dengan Elixir, langkah pertama adalah membuat proyek 
 
 Dengan mengikuti langkah-langkah di atas, Anda akan siap untuk memulai pengembangan proyek Elixir menggunakan VS Code.
 
+\section{String di Elixir}
+
+String adalah salah satu tipe data dasar di Elixir yang digunakan untuk merepresentasikan teks. String di Elixir didefinisikan dengan menggunakan tanda kutip ganda (\texttt{"..."}). Setiap string di Elixir adalah UTF-8 encoded binary, yang memungkinkan penggunaan karakter dari berbagai bahasa.
+
+\subsection{Operasi Dasar pada String}
+
+Elixir menyediakan berbagai operasi yang dapat dilakukan pada string, seperti menggabungkan, membandingkan, dan memanipulasi string. Beberapa operasi dasar termasuk:
+
+\begin{itemize}
+	\item \textbf{Penggabungan String}: Anda dapat menggabungkan dua atau lebih string menggunakan operator \texttt{<>}.
+	\item \textbf{Interpolasi String}: Anda dapat menyisipkan nilai ekspresi atau variabel ke dalam string dengan menggunakan \texttt{\#\{...\}}.
+	\item \textbf{Mengukur Panjang String}: Fungsi \texttt{String.length/1} dapat digunakan untuk mendapatkan jumlah karakter dalam string.
+	\item \textbf{Mengubah Huruf Besar/Kecil}: Fungsi seperti \texttt{String.upcase/1} dan \texttt{String.downcase/1} digunakan untuk mengubah huruf string menjadi huruf besar atau kecil.
+\end{itemize}
+
+\subsection{Contoh Kode}
+
+Berikut adalah beberapa contoh kode yang menunjukkan cara bekerja dengan string di Elixir:
+
+\begin{lstlisting}[language=Elixir]
+	# Menggabungkan dua string
+	greeting = "Hello, " <> "world!"
+	IO.puts(greeting)  # Output: Hello, world!
+	
+	# Interpolasi string
+	name = "Elixir"
+	message = "Welcome to #{name} programming!"
+	IO.puts(message)  # Output: Welcome to Elixir programming!
+	
+	# Mengukur panjang string
+	len = String.length("Hello")
+	IO.puts(len)  # Output: 5
+	
+	# Mengubah string menjadi huruf besar
+	IO.puts(String.upcase("elixir"))  # Output: ELIXIR
+	
+	# Mengubah string menjadi huruf kecil
+	IO.puts(String.downcase("ELIXIR"))  # Output: elixir
+\end{lstlisting}
+
+Dalam contoh-contoh di atas, berbagai operasi dasar string seperti penggabungan, interpolasi, dan perubahan huruf besar/kecil diperlihatkan. Ini adalah beberapa contoh sederhana yang menunjukkan kekuatan dan fleksibilitas dalam bekerja dengan string di Elixir.
+
+\section{List di Elixir}
+
+List adalah salah satu tipe data utama di Elixir yang digunakan untuk menyimpan kumpulan elemen. List di Elixir diwakili oleh tanda kurung siku \texttt{[]} dan dapat menyimpan elemen-elemen dengan tipe data yang berbeda-beda, termasuk angka, string, dan bahkan list lainnya.
+
+\subsection{Operasi Dasar pada List}
+
+Elixir menyediakan berbagai operasi yang dapat dilakukan pada list, seperti menambahkan elemen, menggabungkan list, dan mengakses elemen tertentu. Beberapa operasi dasar termasuk:
+
+\begin{itemize}
+	\item \textbf{Menambah Elemen}: Anda dapat menambahkan elemen ke dalam list menggunakan operator kons \texttt{[head | tail]} atau dengan fungsi \texttt{List.insert\_at/3}.
+	\item \textbf{Menggabungkan List}: Dua atau lebih list dapat digabungkan menggunakan operator \texttt{++}.
+	\item \textbf{Mengakses Elemen}: Elemen dalam list dapat diakses dengan menggunakan notasi indeks atau dengan pola pencocokan (pattern matching).
+	\item \textbf{Menghitung Panjang List}: Fungsi \texttt{length/1} digunakan untuk mendapatkan jumlah elemen dalam list.
+	\item \textbf{Mencari Elemen dalam List}: Fungsi seperti \texttt{Enum.member?/2} digunakan untuk memeriksa apakah sebuah elemen ada dalam list.
+\end{itemize}
+
+\subsection{Contoh Kode}
+
+Berikut adalah beberapa contoh kode yang menunjukkan cara bekerja dengan list di Elixir:
+
+\begin{lstlisting}[language=Elixir]
+	# Membuat list baru
+	list = [1, 2, 3, 4, 5]
+	IO.inspect(list)  # Output: [1, 2, 3, 4, 5]
+	
+	# Menambahkan elemen ke list
+	new_list = [0 | list]
+	IO.inspect(new_list)  # Output: [0, 1, 2, 3, 4, 5]
+	
+	# Menggabungkan dua list
+	combined_list = [1, 2, 3] ++ [4, 5, 6]
+	IO.inspect(combined_list)  # Output: [1, 2, 3, 4, 5, 6]
+	
+	# Mengakses elemen pertama dan sisa list
+	[head | tail] = list
+	IO.puts("Head: #{head}")  # Output: Head: 1
+	IO.inspect(tail)          # Output: [2, 3, 4, 5]
+	
+	# Menghitung panjang list
+	IO.puts("Length: #{length(list)}")  # Output: Length: 5
+	
+	# Memeriksa apakah sebuah elemen ada dalam list
+	IO.puts(Enum.member?(list, 3))  # Output: true
+\end{lstlisting}
+
+Dalam contoh-contoh di atas, berbagai operasi dasar seperti menambah elemen, menggabungkan list, dan mengakses elemen diperlihatkan. List di Elixir sangat fleksibel dan banyak digunakan dalam pemrograman fungsional untuk menyimpan dan memanipulasi kumpulan data.
+
+\section{Modul \texttt{Enum} di Elixir}
+
+Modul \texttt{Enum} di Elixir menyediakan fungsi-fungsi untuk bekerja dengan koleksi data yang enumerable, seperti list, map, dan range. Fungsi-fungsi dalam modul \texttt{Enum} adalah sangat berguna untuk manipulasi dan transformasi data secara fungsional.
+
+\subsection{Fungsi \texttt{Enum.shuffle/1}}
+
+Fungsi \texttt{Enum.shuffle/1} digunakan untuk mengacak urutan elemen-elemen dalam sebuah list. Fungsi ini mengembalikan list baru dengan elemen-elemen yang telah diacak.
+
+\begin{lstlisting}[language=Elixir]
+	list = [1, 2, 3, 4, 5]
+	shuffled_list = Enum.shuffle(list)
+	IO.inspect(shuffled_list)  # Output: [3, 1, 4, 5, 2] (hasil acak)
+\end{lstlisting}
+
+\subsection{Fungsi \texttt{Enum.member?/2}}
+
+Fungsi \texttt{Enum.member?/2} digunakan untuk memeriksa apakah sebuah elemen ada dalam koleksi enumerable. Fungsi ini mengembalikan \texttt{true} jika elemen ditemukan, dan \texttt{false} jika tidak.
+
+\begin{lstlisting}[language=Elixir]
+	list = [1, 2, 3, 4, 5]
+	is_member = Enum.member?(list, 3)
+	IO.puts(is_member)  # Output: true
+\end{lstlisting}
+
+\subsection{Fungsi \texttt{Enum.split/2}}
+
+Fungsi \texttt{Enum.split/2} digunakan untuk membagi koleksi enumerable menjadi dua bagian berdasarkan jumlah elemen yang ditentukan. Fungsi ini mengembalikan tuple yang berisi dua list.
+
+\begin{lstlisting}[language=Elixir]
+	list = [1, 2, 3, 4, 5]
+	{first_part, second_part} = Enum.split(list, 2)
+	IO.inspect(first_part)   # Output: [1, 2]
+	IO.inspect(second_part)  # Output: [3, 4, 5]
+\end{lstlisting}
+
+\subsection{Fungsi \texttt{Enum.map/2}}
+
+Fungsi \texttt{Enum.map/2} menerapkan fungsi yang diberikan kepada setiap elemen dalam koleksi enumerable, menghasilkan koleksi baru dengan hasil-hasil tersebut.
+
+\begin{lstlisting}[language=Elixir]
+	list = [1, 2, 3, 4, 5]
+	squared_list = Enum.map(list, fn x -> x * x end)
+	IO.inspect(squared_list)  # Output: [1, 4, 9, 16, 25]
+\end{lstlisting}
+
+\subsection{Fungsi \texttt{Enum.filter/2}}
+
+Fungsi \texttt{Enum.filter/2} memilih elemen-elemen dari koleksi enumerable yang memenuhi kondisi yang ditentukan oleh fungsi yang diberikan. Hasilnya adalah koleksi baru dengan elemen-elemen yang memenuhi syarat.
+
+\begin{lstlisting}[language=Elixir]
+	list = [1, 2, 3, 4, 5]
+	even_numbers = Enum.filter(list, fn x -> rem(x, 2) == 0 end)
+	IO.inspect(even_numbers)  # Output: [2, 4]
+\end{lstlisting}
+
+\subsection{Fungsi \texttt{Enum.reduce/3}}
+
+Fungsi \texttt{Enum.reduce/3} secara berulang menerapkan fungsi yang diberikan kepada elemen-elemen dalam koleksi, mengakumulasi hasilnya. Fungsi ini sering digunakan untuk agregasi nilai-nilai.
+
+\begin{lstlisting}[language=Elixir]
+	list = [1, 2, 3, 4, 5]
+	sum = Enum.reduce(list, 0, fn x, acc -> x + acc end)
+	IO.puts(sum)  # Output: 15
+\end{lstlisting}
+
+Modul \texttt{Enum} sangat berguna untuk memanipulasi dan bekerja dengan koleksi data di Elixir. Dengan menggunakan fungsi-fungsi seperti \texttt{Enum.shuffle/1}, \texttt{Enum.member?/2}, \texttt{Enum.split/2}, \texttt{Enum.map/2}, \texttt{Enum.filter/2}, dan \texttt{Enum.reduce/3}, Anda dapat melakukan berbagai operasi pada data dengan cara yang efisien dan ekspresif.
 
 \section{The Lottery Module}
 
@@ -275,6 +430,40 @@ Modul \texttt{Lottery} menyediakan fungsionalitas untuk mengelola sistem undian.
 \section{Panduan Menjalankan Kode Elixir di Command Prompt}
 
 Setelah Anda membuat modul \texttt{Lottery} seperti di atas, Anda dapat menjalankan dan menguji fungsinya menggunakan \texttt{iex} (Interactive Elixir) di command prompt. Berikut adalah langkah-langkahnya:
+
+\subsection{Menggunakan \texttt{iex -S mix} dan Perintah \texttt{recompile}}
+
+Perintah \texttt{iex -S mix} digunakan untuk memulai shell interaktif Elixir dan memuat konfigurasi serta dependensi proyek yang telah didefinisikan dalam file \texttt{mix.exs}. Dengan menggunakan perintah ini, Anda dapat:
+
+\begin{itemize}
+	\item Mengakses modul dan fungsi yang telah Anda buat dalam proyek Elixir.
+	\item Menjalankan dan menguji kode Elixir secara interaktif.
+	\item Memantau hasil dan output dari kode yang dijalankan dalam konteks proyek Anda.
+\end{itemize}
+
+\textbf{Contoh Penggunaan \texttt{iex -S mix}:}
+
+1. **Buka Terminal atau Command Prompt** dan arahkan ke direktori proyek Elixir Anda.
+2. **Jalankan perintah berikut** untuk memulai shell interaktif dengan konfigurasi proyek:
+\begin{lstlisting}[language=bash]
+	iex -S mix
+\end{lstlisting}
+3. **Gunakan Modul dan Fungsi** yang telah Anda definisikan dalam proyek.
+
+Selain itu, selama pengembangan, Anda mungkin melakukan perubahan pada kode sumber. Untuk memuat ulang kode yang telah diubah tanpa keluar dari shell, Anda dapat menggunakan perintah `recompile`:
+
+\textbf{Contoh Penggunaan \texttt{recompile}:}
+
+1. Setelah memulai \texttt{iex -S mix}, lakukan perubahan pada kode sumber Anda.
+2. Dalam shell \texttt{iex}, jalankan perintah berikut untuk mengkompilasi ulang kode:
+\begin{lstlisting}[language=bash]
+	recompile
+\end{lstlisting}
+
+Perintah ini akan mengkompilasi ulang file yang telah diubah dan memuat ulang modul yang bersangkutan, sehingga Anda dapat langsung melihat perubahan tanpa harus memulai ulang shell interaktif. 
+
+Perintah \texttt{iex -S mix} dan \texttt{recompile} memudahkan pengembangan dan debugging dengan menyediakan lingkungan yang memungkinkan Anda untuk bereksperimen dan menguji kode dengan cepat.
+
 
 \subsection{Menjalankan Kode di \texttt{iex}}
 

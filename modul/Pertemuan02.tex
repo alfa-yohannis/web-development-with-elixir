@@ -224,3 +224,316 @@ Pada kode di atas, modul \texttt{Example} mendefinisikan fungsi \texttt{hello/2}
 
 Fungsi \texttt{hello/2} kemudian menggabungkan \texttt{"Hello, "} dengan \texttt{"world"}, menghasilkan string \texttt{"Hello, world"}. Dengan pendekatan ini, pipe operator dan fungsi anonim memungkinkan kita untuk dengan mudah mengatur parameter fungsi, termasuk menggunakan nilai dari pipe sebagai parameter kedua. Pendekatan ini meningkatkan fleksibilitas dan keterbacaan kode dalam Elixir.
 
+\section{Menyimpan dan Memuat Ulang Nilai ke dan dari File}
+
+Elixir menyediakan berbagai metode untuk menyimpan dan memuat ulang data dari file. Ini berguna untuk menyimpan konfigurasi, hasil pemrosesan, atau data lainnya secara persisten. Berikut adalah cara melakukannya dengan menggunakan Elixir.
+
+\subsection{Menyimpan Data ke File}
+
+Untuk menyimpan data ke file, Anda dapat menggunakan fungsi `File.write/2`. Fungsi ini menerima nama file dan data yang akan ditulis. Berikut adalah contoh cara menyimpan string ke file:
+
+\begin{lstlisting}[language=Elixir]
+	filename = "data.txt"
+	data = "Hello, Elixir!"
+	
+	File.write(filename, data)
+\end{lstlisting}
+
+Pada contoh di atas, string \texttt{"Hello, Elixir!"} disimpan ke dalam file \texttt{"data.txt"}.
+
+\subsection{Memuat Data dari File}
+
+Untuk memuat data dari file, Anda dapat menggunakan fungsi `File.read/1`. Fungsi ini membaca isi file dan mengembalikan hasilnya sebagai string. Berikut adalah contoh cara memuat data dari file:
+
+\begin{lstlisting}[language=Elixir]
+# File: lib/file_reader.ex
+
+defmodule FileReader do
+def read_file(filename) do
+case File.read(filename) do
+{:ok, content} ->
+IO.puts("File content: #{content}")
+{:error, reason} ->
+IO.puts("Failed to read file: #{reason}")
+end
+end
+end
+\end{lstlisting}
+
+Perintah pada \texttt{iex} command prompt: 
+
+\begin{lstlisting}[language=bash]
+	FileReader.read_file("data.txt")
+\end{lstlisting}
+
+Pada contoh di atas, fungsi `File.read/1` membaca isi file \texttt{"data.txt"}. Jika berhasil, isi file ditampilkan ke konsol; jika terjadi kesalahan, pesan kesalahan akan ditampilkan.
+
+\subsection{Menyimpan dan Memuat Data dengan Format Lain}
+
+Jika Anda bekerja dengan data yang lebih kompleks, seperti objek atau struktur data, Anda mungkin ingin menggunakan format lain, seperti JSON atau Erlang Term Storage (ETS). Berikut adalah contoh cara menggunakan format JSON untuk menyimpan dan memuat data:
+
+\begin{lstlisting}[language=Elixir]
+	# File: lib/json_file_handler.ex
+	
+	defmodule JsonFileHandler do
+	# Save data to a JSON file
+	def save_json(filename, data) do
+	File.write(filename, Jason.encode!(data))
+	end
+	
+	# Load data from a JSON file
+	def load_json(filename) do
+	case File.read(filename) do
+	{:ok, content} ->
+	case Jason.decode(content) do
+	{:ok, decoded_data} ->
+	IO.inspect(decoded_data)
+	{:error, reason} ->
+	IO.puts("Failed to decode JSON: #{reason}")
+	end
+	{:error, reason} ->
+	IO.puts("Failed to read file: #{reason}")
+	end
+	end
+	end
+
+\end{lstlisting}
+
+Perintah pada \texttt{iex} command prompt: 
+
+\begin{lstlisting}[language=bash]
+	filename="data.json"
+	data='{"greeting": "Hello, Elixir!", "count": 42}'
+	JsonFileHandler.save_json(filename, data)
+	JsonFileHandler.load_json(filename)
+\end{lstlisting}
+
+Pada contoh di atas, kita menggunakan pustaka `Jason` untuk mengkodekan dan mendekode data JSON. Fungsi `Jason.encode!/1` mengubah data menjadi format JSON, dan `Jason.decode/1` mengembalikannya ke bentuk asli.
+
+Dengan menggunakan fungsi-fungsi dari modul `File` dan pustaka tambahan seperti `Jason`, Anda dapat dengan mudah menyimpan dan memuat data dari file di Elixir. Ini memungkinkan pengelolaan data yang persisten dan interoperabilitas dengan berbagai format data.
+
+
+\section{Latihan}
+
+Pada bagian ini, terdapat beberapa latihan yang bertujuan untuk menguji pemahaman mengenai kode-kode yang telah dipelajari. Setiap latihan berisi kode yang harus dijalankan dan dipahami hasilnya.
+
+\subsection{Latihan 1: Pattern Matching di Elixir}
+
+Latihan pertama ini akan mengeksplorasi bagaimana pattern matching bekerja di Elixir. Anda akan diminta untuk memahami dan menjalankan contoh kode di bawah ini.
+
+\begin{lstlisting}[language=Elixir]
+	# Contoh Pattern Matching Sederhana
+	{x, y, z} = {1, 2, 3}
+	IO.puts("x = #{x}, y = #{y}, z = #{z}")
+	
+	# Pattern Matching dengan List
+	[head | tail] = [1, 2, 3, 4, 5]
+	IO.puts("Head: #{head}")
+	IO.inspect(tail)
+	
+	# Pattern Matching dengan Map
+	%{name: name, age: age} = %{name: "John", age: 30}
+	IO.puts("Name: #{name}, Age: #{age}")
+\end{lstlisting}
+
+\subsection{Latihan 2: Pipe Operator di Elixir}
+
+Latihan kedua ini akan berfokus pada penggunaan pipe operator (\texttt{|>}) di Elixir. Jalankan dan pahami bagaimana nilai dapat diteruskan dari satu fungsi ke fungsi lainnya.
+
+\begin{lstlisting}[language=Elixir]
+	# Contoh Penggunaan Pipe Operator
+	defmodule PipeExample do
+	def greet(name), do: "Hello, " <> name
+	def exclaim(statement), do: statement <> "!"
+	def emphasize(statement), do: String.upcase(statement)
+	end
+	
+	"world"
+	|> PipeExample.greet()
+	|> PipeExample.exclaim()
+	|> PipeExample.emphasize()
+	|> IO.puts()
+\end{lstlisting}
+
+Selain itu, berikut contoh pipe operator yang memindahkan nilai ke parameter kedua:
+
+\begin{lstlisting}[language=Elixir]
+	defmodule Example do
+	def wrap_in_brackets(prefix, content), do: prefix <> "[" <> content <> "]"
+	end
+	
+	"world"
+	|> (&Example.wrap_in_brackets(&1, "Hello")).()
+	|> IO.puts()
+\end{lstlisting}
+
+\texttt{\&1} merujuk pada nilai yang diteruskan melalui pipe operator. Variasi lainnya seperti \texttt{\&2} merujuk pada parameter kedua, dan seterusnya.
+
+\subsection{Latihan 3: Membaca File Teks}
+
+Latihan ini melibatkan penggunaan modul \texttt{FileReader} untuk membaca konten dari sebuah file teks. Pastikan file \texttt{data.txt} tersedia dengan beberapa konten di dalamnya.
+
+\begin{lstlisting}[language=Elixir]
+	# File: lib/file_reader.ex
+	
+	defmodule FileReader do
+	def read_file(filename) do
+	case File.read(filename) do
+	{:ok, content} ->
+	IO.puts("File content: #{content}")
+	{:error, reason} ->
+	IO.puts("Failed to read file: #{reason}")
+	end
+	end
+	end
+\end{lstlisting}
+
+\begin{lstlisting}[language=bash]
+	iex> 	FileReader.read_file("data.txt")\part{title}
+\end{lstlisting}
+
+\subsection{Latihan 4: Menyimpan dan Membaca Data JSON}
+
+Latihan ini menggunakan modul \texttt{JsonFileHandler} untuk menyimpan dan membaca data dalam format JSON. Anda akan melihat bagaimana data JSON dapat disimpan ke file dan kemudian dimuat kembali.
+
+\begin{lstlisting}[language=Elixir]
+	# File: lib/json_file_handler.ex
+	
+	defmodule JsonFileHandler do
+	# Save data to a JSON file
+	def save_json(filename, data) do
+	File.write(filename, Jason.encode!(data))
+	end
+	
+	# Load data from a JSON file
+	def load_json(filename) do
+	case File.read(filename) do
+	{:ok, content} ->
+	case Jason.decode(content) do
+	{:ok, decoded_data} ->
+	IO.inspect(decoded_data)
+	{:error, reason} ->
+	IO.puts("Failed to decode JSON: #{reason}")
+	end
+	{:error, reason} ->
+	IO.puts("Failed to read file: #{reason}")
+	end
+	end
+	end
+	
+\end{lstlisting}
+
+\begin{lstlisting}[language=bash]
+iex> filename="data.json"
+iex> data='{"greeting": "Hello, Elixir!", "count": 42}'
+iex> JsonFileHandler.save_json(filename, data)
+iex> JsonFileHandler.load_json(filename)
+\end{lstlisting}
+
+
+\subsection{Latihan 5: Menggabungkan Semua Konsep}
+
+Dalam latihan ini, buatlah sebuah modul yang memanfaatkan pattern matching, pipe operator, serta pembacaan dan penulisan file JSON. Fungsi dalam modul ini:
+\begin{itemize}
+	\item Membaca data dari sebuah file JSON.
+	\item Menggunakan pattern matching untuk mengekstrak nilai tertentu dari data JSON yang diambil.
+	\item Memanipulasi data tersebut menggunakan pipe operator.
+	\item Menyimpan hasilnya kembali ke file JSON yang sama.
+\end{itemize}
+
+Berikut adalah struktur dasar untuk memulai:
+
+\begin{lstlisting}[language=Elixir]
+	defmodule IntegratedExercise do
+	def process_file(filename) do
+	# Membaca file JSON
+	filename
+	|> File.read()               # Baca file
+	|> case do                   # Gunakan pattern matching untuk memproses konten
+	{:ok, content} ->
+	# Decode JSON dan ekstrak nilai menggunakan pattern matching
+	case Jason.decode(content) do
+	{:ok, %{"greeting" => greeting, "count" => count}} ->
+	# Manipulasi data menggunakan pipe operator
+	new_count = count + 1
+	new_data = %{"greeting" => greeting, "count" => new_count}
+	
+	# Simpan data baru ke file JSON
+	File.write(filename, Jason.encode!(new_data))
+	{:error, reason} ->
+	IO.puts("Failed to decode JSON: #{reason}")
+	end
+	{:error, reason} ->
+	IO.puts("Failed to read file: #{reason}")
+	end
+	end
+	end
+	
+	# Memanggil fungsi
+	filename = "data.json"
+	IntegratedExercise.process_file(filename)
+\end{lstlisting}
+
+\textbf{Instruksi:}
+\begin{enumerate}
+	\item Buat file \texttt{data.json} dengan struktur: \texttt{\{"greeting": "Hello, Elixir!", "count": 42\}}.
+	\item Modifikasi fungsi \texttt{process\_file} untuk melakukan operasi tambahan, seperti menambahkan data baru atau mengubah nilai tertentu.
+	\item Pastikan hasil akhirnya disimpan kembali ke dalam file JSON yang sama.
+\end{enumerate}
+
+\section{Memperluas Modul Lottery}
+
+Dalam bagian ini, kami memperluas fungsionalitas modul \texttt{Lottery} dengan menambahkan beberapa fitur baru. Fitur-fitur ini mencakup menyimpan dan memuat pool lotere ke dan dari file, serta membuat tangan lotere yang acak. Kode berikut menunjukkan peningkatan-peningkatan ini:
+
+\begin{lstlisting}[language=Elixir]
+	defmodule Lottery do
+	def generate_pool do
+	numbers = ["Number 1", "Number 2", "Number 3", "Number 4", "Number 5"]
+	pots = ["Pot 1", "Pot 2", "Pot 3", "Pot 4"]
+	
+	# Membuat pool dengan menggabungkan angka dan pot.
+	for pot <- pots, number <- numbers do
+	"#{number} in #{pot}"
+	end
+	end
+	
+	def randomize(pool) do
+	Enum.shuffle(pool)
+	end
+	
+	def contains?(pool, number) do
+	Enum.member?(pool, number)
+	end
+	
+	def distribute(pool, draw_size) do
+	Enum.split(pool, draw_size)
+	end
+	
+	def save_pool(pool, filename) do
+	binary = :erlang.term_to_binary(pool)
+	File.write(filename, binary)
+	end
+	
+	def load_pool(filename) do
+	case File.read(filename) do
+	{:ok, binary} -> :erlang.binary_to_term(binary)
+	{:error, _reason} -> "File tersebut tidak ada"
+	end
+	end
+	
+	def create_hand(draw_size) do
+	Lottery.generate_pool()
+	|> Lottery.randomize()
+	|> Lottery.distribute(draw_size)
+	end
+	end
+\end{lstlisting}
+
+\subsection{Deskripsi Fungsi}
+
+\begin{itemize}
+	\item \texttt{save\_pool/2}: Fungsi ini mengkonversi pool lotere menjadi format biner dan menyimpannya ke dalam file. File ini kemudian dapat digunakan untuk mempertahankan status pool.
+	\item \texttt{load\_pool/1}: Fungsi ini membaca file biner dan mengkonversinya kembali ke dalam format pool lotere. Jika file tidak ditemukan, fungsi ini akan mengembalikan pesan kesalahan.
+	\item \texttt{create\_hand/1}: Fungsi ini membuat tangan lotere yang acak dengan menggabungkan fungsi-fungsi yang telah didefinisikan sebelumnya. Fungsi ini membuat pool, merandomnya, dan kemudian membaginya sesuai dengan ukuran undian yang ditentukan.
+\end{itemize}
+
