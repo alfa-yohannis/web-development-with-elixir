@@ -17,6 +17,7 @@ defmodule Lottery do
     Enum.shuffle(pool)
   end
 
+  @spec contains?(any(), any()) :: boolean()
   def contains?(pool, number) do
     Enum.member?(pool, number)
   end

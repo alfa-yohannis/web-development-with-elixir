@@ -159,6 +159,58 @@ Untuk memulai pengembangan dengan Elixir, langkah pertama adalah membuat proyek 
 
 Dengan mengikuti langkah-langkah di atas, Anda akan siap untuk memulai pengembangan proyek Elixir menggunakan VS Code.
 
+\section{Perbedaan Pemrograman Berorientasi Objek dan Pemrograman Fungsional}
+
+Pemrograman Berorientasi Objek (OOP) dan Pemrograman Fungsional (FP) merupakan dua paradigma pemrograman yang memiliki prinsip dan pendekatan yang berbeda dalam menyusun kode dan mengelola data.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=\textwidth]{../assets/object-oriented.pdf}
+	\caption{Pada gambar di atas metode \texttt{generate\_pool} menginisialisasi \texttt{coupons} pada objek \texttt{lottery1} dan \texttt{randomize} mengubah \textit{state} dari \texttt{coupons}.}
+	\label{fig:ilustrasi-oop}
+\end{figure}
+
+\subsection{Pemrograman Berorientasi Objek (OOP)}
+OOP menekankan pada pembuatan objek yang merupakan representasi dari entitas dunia nyata. Objek-objek ini memiliki \textbf{atribut} (data) dan \textbf{metode} (fungsi) yang mengoperasikan data tersebut. Salah satu karakteristik utama dari OOP adalah bahwa \textbf{objek dapat mengubah state-nya}, yakni nilai dari atribut-atribut yang dimilikinya bisa berubah selama program berjalan. Misalnya, pada Gambar \ref{fig:ilustrasi-oop}, metode \texttt{generate\_pool} menginisialisasi \texttt{coupons} pada objek \texttt{lottery1} dan \texttt{randomize} mengubah \textit{state} dari \texttt{coupons}. Beberapa konsep utama dalam OOP adalah:
+\begin{itemize}
+	\item \textbf{Kelas dan Objek}: Kelas adalah cetak biru dari objek. Objek adalah instansiasi dari kelas.
+	\item \textbf{Enkapsulasi}: Pengelompokan data dan fungsi dalam objek, memungkinkan kontrol akses terhadap data.
+	\item \textbf{Pewarisan}: Mekanisme untuk membuat kelas baru berdasarkan kelas yang sudah ada, mewarisi atribut dan metode.
+	\item \textbf{Polimorfisme}: Kemampuan objek untuk diperlakukan sebagai bentuk lain dari objek yang berbeda, memungkinkan metode yang sama digunakan untuk tipe objek yang berbeda.
+\end{itemize}
+
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=\textwidth]{../assets/functional.pdf}
+	\caption{Pada gambar di atas, \texttt{coupons = [A, B, C]} digandakan terlebih dahulu (\texttt{copy list}), kemudian diacak (\texttt{randomize list}) menghasilkan \texttt{coupons = [C, A, B]}. }
+	\label{fig:contoh-fp}
+\end{figure}
+
+\subsection{Pemrograman Fungsional (FP)}
+Pemrograman fungsional didasarkan pada konsep \textbf{fungsi matematika} yang tidak memiliki efek samping, sehingga fungsi akan selalu memberikan hasil yang sama untuk input yang sama. \textbf{FP tidak mengubah state dari nilai}, melainkan setiap operasi pada data menghasilkan \textbf{salinan baru} dari data tersebut dengan modifikasi yang diinginkan. Sebagai contoh, Pada Gambar \ref{fig:contoh-fp}, \texttt{coupons = [A, B, C]} digandakan terlebih dahulu (\texttt{copy list}), kemudian diacak (\texttt{randomize list}) menghasilkan \texttt{coupons = [C, A, B]}. Beberapa konsep kunci dari FP adalah:
+\begin{itemize}
+	\item \textbf{Fungsi Murni}: Fungsi yang tidak memodifikasi keadaan luar dan selalu memberikan hasil yang sama untuk argumen yang sama.
+	\item \textbf{Immutability}: Data tidak dapat diubah setelah didefinisikan, yang meningkatkan prediktabilitas program. Setiap modifikasi menghasilkan salinan baru dari data.
+	\item \textbf{Rekursi}: Pengulangan dilakukan melalui pemanggilan fungsi yang berulang, bukan melalui loop imperatif.
+	\item \textbf{First-Class Functions}: Fungsi diperlakukan sebagai nilai yang dapat diteruskan sebagai parameter, dikembalikan sebagai hasil, atau disimpan dalam variabel.
+\end{itemize}
+Pemrograman fungsional lebih fokus pada transformasi data dengan fungsi, tanpa mengubah data secara langsung, sehingga mengurangi bug yang disebabkan oleh efek samping dan membuat program lebih mudah diuji.
+
+\subsection{Perbandingan OOP dan FP}
+\begin{itemize}
+	\item OOP menekankan pada objek yang menyimpan state dan metode yang mengubah state tersebut, sedangkan FP menekankan pada fungsi murni yang \textbf{tidak mengubah state} melainkan \textbf{menghasilkan salinan baru} dari data sebagai hasil transformasi.
+	\item Pada OOP, perubahan state adalah hal umum, sementara pada FP, data bersifat immutable, dan perubahan dihasilkan dengan mengkopi nilai input dan memodifikasinya.
+	\item OOP biasanya menggunakan loop imperatif untuk iterasi, sementara FP menggunakan rekursi dan fungsi seperti \texttt{map}, \texttt{filter}, dan \texttt{reduce}.
+	\item OOP lebih cocok untuk sistem yang melibatkan interaksi antar entitas (seperti GUI atau game), sedangkan FP lebih efisien untuk perhitungan matematis dan manipulasi data.
+\end{itemize}
+
+Kedua paradigma ini dapat saling melengkapi dan sering digunakan secara bersamaan dalam berbagai bahasa pemrograman modern.
+
+
+
+
+
 \section{String di Elixir}
 
 String adalah salah satu tipe data dasar di Elixir yang digunakan untuk merepresentasikan teks. String di Elixir didefinisikan dengan menggunakan tanda kutip ganda (\texttt{"..."}). Setiap string di Elixir adalah UTF-8 encoded binary, yang memungkinkan penggunaan karakter dari berbagai bahasa.
