@@ -103,6 +103,31 @@ Pattern matching dapat digunakan dalam definisi fungsi untuk membuat kode yang l
 
 Pada contoh ini, fungsi \texttt{greet/1} menerima tuple yang terdiri dari \texttt{first\_name} dan \texttt{last\_name}. Nilai-nilai ini langsung dicocokkan dengan pola yang didefinisikan dalam parameter fungsi.
 
+\subsection{Pattern Matching dengan Pengkondisian}
+
+Berikut adalah contoh penggunaan \texttt{case} dengan pattern matching di dalam modul dan fungsi Elixir:
+
+\begin{lstlisting}[language=Elixir]
+defmodule Example do
+	def match_pattern(tuple) do
+		case tuple do
+		{1, x, 3} -> IO.puts("x adalah #{x}")
+		_ -> IO.puts("Tidak ada kecocokan")
+		end
+	end
+end
+
+# Pemanggilan fungsi
+Example.match_pattern({1, 2, 3})
+\end{lstlisting}
+
+Pada contoh ini, modul \texttt{Example} berisi fungsi \texttt{match\_pattern/1} yang melakukan pattern matching terhadap tuple yang diterima sebagai argumen. Jika tuple sesuai dengan pola \texttt{\{1, x, 3\}}, maka nilai \texttt{x} dicetak. Jika tidak, pesan \texttt{"Tidak ada kecocokan"} akan ditampilkan.
+
+\begin{verbatim}
+	x adalah 2
+\end{verbatim}
+
+
 Pattern matching di Elixir memungkinkan pemrograman yang lebih deklaratif dan ekspresif. Dengan kemampuan untuk mencocokkan dan mengurai struktur data, pattern matching menjadi salah satu fitur esensial yang mempermudah pengembangan aplikasi dalam Elixir.
 
 
@@ -116,9 +141,9 @@ Pattern matching di Elixir memungkinkan pemrograman yang lebih deklaratif dan ek
 Pada dasarnya, pipe operator memungkinkan kita untuk menulis kode yang lebih rapi dan berurutan daripada harus menyusun fungsi secara bersarang (nested).
 
 \begin{lstlisting}[language=Elixir]
-	iex> "hello"
-	...> |> String.upcase()
-	...> |> String.reverse()
+	iex> "hello" # tekan alt + Enter untuk pindah ke baris berikutnya
+		|> String.upcase()
+		|> String.reverse()
 	"OLLEH"
 \end{lstlisting}
 
@@ -134,9 +159,9 @@ Dalam contoh di atas, string \texttt{"hello"} pertama-tama diubah menjadi huruf 
 Pipe operator juga sering digunakan dengan fungsi-fungsi yang memanipulasi list, seperti pada contoh berikut:
 
 \begin{lstlisting}[language=Elixir]
-	iex> [1, 2, 3, 4, 5]
-	...> |> Enum.map(&(&1 * 2))
-	...> |> Enum.filter(&(&1 > 5))
+	iex> [1, 2, 3, 4, 5] # tekan alt + Enter untuk pindah ke baris berikutnya
+		|> Enum.map(&(&1 * 2))
+		|> Enum.filter(&(&1 > 5))
 	[6, 8, 10]
 \end{lstlisting}
 
@@ -169,7 +194,7 @@ Pipe operator juga dapat digunakan dengan fungsi yang memerlukan lebih dari satu
 	end
 	
 	iex> 5
-	...> |> Example.multiply_and_add(2, 3)
+		|> Example.multiply_and_add(2, 3)
 	13
 \end{lstlisting}
 
@@ -197,8 +222,8 @@ Berikut adalah contoh sederhana:
 	end
 	
 	iex> "42"
-	...> |> Converter.string_to_integer()
-	...> |> Converter.add_five()
+		|> Converter.string_to_integer()
+		|> Converter.add_five()
 	47
 \end{lstlisting}
 
@@ -216,7 +241,7 @@ Di Elixir, kita dapat menggunakan pipe operator untuk meneruskan nilai dari fung
 	end
 	
 	iex> "world"
-	...> |> (&Example.hello("Hello, ", &1 )).()
+		|> (&Example.hello("Hello, ", &1 )).()
 	"Hello, world"
 \end{lstlisting}
 
@@ -268,6 +293,32 @@ Perintah pada \texttt{iex} command prompt:
 
 Pada contoh di atas, fungsi `File.read/1` membaca isi file \texttt{"data.txt"}. Jika berhasil, isi file ditampilkan ke konsol; jika terjadi kesalahan, pesan kesalahan akan ditampilkan.
 
+\subsection{Menambahkan Dependensi \texttt{\{:jason, "\textasciitilde{} 1.4"\}}}
+
+Untuk menambahkan library \texttt{Jason} ke dalam proyek Elixir, langkah-langkah berikut perlu dilakukan:
+
+\begin{enumerate}
+	\item Buka file \texttt{mix.exs} di root direktori proyek Elixir Anda.
+	\item Di dalam fungsi \texttt{deps/0}, tambahkan dependensi \texttt{\{:jason, "\textasciitilde{} 1.4"\}}.
+\end{enumerate}
+
+Berikut adalah contoh bagaimana menambahkan \texttt{Jason} dalam file \texttt{mix.exs}:
+
+\begin{lstlisting}[language=Elixir]
+	defp deps do
+	[
+	{:jason, "~> 1.4"}
+	]
+	end
+\end{lstlisting}
+
+\begin{itemize}
+	\item Library \texttt{Jason} digunakan untuk melakukan parsing dan encoding JSON dengan performa tinggi di Elixir.
+	\item Setelah menambahkan dependensi tersebut, jalankan perintah \texttt{mix deps.get} untuk mengunduh dan menginstal library yang diperlukan.
+\end{itemize}
+
+Dengan langkah-langkah ini, proyek Elixir Anda siap menggunakan \texttt{Jason} untuk bekerja dengan data JSON.
+
 \subsection{Menyimpan dan Memuat Data dengan Format Lain}
 
 Jika Anda bekerja dengan data yang lebih kompleks, seperti objek atau struktur data, Anda mungkin ingin menggunakan format lain, seperti JSON atau Erlang Term Storage (ETS). Berikut adalah contoh cara menggunakan format JSON untuk menyimpan dan memuat data:
@@ -298,6 +349,7 @@ Jika Anda bekerja dengan data yang lebih kompleks, seperti objek atau struktur d
 	end
 
 \end{lstlisting}
+
 
 Perintah pada \texttt{iex} command prompt: 
 

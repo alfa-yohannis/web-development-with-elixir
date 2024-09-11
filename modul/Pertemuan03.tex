@@ -1,0 +1,314 @@
+\chapter{Dokumentasi dan Unit Test pada Elixir}
+
+
+\section{Dokumentasi di Elixir}
+
+Elixir mendukung dokumentasi yang mudah untuk modul dan fungsi. Dokumentasi ini dapat ditambahkan langsung dalam kode menggunakan komentar khusus yang disebut dengan \texttt{@moduledoc} untuk modul dan \texttt{@doc} untuk fungsi. Selain itu, Elixir juga menyediakan cara mudah untuk menggenerate dokumentasi dalam bentuk HTML menggunakan perintah \texttt{mix docs}.
+
+\subsection{Dokumentasi pada Level Modul}
+
+Untuk mendokumentasikan sebuah modul, digunakan anotasi \texttt{@moduledoc}. Ini adalah tempat yang tepat untuk memberikan deskripsi tentang tujuan modul, bagaimana modul tersebut digunakan, serta contoh-contoh jika diperlukan.
+
+\begin{lstlisting}[language=Elixir]
+	defmodule ExampleModule do
+	@moduledoc """
+	This module is an example of how to document a module in Elixir.
+	
+	It serves to demonstrate how module documentation can be written
+	and used as a reference when generating HTML documentation.
+	"""
+	
+	# Other functions and logic can be written here
+	end
+\end{lstlisting}
+
+\subsection{Dokumentasi pada Level Fungsi}
+
+Selain mendokumentasikan modul, Anda juga bisa mendokumentasikan setiap fungsi dengan menggunakan anotasi \texttt{@doc}. Dokumentasi fungsi biasanya memberikan penjelasan tentang apa yang dilakukan fungsi tersebut, parameter yang dibutuhkan, dan hasil yang dikembalikan.
+
+\begin{lstlisting}[language=Elixir]
+	defmodule ExampleModule do
+	@moduledoc """
+	This module is an example of how to document a module in Elixir.
+	"""
+	
+	@doc """
+	This function adds two numbers.
+	
+	## Parameters
+	- a: the first number.
+	- b: the second number.
+	
+	## Example
+	
+	iex> ExampleModule.add(2, 3)
+	5
+	"""
+	def add(a, b) do
+	a + b
+	end
+	end
+\end{lstlisting}
+
+\subsection{Mengenerate Dokumentasi HTML}
+
+Untuk menggenerate dokumentasi dalam format HTML, Elixir menyediakan perintah sederhana, yaitu \texttt{mix docs}. Perintah ini akan mencari dokumentasi di dalam modul dan fungsi yang ada, lalu mengubahnya menjadi halaman HTML yang mudah dibaca. Langkah-langkahnya adalah sebagai berikut:
+
+\begin{enumerate}
+	\item Pastikan Anda berada di dalam direktori proyek Elixir.
+	\item Jalankan perintah berikut pada \textit{command prompt}:
+	\begin{lstlisting}[language=Bash]
+mix docs
+	\end{lstlisting}
+	
+	\item Dokumentasi HTML akan dihasilkan di dalam folder \texttt{doc}.
+\end{enumerate}
+
+Dengan mendokumentasikan kode dengan baik dan mengenerate dokumentasi HTML, Anda dapat mempermudah orang lain (atau diri sendiri di masa depan) untuk memahami kode yang Anda tulis.
+
+
+
+\section{Unit Test di Elixir}
+
+Unit testing di Elixir dapat dilakukan menggunakan modul bawaan bernama \texttt{ExUnit}. Elixir menyediakan fitur untuk membuat test dalam file khusus serta memungkinkan test ditulis dalam dokumentasi fungsi menggunakan anotasi \texttt{doctest}. Unit test sangat penting untuk memastikan bahwa fungsi-fungsi dalam kode bekerja sesuai harapan.
+
+\subsection{Unit Test dalam File Khusus}
+
+Untuk membuat unit test di Elixir, biasanya digunakan file khusus yang ditempatkan dalam folder \texttt{test}. File test ini harus memiliki akhiran \texttt{\_test.exs}. Di dalam file tersebut, Anda mendefinisikan modul yang menggunakan \texttt{ExUnit.Case} sebagai template.
+
+\begin{lstlisting}[language=Elixir]
+	defmodule ExampleModuleTest do
+	use ExUnit.Case
+	
+	test "adds two numbers" do
+	assert ExampleModule.add(2, 3) == 5
+	end
+	
+	test "subtracts two numbers" do
+	assert ExampleModule.subtract(5, 2) == 3
+	end
+	end
+\end{lstlisting}
+
+\subsection{Unit Test dalam Dokumentasi Fungsi (Doctest)}
+
+Selain menulis test di file khusus, Elixir juga memungkinkan Anda untuk menulis unit test langsung dalam dokumentasi fungsi menggunakan anotasi \texttt{doctest}. Test ini secara otomatis dijalankan ketika Anda menjalankan \texttt{ExUnit}. Contoh doctest dapat ditulis dalam bagian \texttt{@doc} dari suatu fungsi.
+
+\begin{lstlisting}[language=Elixir]
+	defmodule ExampleModule do
+	@moduledoc """
+	This module demonstrates how to document and test functions.
+	"""
+	
+	@doc """
+	This function adds two numbers.
+	
+	## Parameters
+	- a: the first number.
+	- b: the second number.
+	
+	## Example
+	
+	iex> ExampleModule.add(2, 3)
+	5
+	"""
+	def add(a, b) do
+	a + b
+	end
+	
+	@doc """
+	This function subtracts two numbers.
+	
+	## Parameters
+	- a: the first number.
+	- b: the second number.
+	
+	## Example
+	
+	iex> ExampleModule.subtract(5, 2)
+	3
+	"""
+	def subtract(a, b) do
+	a - b
+	end
+	end
+\end{lstlisting}
+
+Untuk mengaktifkan \texttt{doctest}, Anda perlu menambahkannya dalam modul test:
+
+\begin{lstlisting}[language=Elixir]
+	defmodule ExampleModuleTest do
+	use ExUnit.Case
+	doctest ExampleModule
+	end
+\end{lstlisting}
+
+\subsection{Menjalankan Test dari Command Prompt}
+
+Elixir memudahkan Anda untuk menjalankan test langsung dari command prompt. Ada beberapa opsi untuk menjalankan test tergantung kebutuhan Anda.
+
+\subsubsection{Menjalankan Semua Test}
+
+Untuk menjalankan semua test yang ada di proyek, cukup gunakan perintah berikut:
+
+\begin{lstlisting}[language=Bash]
+	mix test
+\end{lstlisting}
+
+Perintah ini akan mengeksekusi semua test yang ada di folder \texttt{test} dan menampilkan hasilnya di terminal.
+
+\subsubsection{Menjalankan Test Spesifik untuk Modul Tertentu}
+
+Jika Anda hanya ingin menjalankan test untuk modul tertentu, Anda dapat menyebutkan nama file test yang bersangkutan. Misalnya, untuk menjalankan test pada \texttt{ExampleModuleTest}, jalankan perintah berikut:
+
+\begin{lstlisting}[language=Bash]
+	mix test test/example_module_test.exs
+\end{lstlisting}
+
+\subsubsection{Menjalankan Test Spesifik untuk Fungsi Tertentu}
+
+Untuk menjalankan test yang spesifik untuk suatu fungsi dalam modul, Anda dapat menggunakan tag line number. Misalnya, jika test untuk fungsi \texttt{add} ada pada baris 4 dalam file test, Anda bisa menjalankan perintah berikut:
+
+\begin{lstlisting}[language=Bash]
+	mix test test/example_module_test.exs:4
+\end{lstlisting}
+
+Jika Anda ingin menjalankan test untuk fungsi lain seperti \texttt{subtract} yang ada di baris 8, Anda cukup menjalankan:
+
+\begin{lstlisting}[language=Bash]
+	mix test test/example_module_test.exs:8
+\end{lstlisting}
+
+Dengan cara ini, hanya test yang ada pada baris tersebut yang akan dijalankan, sehingga memudahkan dalam proses debugging dan pengujian parsial.
+
+Dengan menggunakan \texttt{ExUnit}, Elixir memberikan cara yang mudah dan efisien untuk melakukan unit testing. Anda bisa menulis test baik dalam file khusus maupun langsung dalam dokumentasi fungsi menggunakan \texttt{doctest}. Menjalankan test dari command prompt juga fleksibel, memungkinkan Anda untuk menjalankan seluruh test, test untuk modul tertentu, atau test untuk fungsi spesifik.
+
+\section{Latihan}
+
+Bagian ini berisi beberapa latihan yang dirancang untuk membantu Anda mempraktikkan dokumentasi dan unit testing di Elixir. Setiap latihan akan mencakup pembuatan modul, menulis dokumentasi, dan membuat unit test. 
+
+\subsection{Latihan 1: Menulis Dokumentasi Modul}
+
+Buatlah sebuah modul Elixir bernama \texttt{Calculator} yang memiliki dua fungsi: \texttt{multiply/2} dan \texttt{divide/2}. Tulislah dokumentasi untuk setiap fungsi menggunakan anotasi \texttt{@doc}.
+
+\begin{lstlisting}[language=Elixir]
+	defmodule Calculator do
+	@moduledoc """
+	A module for basic arithmetic operations.
+	"""
+	
+	@doc """
+	Multiplies two numbers.
+	
+	## Parameters
+	- x: the first number.
+	- y: the second number.
+	
+	## Example
+	
+	iex> Calculator.multiply(4, 5)
+	20
+	"""
+	def multiply(x, y) do
+	x * y
+	end
+	
+	@doc """
+	Divides two numbers.
+	
+	## Parameters
+	- x: the numerator.
+	- y: the denominator.
+	
+	## Example
+	
+	iex> Calculator.divide(10, 2)
+	5
+	"""
+	def divide(x, y) do
+	x / y
+	end
+	end
+\end{lstlisting}
+
+\subsection{Latihan 2: Menulis Unit Test untuk Modul}
+
+Buatlah file test bernama \texttt{calculator\_test.exs} di dalam folder \texttt{test} untuk mengetes fungsi \texttt{multiply/2} dan \texttt{divide/2} dari modul \texttt{Calculator}. Sertakan beberapa skenario pengujian.
+
+\begin{lstlisting}[language=Elixir]
+	defmodule CalculatorTest do
+	use ExUnit.Case
+	doctest Calculator
+	
+	test "multiplies two numbers" do
+	assert Calculator.multiply(4, 5) == 20
+	end
+	
+	test "divides two numbers" do
+	assert Calculator.divide(10, 2) == 5
+	end
+	
+	test "divides by zero raises an error" do
+	assert_raise ArithmeticError, fn -> Calculator.divide(10, 0) end
+	end
+	end
+\end{lstlisting}
+
+\subsection{Latihan 3: Menjalankan Test untuk Modul}
+
+Jalankan unit test yang telah Anda tulis untuk modul \texttt{Calculator} menggunakan perintah berikut:
+
+\begin{lstlisting}[language=Bash]
+	mix test test/calculator_test.exs
+\end{lstlisting}
+
+\subsection{Latihan 4: Menjalankan Test untuk Fungsi Tertentu}
+
+Tambahkan sebuah test baru dalam \texttt{calculator\_test.exs} untuk fungsi \texttt{multiply/2} dan jalankan test tersebut menggunakan nomor baris.
+
+\begin{lstlisting}[language=Elixir]
+	defmodule CalculatorTest do
+	use ExUnit.Case
+	doctest Calculator
+	
+	test "multiplies two numbers" do
+	assert Calculator.multiply(4, 5) == 20
+	end
+	
+	# New test added for specific function
+	test "checks multiply with negative numbers" do
+	assert Calculator.multiply(-4, 5) == -20
+	end
+	end
+\end{lstlisting}
+
+Jika test baru ditambahkan pada baris 6, jalankan perintah berikut:
+
+\begin{lstlisting}[language=Bash]
+	mix test test/calculator_test.exs:6
+\end{lstlisting}
+
+
+\section{Soal}
+
+Bagian ini berisi beberapa soal latihan tambahan yang dirancang untuk mempraktikkan dokumentasi dan unit testing di Elixir. Setiap soal merupakan varian dari contoh-contoh latihan sebelumnya.
+
+\subsection{Soal 1: Dokumentasi dan Unit Test untuk Modul \texttt{Statistics}}
+
+Buatlah modul Elixir bernama \texttt{Statistics} yang memiliki dua fungsi: \texttt{mean/1} dan \texttt{median/1}. 
+
+\begin{enumerate}
+	\item Dokumentasikan setiap fungsi dengan anotasi \texttt{@doc}. Fungsi \texttt{mean/1} harus menghitung rata-rata dari sebuah list angka, sementara \texttt{median/1} harus menghitung median dari list angka yang sudah diurutkan.
+	\item Buatlah file test bernama \texttt{statistics\_test.exs} di dalam folder \texttt{test} untuk mengetes fungsi \texttt{mean/1} dan \texttt{median/1}. Sertakan beberapa skenario pengujian, seperti menghitung rata-rata dan median untuk list dengan berbagai panjang dan nilai.
+\end{enumerate}
+
+\subsection{Soal 2: Dokumentasi dan Unit Test untuk Modul \texttt{StringUtils}}
+
+Buatlah modul Elixir bernama \texttt{StringUtils} yang memiliki dua fungsi: \texttt{reverse/1} dan \texttt{capitalize/1}. 
+
+\begin{enumerate}
+	\item Dokumentasikan setiap fungsi dengan anotasi \texttt{@doc}. Fungsi \texttt{reverse/1} harus membalikkan string, sementara \texttt{capitalize/1} harus mengubah huruf pertama dari string menjadi huruf kapital.
+	\item Buatlah file test bernama \texttt{string\_utils\_test.exs} di dalam folder \texttt{test} untuk mengetes fungsi \texttt{reverse/1} dan \texttt{capitalize/1}. Sertakan beberapa skenario pengujian, seperti membalikkan string dengan berbagai karakter dan mengubah kapitalisasi string dengan berbagai kasus huruf.
+\end{enumerate}
+
+

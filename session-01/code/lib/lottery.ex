@@ -8,20 +8,25 @@ defmodule Lottery do
       "Number 4", "Number 5", "Number 6"]
     pots = ["Pot 1", "Pot 2", "Pot 3", "Pot 4"]
 
-    for pot <- pots, number <- numbers do
+    # for pot <- pots do
+    #   "Nomor #{pot}"
+    # end
+    pool = for pot <- pots, number <- numbers do
       "#{number} in #{pot}"
     end
+    pool
   end
 
   def randomize(pool) do
     Enum.shuffle(pool)
   end
 
-  @spec contains?(any(), any()) :: boolean()
+#@spec contains?(any(), any()) :: boolean()
   def contains?(pool, number) do
     Enum.member?(pool, number)
   end
 
+  # @spec distribute(any(), integer()) :: {list(), list()}
   def distribute(pool, draw_size) do
     Enum.split(pool, draw_size)
   end
