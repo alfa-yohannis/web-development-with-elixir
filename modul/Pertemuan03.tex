@@ -5,6 +5,7 @@
 
 Elixir mendukung dokumentasi yang mudah untuk modul dan fungsi. Dokumentasi ini dapat ditambahkan langsung dalam kode menggunakan komentar khusus yang disebut dengan \texttt{@moduledoc} untuk modul dan \texttt{@doc} untuk fungsi. Selain itu, Elixir juga menyediakan cara mudah untuk menggenerate dokumentasi dalam bentuk HTML menggunakan perintah \texttt{mix docs}.
 
+
 \subsection{Dokumentasi pada Level Modul}
 
 Untuk mendokumentasikan sebuah modul, digunakan anotasi \texttt{@moduledoc}. Ini adalah tempat yang tepat untuk memberikan deskripsi tentang tujuan modul, bagaimana modul tersebut digunakan, serta contoh-contoh jika diperlukan.
@@ -50,7 +51,39 @@ Selain mendokumentasikan modul, Anda juga bisa mendokumentasikan setiap fungsi d
 	end
 \end{lstlisting}
 
-\subsection{Mengenerate Dokumentasi HTML}
+\section{Menambahkan \texttt{ex\_doc} untuk Dokumentasi}
+
+Untuk menghasilkan dokumentasi dalam proyek Elixir, Anda perlu menambahkan library \texttt{ex\_doc}. Library ini memungkinkan Anda untuk menghasilkan dokumentasi dalam berbagai format, termasuk HTML. Berikut adalah langkah-langkah untuk menambahkan \texttt{ex\_doc} ke dalam proyek Elixir Anda.
+
+\subsection{Langkah-langkah Menambahkan \texttt{ex\_doc}}
+
+\begin{enumerate}
+	\item Buka file \texttt{mix.exs} di proyek Anda, dan tambahkan \texttt{ex\_doc} ke dalam daftar dependensi di fungsi \texttt{deps}. Pastikan Anda menambahkan dependensi ini hanya untuk lingkungan pengembangan (\texttt{dev}) dan tidak di runtime.
+	
+	\begin{lstlisting}[language=Elixir]
+		defp deps do
+		[
+			{:ex_doc, "~> 0.34"}
+		]
+		end
+	\end{lstlisting}
+	
+	\item Setelah menambahkan \texttt{ex\_doc}, jalankan perintah berikut di terminal untuk mengunduh dan menginstal dependensi:
+	
+	\begin{lstlisting}[language=Bash]
+		mix deps.get
+	\end{lstlisting}
+	
+	\item Setelah dependensi berhasil diinstal, Anda dapat menghasilkan dokumentasi untuk proyek Anda dengan perintah berikut:
+	
+	\begin{lstlisting}[language=Bash]
+		mix docs
+	\end{lstlisting}
+	
+	\item Dokumentasi yang dihasilkan akan disimpan dalam folder \texttt{doc/} di dalam direktori proyek Anda. Anda dapat membuka file \texttt{index.html} di browser untuk melihat dokumentasi dalam format HTML.
+\end{enumerate}
+
+\section{Mengenerate Dokumentasi HTML}
 
 Untuk menggenerate dokumentasi dalam format HTML, Elixir menyediakan perintah sederhana, yaitu \texttt{mix docs}. Perintah ini akan mencari dokumentasi di dalam modul dan fungsi yang ada, lalu mengubahnya menjadi halaman HTML yang mudah dibaca. Langkah-langkahnya adalah sebagai berikut:
 
@@ -71,6 +104,13 @@ Dengan mendokumentasikan kode dengan baik dan mengenerate dokumentasi HTML, Anda
 \section{Unit Test di Elixir}
 
 Unit testing di Elixir dapat dilakukan menggunakan modul bawaan bernama \texttt{ExUnit}. Elixir menyediakan fitur untuk membuat test dalam file khusus serta memungkinkan test ditulis dalam dokumentasi fungsi menggunakan anotasi \texttt{doctest}. Unit test sangat penting untuk memastikan bahwa fungsi-fungsi dalam kode bekerja sesuai harapan.
+
+
+
+\subsection{Kesimpulan}
+
+Dengan menambahkan \texttt{ex\_doc}, Anda dapat dengan mudah menghasilkan dokumentasi untuk proyek Elixir Anda. Dokumentasi ini membantu memudahkan pemahaman tentang kode yang ditulis dan berfungsi sebagai panduan bagi pengguna lain yang ingin menggunakan atau mengembangkan proyek tersebut.
+
 
 \subsection{Unit Test dalam File Khusus}
 
