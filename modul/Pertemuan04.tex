@@ -1,0 +1,572 @@
+\chapter{Struktur Data di Elixir: Atom, Map, Tuple, List, dan Keyword List}
+
+\section{Atom}
+Atom dalam Elixir adalah konstanta yang nilainya adalah nama itu sendiri. Atom sering digunakan untuk memberi label nilai atau mewakili konsep-konsep tertentu dalam program. Atom diawali dengan titik dua (\texttt{:}), diikuti oleh namanya.
+
+\subsection{Membuat Atom}
+Atom dibuat dengan menambahkan nama diawali dengan titik dua.
+\begin{lstlisting}[language=Elixir]
+	:name  # Sebuah atom dengan nilai :name
+\end{lstlisting}
+
+\subsection{Menggunakan Atom dalam Pattern Matching}
+Atom umumnya digunakan dalam pattern matching untuk alur kontrol.
+\begin{lstlisting}[language=Elixir]
+	status = :ok
+	
+	case status do
+	:ok -> "Berhasil"
+	:error -> "Gagal"
+	end
+\end{lstlisting}
+
+\subsection{Atom dalam Keyword Lists}
+Atom biasanya digunakan sebagai kunci dalam keyword lists, yaitu daftar pasangan kunci-nilai.
+\begin{lstlisting}[language=Elixir]
+	keyword_list = [name: "Alice", age: 30]
+	
+	IO.puts(keyword_list[:name])  # Output: Alice
+\end{lstlisting}
+
+\subsection{Atom yang Mewakili Modul dan Fungsi}
+Dalam Elixir, atom digunakan untuk mewakili nama modul dan referensi fungsi.
+\begin{lstlisting}[language=Elixir]
+	String.length("hello")  # Di sini, modul String adalah atom
+	
+	fun = &String.length/1
+	IO.puts(fun.("world"))  # Output: 5
+\end{lstlisting}
+
+Atom efisien dan ringan, menjadikannya ideal untuk digunakan dalam pattern matching, sebagai label, dan dalam berbagai struktur data seperti keyword lists dan maps. Karena atom bersifat immutable, atom menyediakan cara yang dapat diandalkan untuk merujuk nilai dengan nama di seluruh program.
+
+\section{Map}
+Map dalam Elixir adalah struktur data kunci-nilai di mana kunci dapat berupa tipe apa saja. Map tidak terurut, yang berarti pasangan kunci-nilai tidak disimpan dalam urutan tertentu.
+
+\subsection{Membuat Map}
+Map dibuat menggunakan sintaks \texttt{\%{}}.
+\begin{lstlisting}[language=Elixir]
+	map = %{"name" => "Alice", "age" => 30}
+\end{lstlisting}
+
+\subsection{Menambah/Memperbarui Entitas dalam Map}
+Untuk menambah atau memperbarui entitas dalam map, gunakan fungsi \texttt{Map.put/3}.
+\begin{lstlisting}[language=Elixir]
+	map = %{"name" => "Alice", "age" => 30}
+	updated_map = Map.put(map, "city", "New York")
+\end{lstlisting}
+
+\subsection{Menghapus Entitas dari Map}
+Untuk menghapus entitas dari map, gunakan fungsi \texttt{Map.delete/2}.
+\begin{lstlisting}[language=Elixir]
+	map = %{"name" => "Alice", "age" => 30}
+	updated_map = Map.delete(map, "age")
+\end{lstlisting}
+
+\subsection{Mengakses Nilai dalam Map}
+Nilai dapat diakses menggunakan kuncinya.
+\begin{lstlisting}[language=Elixir]
+	map = %{"name" => "Alice", "age" => 30}
+	IO.puts(map["name"])  # Output: Alice
+\end{lstlisting}
+
+\section{Tuple}
+Tuple adalah koleksi elemen yang terurut. Tuple bersifat immutable, yang berarti tidak dapat diubah setelah dibuat.
+
+\subsection{Membuat Tuple}
+Tuple dibuat menggunakan sintaks \texttt{\{\}}.
+\begin{lstlisting}[language=Elixir]
+	tuple = {"Alice", 30, "New York"}
+\end{lstlisting}
+
+\subsection{Mengakses Elemen dalam Tuple}
+Elemen dalam tuple dapat diakses berdasarkan indeksnya menggunakan pattern matching atau fungsi \texttt{elem/2}.
+\begin{lstlisting}[language=Elixir]
+	tuple = {"Alice", 30, "New York"}
+	IO.puts(elem(tuple, 0))  # Output: Alice
+\end{lstlisting}
+
+\subsection{Memperbarui Tuple}
+Berikut adalah perintah untuk menambahkan elemen baru ke suatu tuple. Akan tetapi, karena tuple bersifat immutable, untuk memperbarui tuple, harus dibuat tuple baru dengan nilai yang diperbarui, seolah-olah elemen baru ditambahkan ke tuple.
+\begin{lstlisting}[language=Elixir]
+	tuple = {"Alice", 30, "New York"}
+	updated_tuple = Tuple.append(tuple, "Engineer")
+\end{lstlisting}
+
+\subsection{Menghapus Elemen dari Tuple}
+Karena tuple bersifat immutable, elemen tidak dapat dihapus langsung dari tuple. Berikut adalah cara untuk menghapus elemen dari suatu tuple. Walapun demikian, elemen tersebut tidaklah dihapus. Yang terjadi adalah suatu tuple baru dibuat tetappi tidak menyertakan elemen yang ingin dihapus.
+
+\begin{lstlisting}[language=Elixir]
+	tuple = {"Alice", 30, "New York"}
+	updated_tuple = Tuple.delete_at(tuple, 2)
+\end{lstlisting}
+
+\section{List}
+List adalah koleksi elemen yang terurut, dan berbeda dengan tuple, list bersifat mutable dan dapat memiliki elemen yang ditambahkan atau dihapus.
+
+\subsection{Membuat List}
+List dibuat menggunakan tanda kurung siku.
+\begin{lstlisting}[language=Elixir]
+	list = [1, 2, 3, 4, 5]
+\end{lstlisting}
+
+
+\subsection{Menambah Elemen ke List}
+Elemen dapat ditambahkan ke depan list menggunakan operator cons \texttt{[ | ]} atau menggunakan fungsi dari modul \texttt{List}.
+
+\subsubsection{Menggunakan Operator Cons \texttt{[ | ]}}
+Elemen dapat ditambahkan ke depan list dengan operator cons.
+\begin{lstlisting}[language=Elixir]
+	list = [1, 2, 3]
+	new_list = [0 | list]
+\end{lstlisting}
+
+\subsubsection{Menggunakan \texttt{List.insert\_at/3}}
+Fungsi \texttt{List.insert\_at/3} menyisipkan elemen pada indeks tertentu dalam list. Indeks dimulai dari 0.
+\begin{lstlisting}[language=Elixir]
+	list = [1, 2, 3]
+	new_list = List.insert_at(list, 0, 0)  # Menyisipkan 0 pada indeks 0
+\end{lstlisting}
+
+\subsubsection{Menggunakan \texttt{List.concat/2}}
+Fungsi \texttt{List.concat/2} dapat digunakan untuk menambahkan elemen dengan cara menggabungkan dua list.
+\begin{lstlisting}[language=Elixir]
+	list = [1, 2, 3]
+	new_list = List.flatten([[0], list])  # Menggabungkan list dengan list baru yang berisi 0
+\end{lstlisting}
+
+
+\subsubsection{Menghapus Elemen dari List}
+Elemen dapat dihapus dari list menggunakan fungsi \texttt{List.delete/2}.
+\begin{lstlisting}[language=Elixir]
+	list = [1, 2, 3, 4]
+	updated_list = List.delete(list, 3)
+\end{lstlisting}
+
+\subsection{Mengakses Elemen dalam List}
+Ada beberapa cara untuk mendapatkan nilai dari list dalam Elixir. Beberapa metode yang umum digunakan adalah sebagai berikut:
+
+\subsubsection{Menggunakan Pattern Matching}
+Pattern matching adalah metode yang kuat dan sering digunakan untuk mengakses elemen dalam list. Dengan cara ini, elemen dari list dapat diambil dengan mencocokkan pola yang sesuai. Misalnya, mengambil Elemen Pertama:
+\begin{lstlisting}[language=Elixir]
+	list = [1, 2, 3, 4]
+	
+	# Mengambil elemen pertama dari list
+	[head | _tail] = list
+	IO.puts(head)  # Outputs: 1
+\end{lstlisting}
+
+\subsubsection{Menggunakan Fungsi \texttt{hd/1}}
+Fungsi \texttt{hd/1} digunakan untuk mendapatkan elemen pertama dari list.
+
+\begin{lstlisting}[language=Elixir]
+	list = [1, 2, 3, 4]
+	IO.puts(hd(list))  # Outputs: 1
+\end{lstlisting}
+
+\subsubsection{Menggunakan Fungsi \texttt{tl/1}}
+Fungsi \texttt{tl/1} digunakan untuk mendapatkan semua elemen dalam list kecuali elemen pertama.
+
+\begin{lstlisting}[language=Elixir]
+	list = [1, 2, 3, 4]
+	IO.inspect(tl(list))  # Outputs: [2, 3, 4]
+\end{lstlisting}
+
+\subsubsection{Mengakses Elemen Berdasarkan Indeks}
+Untuk mengakses elemen berdasarkan indeks dalam list, Elixir menyediakan beberapa metode:
+
+\textbf{Menggunakan Fungsi \texttt{Enum.at/2}}.
+Fungsi \texttt{Enum.at/2} digunakan untuk mendapatkan elemen dari list berdasarkan indeksnya. Indeks mulai dari 0.
+
+\begin{lstlisting}[language=Elixir]
+	list = [1, 2, 3, 4]
+	IO.puts(Enum.at(list, 2))  # Outputs: 3
+\end{lstlisting}
+
+\textbf{Menggunakan Pattern Matching untuk Mengakses Elemen Berdasarkan Indeks}.
+Dengan menggunakan pattern matching, elemen pada posisi tertentu dapat diakses dengan mendefinisikan pola yang sesuai.
+
+\begin{lstlisting}[language=Elixir]
+defmodule ListUtils do
+	def get_element_at([head | _tail], 0), do: head
+	def get_element_at([_head | tail], index) when index > 0, do: get_element_at(tail, index - 1)
+	def get_element_at([], _index), do: nil
+end
+
+list = [1, 2, 3, 4]
+IO.puts(ListUtils.get_element_at(list, 2))  # Outputs: 3
+\end{lstlisting}
+
+\subsubsection{Mendapatkan Indeks Berdasarkan Nilai}
+Untuk menemukan indeks elemen dalam list berdasarkan nilai tertentu, Anda dapat menggunakan beberapa pendekatan berikut:
+
+\textbf{Menggunakan Fungsi Enum.find\_index/2}. 
+Fungsi \texttt{Enum.find\_index/2} mengembalikan indeks dari elemen pertama yang cocok dengan kondisi yang diberikan oleh fungsi.
+
+\begin{lstlisting}[language=Elixir]
+	list = [10, 20, 30, 40]
+	index = Enum.find_index(list, fn x -> x == 30 end)
+	IO.puts(index)  # Outputs: 2
+\end{lstlisting}
+
+\textbf{Menggunakan Pattern Matching untuk Mendapatkan Indeks Berdasarkan Nilai}.
+Untuk menemukan indeks dengan pattern matching, Anda dapat menggunakan rekursi untuk mencari nilai yang sesuai dalam list.
+
+\begin{lstlisting}[language=Elixir]
+	defmodule ListUtils do
+	def index_of([], _value, _index), do: nil
+	def index_of([value | _tail], value, index), do: index
+	def index_of([_head | tail], value, index) do
+	index_of(tail, value, index + 1)
+	end
+	end
+	
+	list = [10, 20, 30, 40]
+	index = ListUtils.index_of(list, 30, 0)
+	IO.puts(index)  # Outputs: 2
+\end{lstlisting}
+
+
+\section{Keyword List}
+Keyword list adalah list dari tuple di mana elemen pertama dari setiap tuple adalah atom, biasanya digunakan untuk melewatkan opsi dalam fungsi.
+
+\subsection{Membuat Keyword List}
+Keyword list dibuat menggunakan sintaks yang sama seperti list tetapi dengan tuple yang berisi atom dan nilai.
+\begin{lstlisting}[language=Elixir]
+	keyword_list = [name: "Alice", age: 30, city: "New York"]
+\end{lstlisting}
+
+\subsection{Menambah/Memperbarui Elemen dalam Keyword List}
+Untuk menambah atau memperbarui nilai dalam keyword list, cukup tambahkan tuple baru dengan nilai yang diperbarui.
+\begin{lstlisting}[language=Elixir]
+	keyword_list = [name: "Alice", age: 30]
+	updated_keyword_list = [city: "New York" | keyword_list]
+\end{lstlisting}
+
+\subsection{Mengakses Elemen dalam Keyword List}
+Nilai dalam keyword list dapat diakses menggunakan kuncinya.
+\begin{lstlisting}[language=Elixir]
+	keyword_list = [name: "Alice", age: 30]
+	IO.puts(keyword_list[:name])  # Output: Alice
+\end{lstlisting}
+
+\subsection{Menghapus Elemen dari Keyword List}
+Untuk menghapus entri dari keyword list, gunakan fungsi \texttt{Keyword.delete/2}.
+\begin{lstlisting}[language=Elixir]
+	keyword_list = [name: "Alice", age: 30, city: "New York"]
+	updated_keyword_list = Keyword.delete(keyword_list, :city)
+\end{lstlisting}
+
+
+\section{Konversi Antara Struktur Data}
+
+Dalam Elixir, seringkali diperlukan untuk mengkonversi antara struktur data yang berbeda seperti tuple, list, dan keyword list. Berikut adalah cara untuk melakukan konversi antara struktur data ini:
+
+\subsection{Konversi dari Tuple ke List}
+Untuk mengkonversi tuple menjadi list, gunakan fungsi \texttt{Tuple.to\_list/1}:
+
+\begin{lstlisting}[language=Elixir]
+	tuple = {1, 2, 3, 4}
+	list = Tuple.to_list(tuple)
+	IO.inspect(list) # Output: [1, 2, 3, 4]
+\end{lstlisting}
+
+\subsection{Konversi dari List ke Tuple}
+Untuk mengkonversi list menjadi tuple, gunakan fungsi \texttt{List.to\_tuple/1}:
+
+\begin{lstlisting}[language=Elixir]
+	list = [1, 2, 3, 4]
+	tuple = List.to_tuple(list)
+	IO.inspect(tuple) # Output: {1, 2, 3, 4}
+\end{lstlisting}
+
+\subsection{Konversi dari Keyword List ke Map}
+Untuk mengkonversi keyword list menjadi map, gunakan fungsi \texttt{Enum.into/2}:
+
+\begin{lstlisting}[language=Elixir]
+	keyword_list = [name: "Budi", age: 25]
+	map = Enum.into(keyword_list, %{})
+	IO.inspect(map) # Output: %{name: "Budi", age: 25}
+\end{lstlisting}
+
+\subsection{Konversi dari Map ke Keyword List}
+Untuk mengkonversi map menjadi keyword list, gunakan fungsi \texttt{Map.to\_list/1}:
+
+\begin{lstlisting}[language=Elixir]
+	map = %{name: "Budi", age: 25}
+	keyword_list = Map.to_list(map)
+	IO.inspect(keyword_list) # Output: [name: "Budi", age: 25]
+\end{lstlisting}
+
+\subsection{Konversi dari List ke Keyword List}
+Untuk mengkonversi list ke keyword list, setiap elemen list harus berupa tuple dengan dua elemen, di mana elemen pertama adalah atom yang akan menjadi key dan elemen kedua adalah nilai. Gunakan \texttt{Enum.into/2} untuk konversi:
+
+\begin{lstlisting}[language=Elixir]
+	list = [name: "Budi", age: 25]
+	keyword_list = Enum.into(list, [])
+	IO.inspect(keyword_list) # Output: [name: "Budi", age: 25]
+\end{lstlisting}
+
+\subsection{Konversi dari Keyword List ke List}
+Untuk mengkonversi keyword list menjadi list, gunakan \texttt{Keyword.to\_list/1}:
+
+\begin{lstlisting}[language=Elixir]
+	keyword_list = [name: "Budi", age: 25]
+	list = Keyword.to_list(keyword_list)
+	IO.inspect(list) # Output: [name: "Budi", age: 25]
+\end{lstlisting}
+
+\subsection{Konversi dari Tuple ke Keyword List}
+Untuk mengkonversi tuple yang berisi pasangan key-value menjadi keyword list, Anda bisa menggunakan \texttt{Tuple.to\_list/1} dan kemudian melakukan konversi lebih lanjut:
+
+\begin{lstlisting}[language=Elixir]
+	tuple = {:name, "Budi"}
+	keyword_list = Tuple.to_list(tuple) |> Enum.chunk_every(2) |> Enum.map(fn [k, v] -> {k, v} end)
+	IO.inspect(keyword_list) # Output: [name: "Budi"]
+\end{lstlisting}
+
+\section{Latihan}
+
+\subsection{Latihan 1: Manipulasi Map}
+\textbf{Tujuan}: Memahami cara menambah, mengubah, menghapus, dan mengakses data dalam Map.
+
+\begin{enumerate}
+	\item Buatlah sebuah Map yang menyimpan informasi berikut:
+	\begin{itemize}
+		\item \texttt{name}: "Budi"
+		\item \texttt{age}: 25
+		\item \texttt{city}: "Jakarta"
+	\end{itemize}
+	\item Tambahkan key baru \texttt{job} dengan nilai "Engineer".
+	\item Update nilai dari key \texttt{age} menjadi 26.
+	\item Hapus key \texttt{city} dari Map.
+	\item Cetak nilai dari key \texttt{name} dan \texttt{age}.
+\end{enumerate}
+
+\begin{lstlisting}[language=Elixir]
+	# Buat Map awal
+	person = %{"name" => "Budi", "age" => 25, "city" => "Jakarta"}
+	
+	# Tambahkan key baru
+	person = Map.put(person, "job", "Engineer")
+	
+	# Update nilai dari key age
+	person = Map.put(person, "age", 26)
+	
+	# Hapus key city
+	person = Map.delete(person, "city")
+	
+	# Akses dan cetak nilai
+	IO.puts("Name: #{person["name"]}")
+	IO.puts("Age: #{person["age"]}")
+\end{lstlisting}
+
+\subsection{Latihan 2: Manipulasi Tuple}
+\textbf{Tujuan}: Memahami cara membuat dan memodifikasi Tuple.
+
+\begin{enumerate}
+	\item Buat sebuah Tuple yang menyimpan data berikut: \texttt{"Budi"}, \texttt{25}, \texttt{"Jakarta"}.
+	\item Akses dan cetak elemen kedua dari Tuple.
+	\item Tambahkan elemen baru \texttt{"Engineer"} ke dalam Tuple.
+	\item Hapus elemen kedua (usia) dari Tuple dan cetak Tuple hasil akhir.
+\end{enumerate}
+
+\begin{lstlisting}[language=Elixir]
+	# Buat Tuple awal
+	person_tuple = {"Budi", 25, "Jakarta"}
+	
+	# Akses elemen kedua
+	IO.puts("Age: #{elem(person_tuple, 1)}")
+	
+	# Tambahkan elemen baru
+	person_tuple = Tuple.append(person_tuple, "Engineer")
+	
+	# Hapus elemen kedua (usia)
+	person_tuple = person_tuple |> Tuple.to_list() |> List.delete_at(1) |> List.to_tuple()
+	
+	# Cetak Tuple hasil akhir
+	IO.inspect(person_tuple)
+\end{lstlisting}
+
+\subsection{Latihan 3: Manipulasi List}
+\textbf{Tujuan}: Memahami cara menambah, menghapus, dan mengakses elemen dari List.
+
+\begin{enumerate}
+	\item Buat sebuah List berisi angka-angka dari 1 sampai 5.
+	\item Tambahkan angka 0 di depan List.
+	\item Hapus angka 3 dari List.
+	\item Akses dan cetak elemen ketiga dari List.
+\end{enumerate}
+
+\begin{lstlisting}[language=Elixir]
+	# Buat List awal
+	numbers = [1, 2, 3, 4, 5]
+	
+	# Tambahkan angka 0 di depan List
+	numbers = [0 | numbers]
+	
+	# Hapus angka 3
+	numbers = List.delete(numbers, 3)
+	
+	# Akses elemen ketiga
+	IO.puts("Elemen ketiga: #{Enum.at(numbers, 2)}")
+\end{lstlisting}
+
+\subsection{Latihan 4: Manipulasi Keyword List}
+\textbf{Tujuan}: Memahami cara membuat, menambah, mengubah, menghapus, dan mengakses elemen dari Keyword List.
+
+\begin{enumerate}
+	\item Buat sebuah Keyword List yang menyimpan informasi berikut:
+	\begin{itemize}
+		\item \texttt{name}: "Budi"
+		\item \texttt{age}: 25
+	\end{itemize}
+	\item Tambahkan key baru \texttt{city} dengan nilai "Jakarta".
+	\item Update nilai dari key \texttt{age} menjadi 26.
+	\item Hapus key \texttt{city} dari Keyword List.
+	\item Cetak nilai dari key \texttt{name} dan \texttt{age}.
+\end{enumerate}
+
+\begin{lstlisting}[language=Elixir]
+	# Buat Keyword List awal
+	person_kw = [name: "Budi", age: 25]
+	
+	# Tambahkan key baru
+	person_kw = [city: "Jakarta" | person_kw]
+	
+	# Update nilai dari key age
+	person_kw = Keyword.put(person_kw, :age, 26)
+	
+	# Hapus key city
+	person_kw = Keyword.delete(person_kw, :city)
+	
+	# Akses dan cetak nilai
+	IO.puts("Name: #{person_kw[:name]}")
+	IO.puts("Age: #{person_kw[:age]}")
+\end{lstlisting}
+
+\subsection{Latihan 5: Penggunaan Atom}
+\textbf{Tujuan}: Memahami cara menggunakan atom dalam pattern matching dan sebagai key dalam struktur data.
+
+\begin{enumerate}
+	\item Buat sebuah atom bernama \texttt{:status} dengan nilai \texttt{:ok}.
+	\item Gunakan atom \texttt{:ok} dan \texttt{:error} untuk melakukan pattern matching di dalam \texttt{case}.
+	\item Buatlah sebuah Map dengan key berupa atom, misalnya \texttt{:name}, \texttt{:age}, dan \texttt{:city}. Akses dan cetak nilai dari masing-masing key tersebut.
+\end{enumerate}
+
+\begin{lstlisting}[language=Elixir]
+	# Buat atom status
+	status = :ok
+	
+	# Pattern matching dengan atom
+	case status do
+	:ok -> IO.puts("Success")
+	:error -> IO.puts("Failure")
+	end
+	
+	# Buat Map dengan key berupa atom
+	person_map = %{name: "Budi", age: 25, city: "Jakarta"}
+	
+	# Akses dan cetak nilai
+	IO.puts("Name: #{person_map[:name]}")
+	IO.puts("Age: #{person_map[:age]}")
+	IO.puts("City: #{person_map[:city]}")
+\end{lstlisting}
+
+\subsection{Latihan 6: Menggabungkan Semua Konsep}
+\textbf{Tujuan}: Menerapkan semua konsep yang telah dipelajari dalam satu program.
+
+\begin{enumerate}
+	\item Buat sebuah fungsi \texttt{create\_person/3} yang menerima tiga argumen: Nama (String), Usia (Integer), Kota (String).
+	\item Fungsi ini harus mengembalikan Map yang berisi informasi tersebut dengan key berupa atom.
+	\item Buat fungsi \texttt{update\_city/2} untuk mengubah kota dari Map hasil dari fungsi \texttt{create\_person/3}.
+	\item Buat fungsi \texttt{delete\_age/1} untuk menghapus key \texttt{:age} dari Map.
+	\item Cetak hasil akhir dari setiap fungsi.
+\end{enumerate}
+
+\begin{lstlisting}[language=Elixir]
+	defmodule Person do
+	# Fungsi untuk membuat Map dengan atom sebagai key
+	def create_person(name, age, city) do
+	%{name: name, age: age, city: city}
+	end
+	
+	# Fungsi untuk mengupdate nilai city
+	def update_city(person, new_city) do
+	Map.put(person, :city, new_city)
+	end
+	
+	# Fungsi untuk menghapus key age
+	def delete_age(person) do
+	Map.delete(person, :age)
+	end
+	end
+	
+	# Membuat person
+	person = Person.create_person("Budi", 25, "Jakarta")
+	
+	# Mengupdate kota
+	person = Person.update_city(person, "Bandung")
+	
+	# Menghapus usia
+	person = Person.delete_age(person)
+	
+	# Cetak hasil akhir
+	IO.inspect(person)
+\end{lstlisting}
+
+\section{Soal Latihan}
+
+\subsection{Latihan 1: Atom}
+\begin{enumerate}
+	\item Apa itu atom dalam Elixir? Jelaskan kapan dan mengapa atom digunakan.
+	\item Buat sebuah fungsi yang menerima atom sebagai argumen, dan melakukan pattern matching untuk mencetak pesan berikut:
+	\begin{itemize}
+		\item Jika menerima \texttt{:ok}, cetak "Proses berhasil".
+		\item Jika menerima \texttt{:error}, cetak "Proses gagal".
+	\end{itemize}
+	\item Buatlah tiga atom berbeda, simpan mereka dalam sebuah tuple, dan akses masing-masing elemen dari tuple tersebut.
+\end{enumerate}
+
+\subsection{Latihan 2: Manipulasi Map}
+\begin{enumerate}
+	\item Buatlah sebuah Map yang menyimpan informasi tentang sebuah buku, yang terdiri dari \texttt{title}, \texttt{author}, dan \texttt{year\_published}.
+	\item Tambahkan sebuah key baru \texttt{publisher} ke dalam Map yang telah dibuat.
+	\item Update nilai dari key \texttt{year\_published} menjadi tahun terbaru.
+	\item Hapus key \texttt{publisher} dari Map.
+	\item Bagaimana cara mengakses nilai dari key \texttt{author}?
+\end{enumerate}
+
+\subsection{Latihan 3: Manipulasi Tuple}
+\begin{enumerate}
+	\item Buatlah sebuah Tuple yang menyimpan informasi mengenai sebuah kendaraan, yang terdiri dari \texttt{jenis}, \texttt{warna}, dan \texttt{tahun}.
+	\item Akses elemen kedua dari Tuple tersebut.
+	\item Bagaimana cara menambah elemen baru ke dalam Tuple? Ubah tuple agar elemen baru berupa \texttt{"plat nomor"} ditambahkan di akhir.
+	\item Bagaimana cara menghapus elemen kedua dari Tuple tersebut?
+\end{enumerate}
+
+\subsection{Latihan 4: Manipulasi List}
+\begin{enumerate}
+	\item Buat sebuah List yang berisi lima angka acak.
+	\item Bagaimana cara menambahkan elemen baru ke depan List?
+	\item Hapus elemen ketiga dari List tersebut.
+	\item Jelaskan bagaimana cara mengakses elemen keempat dari List.
+\end{enumerate}
+
+\subsection{Latihan 5: Manipulasi Keyword List}
+\begin{enumerate}
+	\item Buat sebuah Keyword List yang menyimpan informasi mengenai produk dengan key berupa \texttt{:nama}, \texttt{:harga}, dan \texttt{:stok}.
+	\item Bagaimana cara menambah key baru \texttt{:kategori} ke dalam Keyword List tersebut?
+	\item Ubah nilai dari key \texttt{:harga}.
+	\item Hapus key \texttt{:stok} dari Keyword List.
+	\item Jelaskan bagaimana cara mengakses nilai dari key \texttt{:nama}.
+\end{enumerate}
+
+\subsection{Latihan 6: Menggabungkan Semua Konsep}
+\begin{enumerate}
+	\item Buat sebuah fungsi yang menerima nama, usia, dan pekerjaan sebagai argumen, dan mengembalikan sebuah Map dengan key berupa atom.
+	\item Buat sebuah fungsi untuk mengupdate salah satu informasi dalam Map yang dihasilkan dari fungsi di atas.
+	\item Buat sebuah fungsi untuk menghapus salah satu informasi dari Map tersebut.
+	\item Buat sebuah fungsi yang menerima argumen berupa Tuple dan List, lalu gabungkan elemen dari keduanya menjadi satu List.
+	\item Buatlah Keyword List yang menyimpan informasi tentang siswa (nama, nilai, dan kelas), dan lakukan operasi penambahan, pengubahan, dan penghapusan pada Keyword List tersebut.
+\end{enumerate}
+
