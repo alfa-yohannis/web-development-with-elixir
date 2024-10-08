@@ -1,0 +1,25 @@
+Script started on 2024-10-03 04:00:19+07:00 [TERM="xterm-256color" TTY="/dev/pts/3" COLUMNS="94" LINES="8"]
+[?2004h]0;alfa@ThinkPadL13: /data1/projects/web-development-with-elixir/session-05/avatar_generator[01;34m/data1/projects/web-development-with-elixir/session-05/avatar_generator[00m$ ./update.sh [K./update.sh [K[K[K[K[K[K[K[K[K[K[K[Kcd cript[K[K[K[K[K[K[K[Kcd cr[K[K[Ks[K script/
+[?2004l[?2004h]0;alfa@ThinkPadL13: /data1/projects/web-development-with-elixir/session-05/avatar_generator/script[01;34m/data1/projects/web-development-with-elixir/session-05/avatar_generator/script[00m$ ls
+[?2004l[0m[01;32mdemo.exs[0m
+[?2004h]0;alfa@ThinkPadL13: /data1/projects/web-development-with-elixir/session-05/avatar_generator/script[01;34m/data1/projects/web-development-with-elixir/session-05/avatar_generator/script[00m$ cls
+[?2004lCommand 'cls' not found, but there are 18 similar ones.
+[?2004h]0;alfa@ThinkPadL13: /data1/projects/web-development-with-elixir/session-05/avatar_generator/script[01;34m/data1/projects/web-development-with-elixir/session-05/avatar_generator/script[00m$ clear
+[?2004l[H[2J[3J[?2004h]0;alfa@ThinkPadL13: /data1/projects/web-development-with-elixir/session-05/avatar_generator/script[01;34m/data1/projects/web-development-with-elixir/session-05/avatar_generator/script[00m$ elixr [K[Kir demo.exs 
+[?2004lhash = <<54, 129, 223, 141, 4, 71, 14, 204, 101, 5, 59, 121, 14, 25, 160, 101>>
+[?2004h]0;alfa@ThinkPadL13: /data1/projects/web-development-with-elixir/session-05/avatar_generator/script[01;34m/data1/projects/web-development-with-elixir/session-05/avatar_generator/script[00m$ elixir demo.exs 
+[?2004lhash = <<54, 129, 223, 141, 4, 71, 14, 204, 101, 5, 59, 121, 14, 25, 160, 101>>
+[?2004h]0;alfa@ThinkPadL13: /data1/projects/web-development-with-elixir/session-05/avatar_generator/script[01;34m/data1/projects/web-development-with-elixir/session-05/avatar_generator/script[00m$ elixir demo.exs [A]0;alfa@ThinkPadL13: /data1/projects/web-development-with-elixir/session-05/avatar_generator/script[01;34m/data1/projects/web-development-with-elixir/session-05/avatar_generator/script[00m$ [K
+[K[A[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[Cclear
+[?2004l[H[2J[3J[?2004h]0;alfa@ThinkPadL13: /data1/projects/web-development-with-elixir/session-05/avatar_generator/script[01;34m/data1/projects/web-development-with-elixir/session-05/avatar_generator/script[00m$ clearelixir demo.exs 
+[?2004lhash = <<54, 129, 223, 141, 4, 71, 14, 204, 101, 5, 59, 121, 14, 25, 160, 101>>
+hash16 = 3681DF8D04470ECC65053B790E19A065
+[?2004h]0;alfa@ThinkPadL13: /data1/projects/web-development-with-elixir/session-05/avatar_generator/script[01;34m/data1/projects/web-development-with-elixir/session-05/avatar_generator/script[00m$ clear
+[?2004l[H[2J[3J[?2004h]0;alfa@ThinkPadL13: /data1/projects/web-development-with-elixir/session-05/avatar_generator/script[01;34m/data1/projects/web-development-with-elixir/session-05/avatar_generator/script[00m$ clearelixir demo.exs 
+[?2004lhash = <<54, 129, 223, 141, 4, 71, 14, 204, 101, 5, 59, 121, 14, 25, 160, 101>>
+hash16 = 3681DF8D04470ECC65053B790E19A065
+list = [54, 129, 223, 141, 4, 71, 14, 204, 101, 5, 59, 121, 14, 25, 160, 101]
+[?2004h]0;alfa@ThinkPadL13: /data1/projects/web-development-with-elixir/session-05/avatar_generator/script[01;34m/data1/projects/web-development-with-elixir/session-05/avatar_generator/script[00m$ [?2004l
+exit
+
+Script done on 2024-10-03 04:03:40+07:00 [COMMAND_EXIT_CODE="0"]

@@ -1,0 +1,4 @@
+%{
+  "crc32cer": {:hex, :crc32cer, "0.1.11", "b550da6d615feb72a882d15d020f8f7dee72dfb2cb1bcdf3b1ee8dc2afd68cfc", [:rebar3], [], "hexpm", "a39b8f0b1990ac1bf06c3a247fc6a178b740cdfc33c3b53688dc7dd6b1855942"},
+  "egd": {:git, "https://github.com/erlang/egd.git", "1cea959544de7dd40a3284ba571a58939de57616", []},
+}
