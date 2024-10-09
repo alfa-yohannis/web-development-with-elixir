@@ -330,3 +330,6 @@ erl_crash.dump
 
 #draw.io
 *.xdp*
+
+*.pdf
+!assets/*.pdf

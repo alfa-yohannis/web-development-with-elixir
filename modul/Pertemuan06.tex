@@ -1,0 +1,417 @@
+\chapter{Generator Avatar dengan Elixir: Bagian 2}
+
+Bab ini merupakan kelanjutan dari bab sebelumnya, di mana bab ini akan dibahas implementasi kode Elixir yang digunakan untuk membangkitkan sebuah gambar avatar berbasis data input dengan serangkaian operasi pemrosesan data. Kode ini terdiri dari beberapa fungsi yang bekerja secara berurutan untuk memproses input dan menghasilkan sebuah file gambar berbentuk avatar. Pembahasan akan fungsi-fungsi yang belum dibahas di bab sebelumnya.
+
+
+\section{Keseluruhan Kode}
+
+\begin{lstlisting}[language=Elixir, caption={Keseluruhan Kode src/avatar.ex}]
+	defmodule AvatarGenerator do
+	use Application
+	
+	def generate(input) do
+	input
+	|> compute_hash
+	|> select_color
+	|> create_grid
+	|> remove_odd_cells
+	|> generate_pixel_map
+	|> render_image
+	|> store_image(input)
+	end
+	
+	def store_image(image, input) do
+	File.write("#{input}_avatar.png", image)
+	end
+	
+	def render_image(%Avatar.Image{color: color, pixel_map: pixel_map}) do
+	image = :egd.create(250, 250)
+	fill = :egd.color(color)
+	
+	Enum.each pixel_map, fn({start, stop}) ->
+	:egd.filledRectangle(image, start, stop, fill)
+	end
+	
+	:egd.render(image)
+	end
+	
+	
+	def generate_pixel_map(%Avatar.Image{grid: grid} = image) do
+	pixel_map = Enum.map grid, fn({_code, index}) ->
+	x = rem(index, 5) * 50
+	y = div(index, 5) * 50
+	
+	top_left = {x, y}
+	bottom_right = {x + 50, y + 50}
+	
+	{top_left, bottom_right}
+	end
+	
+	%Avatar.Image{image | pixel_map: pixel_map}
+	end
+	
+	def remove_odd_cells(%Avatar.Image{grid: grid} = image) do
+	grid = Enum.filter grid, fn({code, _index}) ->
+	rem(code, 2) == 0
+	end
+	
+	%Avatar.Image{image | grid: grid}
+	end
+	
+	def create_grid(%Avatar.Image{hash: hash} = image) do
+	grid = hash
+	|> Enum.chunk_every(3)
+	|> Enum.map(&reflect_row/1)
+	|> List.flatten
+	|> Enum.with_index
+	
+	%Avatar.Image{image | grid: grid}
+	end
+	
+	def reflect_row(row) do
+	[ first, second | _tail] = row
+	row ++ [second, first]
+	end
+	
+	def compute_hash(input) do
+	hash =
+	:crypto.hash(:md5, input)
+	|> :binary.bin_to_list()
+	|> resize_list
+	
+	# IO.inspect(hash)
+	%Avatar.Image{hash: hash}
+	end
+	
+	def resize_list(list) do
+	full_chunks_count = div(length(list), 3) * 3
+	Enum.take(list, full_chunks_count)
+	end
+	
+	def select_color(%Avatar.Image{hash: [r, g, b | _tail]} = image) do
+	%Avatar.Image{image | color: {r, g, b}}
+	end
+	
+	def start(_type, _args) do
+	result = AvatarGenerator.generate("wolverine")
+	IO.inspect(result)
+	IO.puts("Finished!")
+	{:ok, self()}
+	end
+	end
+\end{lstlisting}
+
+\begin{lstlisting}[language=Elixir, caption={Keseluruhan Kode src/image.ex}]
+defmodule Avatar.Image do
+	defstruct hash: nil, color: nil, grid: nil, pixel_map: nil
+end
+\end{lstlisting}
+
+
+\section{Fungsi Utama: \texttt{generate/1}}
+
+Fungsi \texttt{generate/1} merupakan titik awal dari proses pembentukan avatar. Fungsi ini menerima sebuah \texttt{input} yang kemudian diproses melalui beberapa tahap berikut:
+
+\begin{itemize}
+	\item \texttt{compute\_hash} untuk menghasilkan representasi hash dari \texttt{input}.
+	\item \texttt{select\_color} untuk memilih warna berdasarkan hash.
+	\item \texttt{create\_grid} untuk membentuk grid data yang merepresentasikan pola gambar.
+	\item \texttt{remove\_odd\_cells} untuk menghapus sel grid yang tidak memenuhi kriteria tertentu.
+	\item \texttt{generate\_pixel\_map} untuk mengonversi grid ke dalam peta piksel yang akan digunakan untuk menggambar.
+	\item \texttt{render\_image} untuk menggambar gambar berdasarkan peta piksel.
+	\item \texttt{store\_image} untuk menyimpan gambar ke dalam file.
+\end{itemize}
+
+Berikut adalah implementasi dari fungsi \texttt{generate/1}:
+
+\begin{lstlisting}[language=elixir]
+	def generate(input) do
+	input
+	|> compute_hash
+	|> select_color
+	|> create_grid
+	|> remove_odd_cells
+	|> generate_pixel_map
+	|> render_image
+	|> store_image(input)
+	end
+\end{lstlisting}
+
+Fungsi \texttt{generate/1} memanfaatkan operator \texttt{|>} untuk meneruskan hasil dari setiap fungsi ke fungsi berikutnya, sehingga mempermudah pembacaan alur pemrosesan data.
+
+\section{Penyaringan Sel: \texttt{remove\_odd\_cells/1}}
+
+Fungsi \texttt{remove\_odd\_cells/1} digunakan untuk menyaring sel-sel pada grid yang tidak sesuai kriteria. Pada contoh ini, hanya sel dengan kode genap yang akan dipertahankan.
+
+\begin{lstlisting}[language=elixir]
+	def remove_odd_cells(%Avatar.Image{grid: grid} = image) do
+	grid = Enum.filter grid, fn({code, _index}) ->
+	rem(code, 2) == 0
+	end
+\end{lstlisting}
+
+Fungsi ini menggunakan \texttt{Enum.filter/2} untuk menghapus sel-sel yang memiliki nilai kode ganjil. Dengan demikian, grid yang dihasilkan akan hanya berisi sel-sel yang memenuhi syarat tersebut.
+
+\section{Pembentukan Peta Piksel: \texttt{generate\_pixel\_map/1}}
+
+Fungsi \texttt{generate\_pixel\_map/1} berfungsi untuk membentuk peta piksel dari grid data yang telah dihasilkan pada tahap sebelumnya. Fungsi ini menentukan posisi setiap sel di dalam grid pada kanvas gambar.
+
+\begin{lstlisting}[language=elixir]
+	def generate_pixel_map(%Avatar.Image{grid: grid} = image) do
+	pixel_map = Enum.map grid, fn({_code, index}) ->
+	x = rem(index, 5) * 50
+	y = div(index, 5) * 50
+	
+	top_left = {x, y}
+	bottom_right = {x + 50, y + 50}
+	
+	{top_left, bottom_right}
+	end
+	
+	%Avatar.Image{image | pixel_map: pixel_map}
+	end
+\end{lstlisting}
+
+Setiap sel pada grid diubah menjadi koordinat yang merepresentasikan posisi sudut kiri atas (\texttt{top\_left}) dan sudut kanan bawah (\texttt{bottom\_right}) dari sel tersebut di dalam gambar.
+
+
+\section{Pembuatan Gambar: \texttt{render\_image/1}}
+
+Fungsi \texttt{render\_image/1} bertanggung jawab untuk menggambar gambar berdasarkan peta piksel yang sudah dibuat. Fungsi ini menggunakan modul \texttt{:egd} (Erlang Graphics Drawer) untuk membuat gambar. Warna dan peta piksel yang digunakan diterima dari struktur data \texttt{Avatar.Image}.
+
+\begin{lstlisting}[language=elixir]
+	def render_image(%Avatar.Image{color: color, pixel_map: pixel_map}) do
+	image = :egd.create(250, 250)
+	fill = :egd.color(color)
+	
+	Enum.each pixel_map, fn({start, stop}) ->
+	:egd.filledRectangle(image, start, stop, fill)
+	end
+	
+	:egd.render(image)
+	end
+\end{lstlisting}
+
+Fungsi ini membuat kanvas berukuran 250x250 piksel, menentukan warna, dan menggambar setiap sel berdasarkan posisi yang didefinisikan oleh \texttt{pixel\_map}.
+
+
+\section{Penyimpanan Gambar: \texttt{store\_image/2}}
+
+Fungsi \texttt{store\_image/2} digunakan untuk menyimpan hasil gambar ke dalam file dengan format \texttt{.png}. Fungsi ini menerima dua argumen, yaitu gambar hasil pemrosesan dan \texttt{input} yang digunakan untuk memberi nama file.
+
+\begin{lstlisting}[language=elixir]
+	def store_image(image, input) do
+	File.write("#{input}_avatar.png", image)
+	end
+\end{lstlisting}
+
+Fungsi ini menggunakan modul \texttt{File} bawaan Elixir untuk menulis data gambar ke dalam file.
+
+
+\section{Konfigurasi Proyek Menggunakan \texttt{mix.exs}}
+
+Pada bagian ini, akan dibahas mengenai konfigurasi proyek Elixir menggunakan \texttt{mix.exs} yang terdapat dalam modul \texttt{AvatarGenerator.MixProject}. Berkas \texttt{mix.exs} adalah tempat untuk mendefinisikan metadata proyek, pengaturan aplikasi, serta daftar dependensi yang dibutuhkan. Modul \texttt{AvatarGenerator.MixProject} ini merupakan konfigurasi standar yang dihasilkan oleh perintah \texttt{mix new} saat membuat proyek baru di Elixir. Berikut adalah penjelasan detail dari setiap bagian kode:
+
+\subsection{Pendefinisian Modul: \texttt{AvatarGenerator.MixProject}}
+
+Modul ini dimulai dengan pendefinisian modul menggunakan \texttt{defmodule} dan mendeklarasikan bahwa modul tersebut menggunakan \texttt{Mix.Project}, yang merupakan modul standar untuk mengelola proyek di Elixir. Modul ini berfungsi sebagai titik awal konfigurasi yang berisi beberapa fungsi utama, yaitu \texttt{project/0}, \texttt{application/0}, dan \texttt{deps/0}.
+
+\begin{lstlisting}[language=elixir]
+	defmodule AvatarGenerator.MixProject do
+	use Mix.Project
+\end{lstlisting}
+
+Deklarasi \texttt{use Mix.Project} menandakan bahwa modul ini akan menggunakan fungsi dan macro yang tersedia dalam \texttt{Mix.Project}.
+
+\subsection{Konfigurasi Proyek: \texttt{project/0}}
+
+Fungsi \texttt{project/0} berfungsi untuk mendefinisikan metadata proyek dan pengaturan yang akan digunakan oleh \texttt{mix} saat menjalankan berbagai perintah seperti \texttt{mix compile} atau \texttt{mix run}. Berikut adalah contoh implementasinya:
+
+\begin{lstlisting}[language=elixir]
+	def project do
+	[
+	app: :avatar_generator,
+	version: "0.1.0",
+	elixir: "~> 1.17",
+	build_embedded: Mix.env == :prod,
+	start_permanent: Mix.env() == :prod,
+	deps: deps()
+	]
+	end
+\end{lstlisting}
+
+Fungsi ini mengembalikan sebuah \texttt{Keyword List} yang terdiri dari beberapa informasi berikut:
+
+\begin{itemize}
+	\item \texttt{app:} Menentukan nama aplikasi yang akan dihasilkan. Pada contoh ini, nama aplikasi adalah \texttt{:avatar\_generator}.
+	\item \texttt{version:} Menentukan versi aplikasi, yaitu \texttt{"0.1.0"}.
+	\item \texttt{elixir:} Menentukan versi minimum Elixir yang diperlukan, yaitu \texttt{~> 1.17}.
+	\item \texttt{build\_embedded:} Menentukan apakah aplikasi akan dibangun dalam mode embedded (biasanya digunakan pada lingkungan produksi).
+	\item \texttt{start\_permanent:} Menentukan apakah aplikasi akan berjalan dalam mode permanent jika berada pada lingkungan \texttt{:prod} (produksi). Mode ini memastikan aplikasi berhenti jika terjadi kegagalan.
+	\item \texttt{deps:} Mendefinisikan daftar dependensi yang diperlukan oleh aplikasi, yang dideklarasikan pada fungsi \texttt{deps/0}.
+\end{itemize}
+
+\subsection{Pengaturan Aplikasi: \texttt{application/0}}
+
+Fungsi \texttt{application/0} berfungsi untuk menentukan pengaturan tambahan pada aplikasi, seperti daftar aplikasi tambahan yang harus dijalankan bersama aplikasi utama serta modul utama aplikasi yang akan dijalankan. Berikut adalah implementasinya:
+
+\begin{lstlisting}[language=elixir]
+	def application do
+	[
+	extra_applications: [:logger],
+	mod: {AvatarGenerator, [] }
+	]
+	end
+\end{lstlisting}
+
+Fungsi ini mengembalikan sebuah \texttt{Keyword List} yang berisi:
+
+\begin{itemize}
+	\item \texttt{extra\_applications:} Menentukan aplikasi tambahan yang perlu dijalankan. Pada contoh ini, \texttt{:logger} adalah aplikasi tambahan yang akan dijalankan untuk pencatatan log.
+	\item \texttt{mod:} Menentukan modul utama yang akan dijalankan saat aplikasi dimulai, yaitu \texttt{AvatarGenerator}.
+\end{itemize}
+
+\subsection{Pendefinisian Dependensi: \texttt{deps/0}}
+
+Fungsi \texttt{deps/0} digunakan untuk mendefinisikan daftar dependensi eksternal yang diperlukan oleh aplikasi. Dependensi dapat berupa pustaka dari Hex.pm (pusat paket Elixir) atau dari repositori GitHub.
+
+\begin{lstlisting}[language=elixir]
+	defp deps do
+	[
+	{:egd, github: "erlang/egd", manager: :rebar3},
+	# {:dep_from_hexpm, "~> 0.3.0"},
+	# {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
+	]
+	end
+\end{lstlisting}
+
+Pada kode di atas, satu dependensi utama dideklarasikan, yaitu:
+
+\begin{itemize}
+	\item \texttt{:egd, github: "erlang/egd", manager: :rebar3} adalah pustaka \texttt{egd} yang digunakan untuk menggambar gambar bitmap, yang diambil langsung dari repositori GitHub \texttt{"erlang/egd"} dan dikelola menggunakan \texttt{rebar3}.
+\end{itemize}
+
+Selain itu, beberapa contoh dependensi dari Hex.pm dan Git juga disertakan dalam bentuk komentar untuk menunjukkan cara menambahkan dependensi tambahan jika diperlukan.
+
+Modul \texttt{AvatarGenerator.MixProject} memberikan konfigurasi lengkap untuk mengelola proyek Elixir, mulai dari informasi metadata, pengaturan aplikasi, hingga daftar dependensi yang diperlukan. Dengan menggunakan konfigurasi ini, pengembangan aplikasi Elixir dapat dilakukan dengan lebih terstruktur dan mudah dikelola.
+
+
+\section{Mengelola Dependensi dan Menjalankan Proyek}
+
+Setelah memahami konfigurasi \texttt{mix.exs}, pada bagian ini akan dijelaskan beberapa perintah penting untuk mengelola dependensi, mengunduh ulang pustaka yang dibutuhkan, mengkompilasi, serta menjalankan proyek. Berikut adalah langkah-langkah yang perlu dilakukan:
+
+\subsection{Menghapus dan Mengunduh Ulang Dependensi}
+
+Untuk membersihkan (menghapus) dependensi yang telah diunduh dan disimpan pada proyek, gunakan perintah \texttt{mix deps.clean --all}. Perintah ini akan menghapus semua berkas yang berkaitan dengan dependensi yang terdapat pada folder \texttt{deps}.
+
+\begin{lstlisting}[language=bash]
+	$ mix deps.clean --all
+\end{lstlisting}
+
+Perintah ini berguna ketika terdapat perubahan pada konfigurasi \texttt{mix.exs} atau ketika ingin menghapus cache pustaka yang sudah tidak digunakan lagi.
+
+Untuk mengunduh ulang dependensi yang telah didefinisikan di dalam fungsi \texttt{deps/0}, gunakan perintah berikut:
+
+\begin{lstlisting}[language=bash]
+	$ mix deps.get
+\end{lstlisting}
+
+Perintah \texttt{mix deps.get} akan mencari dan mengunduh semua pustaka yang dideklarasikan di dalam \texttt{mix.exs}, serta menyimpannya pada folder \texttt{deps}.
+
+\subsection{Mengkompilasi Proyek}
+
+Setelah memastikan semua dependensi telah diunduh, langkah selanjutnya adalah mengkompilasi proyek. Kompilasi ini akan memeriksa setiap berkas sumber kode serta pustaka yang dibutuhkan. Gunakan perintah berikut untuk melakukan kompilasi:
+
+\begin{lstlisting}[language=bash]
+	$ mix compile
+\end{lstlisting}
+
+Perintah ini akan menghasilkan berkas-berkas \texttt{.beam} pada folder \texttt{\_build} yang dapat dijalankan oleh mesin runtime Elixir.
+
+\subsection{Menjalankan Proyek}
+
+Untuk menjalankan proyek dan melihat hasilnya, cukup gunakan perintah \texttt{mix run}. Perintah ini akan mengeksekusi kode di dalam proyek sesuai dengan pengaturan aplikasi yang telah didefinisikan.
+
+\begin{lstlisting}[language=bash]
+	$ mix run
+\end{lstlisting}
+
+Jika proyek memiliki modul utama dengan fungsi \texttt{main/0}, maka fungsi tersebut akan dipanggil secara otomatis saat perintah \texttt{mix run} dijalankan.
+
+Selain itu, perintah \texttt{mix run} juga dapat digunakan untuk menjalankan berkas atau modul tertentu:
+
+\begin{lstlisting}[language=bash]
+	$ mix run -e "AvatarGenerator.generate('example')"
+\end{lstlisting}
+
+Pada contoh di atas, perintah \texttt{mix run} digunakan untuk menjalankan fungsi \texttt{generate/1} dari modul \texttt{AvatarGenerator} dan membangkitkan avatar dengan \texttt{input} 'example'.
+
+\subsection{Mengatasi Masalah pada Dependensi}
+
+Jika terjadi masalah dengan dependensi, seperti versi pustaka yang tidak sesuai atau kesalahan saat mengunduh pustaka, dapat dilakukan pembaruan menggunakan perintah \texttt{mix deps.update --all}:
+
+\begin{lstlisting}[language=bash]
+	$ mix deps.update --all
+\end{lstlisting}
+
+Perintah ini akan memperbarui semua pustaka ke versi terbaru yang kompatibel dengan spesifikasi yang telah didefinisikan di dalam \texttt{mix.exs}.
+
+Manajemen dependensi dan kompilasi proyek Elixir dapat dilakukan dengan mudah menggunakan perintah \texttt{mix}. Proses ini melibatkan pengunduhan pustaka (\texttt{mix deps.get}), penghapusan cache (\texttt{mix deps.clean}), kompilasi kode (\texttt{mix compile}), dan eksekusi proyek (\texttt{mix run}). Menggunakan perintah-perintah ini dengan benar akan membantu memastikan proyek berjalan dengan lancar serta sesuai dengan konfigurasi yang didefinisikan di dalam \texttt{mix.exs}.
+
+
+\section{Penyesuaian Kode \texttt{egd} pada Erlang/OTP 27}
+
+Pada versi Erlang/OTP 27, fungsi \texttt{zlib:crc32/2} telah dihapus dari pustaka \texttt{zlib}. Hal ini menyebabkan ketidakcocokan dengan pustaka \texttt{egd} yang digunakan oleh proyek ini, yang mengakibatkan kesalahan \texttt{undefined function} saat kompilasi atau eksekusi proyek. Untuk memperbaiki masalah ini, diperlukan penyesuaian pada kode \texttt{egd}. Berikut adalah langkah-langkah yang perlu dilakukan:
+
+\subsection{Mengubah Kode pada \texttt{egd}}
+
+Setelah mengunduh pustaka \texttt{egd} dari repositori GitHub (setelah perintah \texttt{mix deps.get}), buka berkas \texttt{egd\_png.erl} yang terletak di folder \texttt{deps/egd/src/}. Pada berkas tersebut, terdapat fungsi \texttt{create\_chunk/2} yang menggunakan \texttt{zlib:crc32/2} untuk menghitung nilai \texttt{CRC32}. Berikut adalah kode asli sebelum dilakukan perubahan:
+
+\begin{lstlisting}[language=Elixir]
+	create_chunk(Bin, Z) when is_binary(Bin) ->
+	Sz = size(Bin)-4,
+	Crc = zlib:crc32(Z, Bin),
+	<<Sz:32, Bin/binary, Crc:32>>.
+\end{lstlisting}
+
+Fungsi \texttt{zlib:crc32/2} tersebut perlu diganti dengan \texttt{erlang:crc32/2} karena fungsi \texttt{crc32/2} kini tersedia langsung pada modul \texttt{erlang}. Setelah dilakukan perubahan, kode yang baru adalah sebagai berikut:
+
+\begin{lstlisting}[language=Elixir]
+	create_chunk(Bin, _Z) when is_binary(Bin) ->
+	Sz = size(Bin)-4,
+	% Crc = zlib:crc32(Z,Bin),
+	Crc = erlang:crc32(Bin),
+	<<Sz:32,Bin/binary,Crc:32>>.
+\end{lstlisting}
+
+Pada kode di atas, baris \texttt{Crc = zlib:crc32(Z,Bin)} telah diganti dengan \texttt{Crc = erlang:crc32(Bin)} untuk menyesuaikan dengan perubahan pada versi Erlang/OTP 27. Perubahan ini diperlukan agar pustaka \texttt{egd} dapat berfungsi tanpa kesalahan.
+
+\subsection{Kompilasi Ulang Pustaka \texttt{egd}}
+
+Setelah melakukan perubahan pada berkas \texttt{egd\_png.erl}, langkah selanjutnya adalah mengkompilasi ulang pustaka \texttt{egd} agar perubahan tersebut dapat diterapkan. Gunakan perintah berikut untuk melakukan kompilasi ulang:
+
+\begin{lstlisting}[language=bash]
+	$ mix deps.compile egd
+\end{lstlisting}
+
+Perintah ini akan mengkompilasi ulang pustaka \texttt{egd} dan memastikan bahwa pustaka yang telah diperbaiki tersebut siap digunakan oleh proyek. 
+
+\subsection{Menjalankan Ulang Proyek}
+
+Setelah proses kompilasi ulang pustaka \texttt{egd} selesai, proyek dapat dijalankan kembali menggunakan perintah \texttt{mix run}. Namun, sebelum menjalankan proyek, disarankan untuk melakukan kompilasi ulang seluruh dependensi proyek untuk memastikan tidak ada kesalahan lain yang mungkin terjadi:
+
+\begin{lstlisting}[language=bash]
+	$ mix deps.compile
+\end{lstlisting}
+
+Setelah proses kompilasi selesai, jalankan proyek dengan perintah berikut:
+
+\begin{lstlisting}[language=bash]
+	$ mix run
+\end{lstlisting}
+
+Jika semua langkah telah dilakukan dengan benar, proyek akan berjalan tanpa kesalahan.
+
+
+Perubahan pada Erlang/OTP 27 yang menghapus fungsi \texttt{zlib:crc32/2} perlu diatasi dengan mengganti penggunaannya dengan \texttt{erlang:crc32/2} di dalam pustaka \texttt{egd}. Langkah ini penting agar proyek dapat terus berjalan dengan lancar tanpa perlu mengubah versi Erlang/OTP. Setelah melakukan penyesuaian pada kode \texttt{egd\_png.erl}, kompilasi ulang pustaka \texttt{egd} serta seluruh dependensi proyek harus dilakukan sebelum menjalankan ulang proyek. Avatar yang dihasilkan dari username ``wolverine" dapat ditemukan dengan nama file \texttt{wolverine\_avatar.png}.
+

@@ -15,9 +15,9 @@ Perintah \texttt{mix deps.update --all} digunakan untuk memperbarui semua depend
 
 Perintah \texttt{mix deps.unlock --all} diikuti oleh \texttt{mix deps.update --all} biasanya digunakan bersama ketika Anda ingin menghapus semua pembatasan versi dari dependencies yang ada dan memperbarui semuanya ke versi terbaru. Langkah ini sering diambil ketika terjadi masalah kompatibilitas dengan versi dependencies atau ketika ada pembaruan besar yang perlu diadopsi dalam proyek.
 
-\section{Error: 08:13:29.182 [error] beam/beam\_load.c(206): Error loading module 'Elixir.Hex':
+\section{\texttt{Error: 08:13:29.182 [error] beam/beam\_load.c(206): Error loading module 'Elixir.Hex':
 	This BEAM file was compiled for an old version of the runtime system.
-	To fix this, please re-compile this module with Erlang\/OTP 24 or later.}
+	To fix this, please re-compile this module with Erlang\/OTP 24 or later.}}
 
-I would \texttt{mix local.hex} and also if you’re in a mix project I would \texttt{rm -rf \_build} deps and see if recompiling helps.
-\
+Jika terjadi error di atas, yang perlu dilakukan adalah menjalankan perintah \texttt{mix local.hex} dan juga menghapus direktori \texttt{\_build} dengan perintah \texttt{rm -rf \_build}. Sete
+lah itu, jalankan ulang dengan perintah \texttt{mix run}. 
