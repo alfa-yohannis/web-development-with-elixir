@@ -1,0 +1,24 @@
+@startuml
+left to right direction
+
+actor Customer as C
+actor Participant as P
+actor Teller as T 
+actor Display as D
+
+C --> (Register in System)
+C --> (Create and Manage Queues)
+
+P --> (Register for Queue)
+P --> (Receive Queue Number)
+
+T --> (Register in System)
+T --> (Control Queue Progression)
+
+D --> (Display Queues)
+
+(Register for Queue) .> (Receive Queue Number) : <<include>>
+(Control Queue Progression) .> (Display Queues)  : <<include>>
+
+@enduml
+ 

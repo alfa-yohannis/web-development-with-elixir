@@ -29,7 +29,7 @@ defmodule AvatarGenerator do
 
 
   def generate_pixel_map(%Avatar.Image{grid: grid} = image) do
-    pixel_map = Enum.map grid, fn({_code, index}) ->
+    pixel_map = Enum.map grid, fn({_value, index}) ->
       x = rem(index, 5) * 50
       y = div(index, 5) * 50
 
@@ -43,8 +43,8 @@ defmodule AvatarGenerator do
   end
 
   def remove_odd_cells(%Avatar.Image{grid: grid} = image) do
-    grid = Enum.filter grid, fn({code, _index}) ->
-      rem(code, 2) == 0
+    grid = Enum.filter grid, fn({value, _index}) ->
+      rem(value, 2) == 0
     end
 
     %Avatar.Image{image | grid: grid}
@@ -85,7 +85,7 @@ defmodule AvatarGenerator do
   end
 
   def start(_type, _args) do
-    result = AvatarGenerator.generate("wolverine")
+    result = AvatarGenerator.generate("batman")
     IO.inspect(result)
     IO.puts("Finished!")
     {:ok, self()}
