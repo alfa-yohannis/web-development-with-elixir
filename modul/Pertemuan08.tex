@@ -1,0 +1,93 @@
+\chapter{Import, Alias, dan Use di Elixir}
+
+\section{Pendahuluan}
+Elixir menyediakan fitur-fitur yang kuat untuk mengelola organisasi kode dan ketergantungan antar modul. Tiga direktif yang sering digunakan adalah \texttt{import}, \texttt{alias}, dan \texttt{use}. Masing-masing memiliki tujuan spesifik untuk membantu menyusun kode secara efektif dan menulis program yang lebih ringkas.
+
+\section{Import}
+Direktif \texttt{import} memungkinkan fungsi dan makro yang didefinisikan di suatu modul dapat diakses langsung di modul lain tanpa perlu mereferensikan nama modul.
+
+\subsection{Penggunaan}
+\texttt{import} dapat digunakan untuk mengimpor semua atau hanya beberapa fungsi dari suatu modul. Berikut adalah contoh impor fungsi:
+
+\begin{lstlisting}[language=Elixir]
+	defmodule MyModule do
+	import Enum, only: [map: 2, filter: 2]
+	
+	def process_list(list) do
+	list
+	|> map(&(&1 * 2))
+	|> filter(&(&1 > 10))
+	end
+	end
+\end{lstlisting}
+
+Pada kode di atas, hanya fungsi \texttt{map/2} dan \texttt{filter/2} dari modul \texttt{Enum} yang diimpor, sehingga keduanya dapat diakses langsung di dalam \texttt{MyModule}.
+
+\section{Alias}
+Direktif \texttt{alias} menyediakan cara untuk membuat nama modul yang lebih pendek atau lebih mudah dibaca, mengurangi kebutuhan untuk menggunakan nama modul yang lengkap secara berulang-ulang.
+
+\subsection{Penggunaan}
+\texttt{alias} biasanya digunakan untuk menyederhanakan kode saat mengacu ke modul dari namespace yang berbeda:
+
+\begin{lstlisting}[language=Elixir]
+	defmodule MyApp do
+	alias MyApp.Utilities.Math
+	
+	def calculate_sum(a, b) do
+	Math.add(a, b)
+	end
+	end
+\end{lstlisting}
+
+Pada contoh ini, \texttt{MyApp.Utilities.Math} dialiaskan menjadi \texttt{Math}. Ini memungkinkan fungsi \texttt{Math.add/2} dipanggil tanpa menyebutkan nama modul secara lengkap.
+
+\section{Use}
+Direktif \texttt{use} digunakan untuk menjalankan kode khusus atau memasukkan perilaku yang telah ditentukan ke dalam modul. Direktif ini sering digunakan untuk memperluas kemampuan modul melalui makro.
+
+\subsection{Penggunaan}
+\texttt{use} biasanya memanggil makro dari modul yang ditentukan, sehingga fitur atau perilaku dapat diaktifkan. Berikut adalah contoh penggunaan direktif \texttt{use}:
+
+\begin{lstlisting}[language=Elixir]
+	defmodule MyGenServer do
+	use GenServer
+	
+	# Callback
+	def handle_call(:ping, _from, state) do
+	{:reply, :pong, state}
+	end
+	end
+\end{lstlisting}
+
+Pada contoh di atas, direktif \texttt{use} mengimpor perilaku dan fungsionalitas default dari modul \texttt{GenServer}, sehingga memungkinkan \texttt{MyGenServer} untuk mengimplementasikan fungsi callback-nya.
+
+\section{Perbedaan antara \texttt{Import}, \texttt{Alias}, dan \texttt{Use}}
+Berikut adalah perbedaan utama antara \texttt{import}, \texttt{alias}, dan \texttt{use} dalam Elixir:
+
+\begin{table}[h!]
+	\centering
+	\begin{tabular}{|p{.1\linewidth}|p{.4\linewidth}|p{.4\linewidth}|}
+		\hline
+		\textbf{Direktif} & \textbf{Tujuan} & \textbf{Kapan Digunakan} \\ \hline
+		\texttt{import} & Membuat fungsi atau makro dapat diakses tanpa menyebutkan nama modulnya. & Digunakan saat ingin menggunakan beberapa fungsi/makro dari modul lain tanpa menyebutkan modulnya. \\ \hline
+		\texttt{alias} & Memberikan nama pendek untuk modul. & Digunakan untuk mengurangi penulisan nama modul yang panjang atau untuk referensi modul secara lebih singkat. \\ \hline
+		\texttt{use} & Menjalankan kode makro yang mendefinisikan perilaku atau menambahkan fungsionalitas ke dalam modul. & Digunakan saat modul ingin mewarisi atau mengimplementasikan perilaku dari modul lain (seperti \texttt{GenServer}). \\ \hline
+	\end{tabular}
+	\caption{Perbedaan antara \texttt{import}, \texttt{alias}, dan \texttt{use} di Elixir}
+\end{table}
+
+\section{Ringkasan}
+Direktif \texttt{import}, \texttt{alias}, dan \texttt{use} masing-masing memiliki tujuan yang berbeda dalam Elixir:
+
+\begin{itemize}
+	\item \textbf{import} digunakan untuk membuat fungsi atau makro tertentu dapat diakses tanpa mereferensikan nama modul.
+	\item \textbf{alias} memungkinkan nama modul yang lebih pendek dan lebih mudah dibaca.
+	\item \textbf{use} menyuntikkan kode atau perilaku ke dalam modul, biasanya melalui makro.
+\end{itemize}
+
+Ketiga konstruksi ini memberikan fleksibilitas dan meningkatkan keterbacaan serta pemeliharaan kode di Elixir.
+
+
+
+\section{Other}
+
+%mix phx.gen.schema Queue queues status:string prefix:string max_number:integer current_number:integer location_code:string create_user:string update_user:string --timestamps
