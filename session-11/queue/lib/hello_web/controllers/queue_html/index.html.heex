@@ -1,0 +1,21 @@
+<h1>Queuex</h1>
+<ul>
+  <%= for queue <- @queues do %>
+    <li class="action-links"> 
+      <div>
+      <%= queue.name %> 
+      </div>
+      <div>
+      |
+      <.link href={~p"/queues/edit/#{queue.id}"} >Edit</.link> 
+      |
+      <.link href={~p"/queues/delete/#{queue.id}"} method="delete">Delete</.link> 
+      |
+      </div>
+    </li>
+  <% end %>
+</ul>
+
+<div class="button">
+  <.link href={~p"/queues/new"}>New Queue</.link>
+</div>
