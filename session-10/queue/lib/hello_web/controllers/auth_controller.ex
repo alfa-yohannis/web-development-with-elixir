@@ -5,11 +5,8 @@ defmodule HelloWeb.AuthController do
   alias Hello.Repo
 
   def callback(conn, params) do
-    IO.puts("AAAAAA")
-    IO.inspect(conn)
-    IO.puts("BBBBBB")
-    IO.inspect(params)
-    IO.puts("CCCCCC")
+    IO.puts("conn = " <> Kernel.inspect(conn))
+    IO.puts("params = " <> Kernel.inspect(params))
     %{"code" => _code, "provider" => provider, "state" => _state} = params
     %{assigns: %{ueberauth_auth: auth}} = conn
     %{credentials: %{token: token}, info: %{email: email, nickname: nickname}} = auth
@@ -20,8 +17,7 @@ defmodule HelloWeb.AuthController do
       provider: provider
     }
 
-    IO.puts("DDDDD")
-    IO.inspect(user_params)
+    O.puts("user_params = " <> Kernel.inspect(user_params))
 
     changeset = User.changeset(%User{}, user_params)
 
