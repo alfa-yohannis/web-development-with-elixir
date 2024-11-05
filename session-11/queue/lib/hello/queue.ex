@@ -11,6 +11,7 @@ defmodule Hello.Queue do
     field :current_number, :integer
     field :create_user, :string
     field :update_user, :string
+    belongs_to :user, Hello.User
 
     timestamps(type: :utc_datetime)
   end

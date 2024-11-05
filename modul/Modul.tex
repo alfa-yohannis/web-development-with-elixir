@@ -12,11 +12,11 @@
 \renewcommand{\chaptername}{Bab}
 
 \lstdefinelanguage{Elixir} {
-	keywords={def, defmodule, do, end, for, if, else, true, false},
+	keywords={def, defmodule, do, end, for, if, else, true, false, scope},
 	language=ruby,
 	basicstyle=\ttfamily\small,
 	keywordstyle=\color{blue}\bfseries,
-	ndkeywords={@spec, @moduledoc, iex, Enum, @doc},
+	ndkeywords={@spec, @moduledoc, iex, Enum, @doc, add, alter, field, has_many, timestamps},
 	ndkeywordstyle=\color{purple}\bfseries,
 	sensitive=true,
 	commentstyle=\color{gray},
@@ -57,10 +57,10 @@
 }
 
 \lstdefinelanguage{html} {
-	keywords={h1, b},
+	keywords={h1, b, a, href, class},
 	basicstyle=\ttfamily\small,
 	keywordstyle=\color{blue}\bfseries,
-	ndkeywords={},
+	ndkeywords={p, else, if, do, end},
 	ndkeywordstyle=\color{purple}\bfseries,
 	sensitive=true,
 	commentstyle=\color{gray},
@@ -70,6 +70,11 @@
 	breaklines=true,
 	frame=lines,
 	backgroundcolor=\color{lightgray!10},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	morecomment=[s]{<!--}{-->},
+	string=[s]{'}{'},
+	morestring=[s]{"}{"},
 	tabsize=2
 }
 \begin{document}
@@ -113,6 +118,12 @@
 	\include{Pertemuan06.tex}
 	\include{Pertemuan07.tex}
 	\include{Pertemuan08.tex}
+	\include{Pertemuan09.tex}
+	\include{Pertemuan10.tex}
+	\include{Pertemuan11.tex}
+	\include{Pertemuan12.tex}
+	\include{Pertemuan13.tex}
+	\include{Pertemuan14.tex}
 	
 	\appendix
 	\include{appendixA.tex}

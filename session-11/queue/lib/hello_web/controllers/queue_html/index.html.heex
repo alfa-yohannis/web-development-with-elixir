@@ -1,17 +1,20 @@
-<h1>Queuex</h1>
+<h1>Queues</h1>
 <ul>
   <%= for queue <- @queues do %>
-    <li class="action-links"> 
+    <li class="action-links">
       <div>
-      <%= queue.name %> 
+        <%= queue.name %>
       </div>
-      <div>
-      |
-      <.link href={~p"/queues/edit/#{queue.id}"} >Edit</.link> 
-      |
-      <.link href={~p"/queues/delete/#{queue.id}"} method="delete">Delete</.link> 
-      |
-      </div>
+      <%!-- <% IO.inspect(@conn.assigns) %> --%>
+      <%= if  @conn.assigns.user && @conn.assigns.user.id==queue.user_id do %>
+        <div>
+          |
+          <.link href={~p"/queues/#{queue.id}/edit"}>Edit</.link>
+          |
+          <.link href={~p"/queues//#{queue.id}/delete"} method="delete">Delete</.link>
+          |
+        </div>
+      <% end %>
     </li>
   <% end %>
 </ul>

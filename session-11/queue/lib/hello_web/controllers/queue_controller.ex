@@ -3,21 +3,30 @@ defmodule HelloWeb.QueueController do
   alias Hello.Queue
   alias Hello.Repo
 
+  plug HelloWeb.Plugs.RequireAuth when action in [:new, :create, :update, :edit, :delete]
+  plug :check_queue_owner when action in [:update, :edit, :delete]
+
   def index(conn, _params) do
+    IO.inspect(conn.assigns)
+
     queues = Repo.all(Queue)
     render(conn, :index, queues: queues)
   end
 
   @spec new(Plug.Conn.t(), any()) :: Plug.Conn.t()
-  def new(conn, params) do
-    sum = 1 + 1
+  def new(conn, _params) do
     changeset = Queue.changeset(%Queue{}, %{})
-    render(conn, :new, changeset: changeset, sum: sum)
+    render(conn, :new, changeset: changeset)
   end
 
   def create(conn, params) do
     %{"queue" => queue_params} = params
-    changeset = Queue.changeset(%Queue{}, queue_params)
+    # changeset = Queue.changeset(%Queue{}, queue_params)
+
+    changeset =
+      conn.assigns.user
+      |> Ecto.build_assoc(:queues)
+      |> Queue.changeset(queue_params)
 
     case Repo.insert(changeset) do
       {:ok, _queue} ->
@@ -70,5 +79,17 @@ defmodule HelloWeb.QueueController do
     conn
     |> put_flash(:info, "Queue deleted successfully.")
     |> redirect(to: "/")
+  end
+
+  def check_queue_owner(conn, _params) do
+    %{params: %{"id" => queue_id}} = conn
+
+    if Repo.get(Queue, queue_id) do
+      conn
+    else
+      conn
+      |> put_flash(:error, "The document is not editable")
+      |> halt()
+    end
   end
 end

@@ -10,7 +10,7 @@ defmodule HelloWeb.QueueController do
 
   @spec new(Plug.Conn.t(), any()) :: Plug.Conn.t()
   def new(conn, params) do
-    sum = 1 + 1
+    sum = 1 + 1 + 9
     changeset = Queue.changeset(%Queue{}, %{})
     render(conn, :new, changeset: changeset, sum: sum)
   end

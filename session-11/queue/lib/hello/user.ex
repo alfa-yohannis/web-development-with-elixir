@@ -6,6 +6,7 @@ defmodule Hello.User do
     field :email, :string
     field :provider, :string
     field :token, :string
+    has_many :queues, Hello.Queue
     timestamps(type: :utc_datetime)
   end
 
