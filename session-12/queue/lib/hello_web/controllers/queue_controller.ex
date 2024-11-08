@@ -13,6 +13,12 @@ defmodule HelloWeb.QueueController do
     render(conn, :index, queues: queues)
   end
 
+  def show(conn, params) do
+    %{"id" => queue_id} = params
+    queue = Repo.get!(Queue, queue_id)
+    render conn, :new, queue: queue
+  end
+
   @spec new(Plug.Conn.t(), any()) :: Plug.Conn.t()
   def new(conn, _params) do
     changeset = Queue.changeset(%Queue{}, %{})
