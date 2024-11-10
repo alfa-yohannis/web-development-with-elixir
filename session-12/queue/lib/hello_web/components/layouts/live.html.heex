@@ -9,7 +9,7 @@
       </p>
     </div>
     <div class="flex items-center gap-4 font-semibold leading-6 text-zinc-900">
-      <%= if @conn.assigns[:user] do %>
+      <%= if @user_id do %>
         <a href={~p"/auth/signout"} class="hover:text-zinc-700">
           Signout
         </a> 

@@ -2,12 +2,14 @@
 <ul>
   <%= for queue <- @queues do %>
     <li class="action-links">
-      <div>
-        <.link href={~p"/queues/#{queue.id}/show"}><%= queue.name %></.link>
-      </div>
+        <%= queue.name %>
       <%!-- <% IO.inspect(@conn.assigns) %> --%>
       <%= if  @conn.assigns.user && @conn.assigns.user.id==queue.user_id do %>
         <div>
+          |
+          <.link href={~p"/queues/#{queue.id}/control"}>Control</.link>
+          |
+          <.link href={~p"/queues/#{queue.id}/display"}>Display</.link>
           |
           <.link href={~p"/queues/#{queue.id}/edit"}>Edit</.link>
           |

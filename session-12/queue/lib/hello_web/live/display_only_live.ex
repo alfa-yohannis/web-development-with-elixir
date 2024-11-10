@@ -1,19 +1,32 @@
-# lib/my_app_web/live/display_only_live.ex
 defmodule HelloWeb.DisplayOnlyLive do
   use HelloWeb, :live_view
+  alias Hello.QueueCounter
+  alias Hello.Queue
+  alias Hello.Repo
 
-  alias Hello.Temperature
+  def mount(params, _session, socket) do
 
-  def mount(_params, _session, socket) do
-    # Subscribe to temperature updates
-    :ok = Phoenix.PubSub.subscribe(Hello.PubSub, "temperature:updates")
+    %{"id" => queue_id} = params
 
-    # Set the initial temperature
-    temperature = Temperature.get_temperature()
-    {:ok, assign(socket, :temperature, temperature)}
+    # Subscribe to updates from the QueueCounter
+    :ok = Phoenix.PubSub.subscribe(Hello.PubSub, "queue_counter:updates")
+
+    # Get the initial current number of cases handled from QueueCounter
+    current_number = QueueCounter.get_current_number()
+
+    queue = Repo.get!(Queue, queue_id)
+
+    socket =
+      socket
+      |> assign(:current_number, current_number)
+      |> assign(:queue_name, queue.name)
+      |> assign(:queue_prefix, queue.prefix)
+
+    {:ok, socket, layout: false}
   end
 
-  def handle_info({:temperature_update, new_temperature}, socket) do
-    {:noreply, assign(socket, :temperature, new_temperature)}
+  def handle_info({:number_update, new_number}, socket) do
+    # Update the socket state when a new number is broadcasted
+    {:noreply, assign(socket, :current_number, new_number)}
   end
 end

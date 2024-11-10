@@ -16,10 +16,15 @@ defmodule HelloWeb.QueueController do
   def show(conn, params) do
     %{"id" => queue_id} = params
     queue = Repo.get!(Queue, queue_id)
-    render conn, :new, queue: queue
+    current_number = queue.current_number
+    render(conn, :show, queue: queue, current_number: current_number)
+
+    # %{"id" => queue_id} = params
+    # queue = Repo.get(Queue, queue_id)
+    # changeset = Queue.changeset(queue, %{})
+    # render(conn, :edit, changeset: changeset, queue: queue)
   end
 
-  @spec new(Plug.Conn.t(), any()) :: Plug.Conn.t()
   def new(conn, _params) do
     changeset = Queue.changeset(%Queue{}, %{})
     render(conn, :new, changeset: changeset)
@@ -51,7 +56,7 @@ defmodule HelloWeb.QueueController do
 
     queue = Repo.get(Queue, queue_id)
 
-    IO.puts("AAAA = " <> Kernel.inspect(queue_id))
+    # IO.puts("AAAA = " <> Kernel.inspect(queue_id))
 
     changeset = Queue.changeset(queue, %{})
 

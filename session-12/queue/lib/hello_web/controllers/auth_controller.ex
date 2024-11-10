@@ -41,6 +41,7 @@ defmodule HelloWeb.AuthController do
         conn
         |> put_flash(:info, "Good to see you again!")
         |> put_session(:user_id, user.id)
+        |> put_session(:user_token, user.token)
         |> redirect(to: "/")
       {:error, reason} ->
         conn

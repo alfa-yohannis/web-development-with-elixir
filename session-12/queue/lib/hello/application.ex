@@ -13,7 +13,7 @@ defmodule Hello.Application do
       {DNSCluster, query: Application.get_env(:hello, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Hello.PubSub},
        # Start the Temperature GenServer
-       Hello.Temperature,
+       Hello.QueueCounter,
       # Start the Finch HTTP client for sending emails
       {Finch, name: Hello.Finch},
       # Start a worker by calling: Hello.Worker.start_link(arg)
