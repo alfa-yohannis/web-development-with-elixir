@@ -1,4 +1,751 @@
-\chapter{Web Socket pada Phoenix Framework (Bagian 1)}
-
+\chapter{Phoenix LiveView: Aplikasi Web Real-Time}
 \section{Pendahuluan}
-Test
+Phoenix LiveView adalah fitur inovatif dari Phoenix Framework yang memungkinkan antarmuka pengguna real-time tanpa memerlukan framework JavaScript di sisi klien. Dengan memanfaatkan proses ringan Elixir dan model konkurensi BEAM, LiveView menciptakan aplikasi web interaktif dan responsif di mana interaksi pengguna ditangani langsung di server.
+
+Bab ini membahas arsitektur, siklus hidup, manajemen state, penanganan event, dan kemampuan sinkronisasi dari LiveView, dengan menekankan keunggulan dan penggunaan yang tepat.
+
+\section{Konsep Dasar Phoenix LiveView}
+Phoenix LiveView dibangun di atas konsep HTML yang dirender oleh server dan koneksi berbasis WebSocket untuk menyediakan interaktivitas real-time. Alih-alih mengandalkan framework JavaScript di sisi klien, LiveView menjaga sebagian besar logika aplikasi di server, yang bermanfaat untuk sinkronisasi data dan mengurangi kompleksitas front-end.
+
+\subsection{Keunggulan Menggunakan LiveView}
+LiveView menawarkan beberapa keunggulan:
+\begin{itemize}
+	\item \textbf{Kesederhanaan:} Mengurangi ketergantungan pada framework di sisi klien, sehingga pengembangan dan pemeliharaan lebih sederhana.
+	\item \textbf{Pembaruan Real-Time:} Memungkinkan pembaruan halaman secara dinamis dengan menjaga koneksi WebSocket yang persisten.
+	\item \textbf{Rendering oleh Server:} Memindahkan proses rendering ke server, memanfaatkan model proses Elixir untuk menangani pengguna secara efisien.
+	\item \textbf{Konsistensi State:} Memastikan konsistensi data di seluruh sesi pengguna dan komponen dengan mengelola state di server.
+\end{itemize}
+
+\section{Siklus Hidup dan Arsitektur LiveView}
+Siklus hidup LiveView ditentukan oleh fase-fasenya, masing-masing dengan callback khusus yang mengelola koneksi, rendering, dan proses penanganan event. Memahami siklus hidup ini penting untuk menerapkan aplikasi LiveView yang efisien.
+
+\subsection{Fase Mounting}
+Saat pengguna mengakses halaman LiveView, server pertama kali merender HTML. Fase rendering ini menetapkan proses LiveView, memuat tampilan, dan menyiapkan state awal untuk pengguna. Selama fase ini, LiveView memanggil callback `mount/3` untuk mengatur data yang diperlukan dan mempersiapkan socket.
+
+\subsection{Rendering dan Pelacakan Perubahan (Diff Tracking)}
+LiveView menggunakan pelacakan perubahan untuk memperbarui hanya bagian HTML yang berubah. Callback `render/1` di LiveView menghasilkan konten HTML secara dinamis berdasarkan state di socket. Dengan melacak perubahan pada HTML yang dirender, LiveView mengurangi data yang dikirim ke klien, yang bermanfaat untuk aplikasi real-time.
+
+\subsection{Fase Pembaruan dan Terminasi}
+Saat pengguna berinteraksi dengan LiveView, pembaruan pada state memicu proses rendering ulang hanya pada elemen yang dimodifikasi. Proses ini diatur oleh algoritma pelacakan perubahan (diffing) LiveView yang memastikan efisiensi dengan meminimalkan transfer data. Ketika LiveView ditutup atau pengguna terputus, fase terminasi membersihkan sumber daya yang terkait dengan proses LiveView.
+
+\section{Manajemen State di LiveView}
+Salah satu fitur utama dari LiveView adalah manajemen state di sisi server. Setiap LiveView mempertahankan state dalam `socket`, dan state ini dapat diakses oleh semua callback di dalam modul LiveView. Fungsi `assign/3` di Phoenix LiveView memungkinkan pembaruan state sebagai respons terhadap event atau perubahan data.
+
+\subsection{Assigns pada Socket}
+Semua data yang perlu dirender dalam template atau dimodifikasi selama siklus hidup LiveView disimpan dalam `assigns`. Struktur ini memberikan cara yang efisien untuk mengelola state dan memperbarui HTML secara dinamis.
+
+\subsection{State Persisten vs. Ephemeral}
+LiveView membedakan antara state persisten, yang tetap konstan di seluruh sesi, dan state sementara (ephemeral), yang dapat berubah sering sebagai respons terhadap event atau interaksi pengguna. Manajemen state yang efektif membantu mengoptimalkan performa LiveView dengan mengurangi jumlah data yang dipertukarkan dengan klien.
+
+\section{Penanganan Event di LiveView}
+Di LiveView, tindakan pengguna (seperti klik tombol atau pengiriman form) ditangkap melalui penanganan event. Event-event ini diproses oleh server, memungkinkan LiveView untuk memodifikasi state dan merender ulang komponen yang terpengaruh.
+
+\subsection{Jenis-Jenis Event}
+LiveView mendukung beberapa jenis event:
+\begin{itemize}
+	\item \textbf{Event Klik:} Dipicu oleh tombol atau tautan, sering digunakan untuk interaksi sederhana seperti penambahan counter.
+	\item \textbf{Pengiriman Form:} Ditangani melalui event submit, berguna untuk mengumpulkan input pengguna dan memproses data.
+	\item \textbf{Event Keyboard:} Dipicu oleh input pengguna di kolom teks atau perintah keyboard tertentu.
+\end{itemize}
+
+\subsection{Mendefinisikan Penanganan Event}
+Penanganan event didefinisikan dengan menggunakan fungsi \texttt{handle\_event/3}, yang menerima nama event, parameter event, dan socket saat ini sebagai argumen. Fungsi ini memperbarui state socket dan merender ulang LiveView sesuai kebutuhan.
+
+\section{Sinkronisasi LiveView dan Phoenix PubSub}
+Untuk aplikasi yang memerlukan konsistensi data di beberapa sesi pengguna, LiveView terintegrasi dengan Phoenix PubSub. PubSub adalah sistem publish-subscribe dari Phoenix yang memungkinkan sinkronisasi data di beberapa LiveView, memungkinkan state yang dibagikan secara real-time.
+
+\subsection{Contoh Penggunaan PubSub di LiveView}
+Penggunaan umum PubSub dengan LiveView mencakup:
+\begin{itemize}
+	\item \textbf{Notifikasi Real-Time:} Menampilkan peringatan atau pembaruan di beberapa LiveView.
+	\item \textbf{Aplikasi dengan State Bersama:} Aplikasi seperti ruang obrolan atau alat kolaborasi di mana pengguna memerlukan tampilan yang disinkronkan.
+\end{itemize}
+
+\subsection{Implementasi PubSub di LiveView}
+Untuk mengimplementasikan PubSub, berlangganan LiveView ke topik tertentu dan siarkan event ke semua LiveView yang berlangganan topik tersebut. Pendekatan ini sangat berguna untuk aplikasi yang bergantung pada pembaruan real-time dari beberapa sumber atau pengguna.
+
+\section{Pertimbangan Keamanan di LiveView}
+Seperti pada aplikasi yang dirender oleh server lainnya, mengamankan data pengguna dan mencegah akses tidak sah sangat penting. LiveView menyediakan dukungan bawaan untuk manajemen sesi yang aman, kontrol akses berbasis peran, dan perlindungan CSRF, memastikan bahwa data sensitif tetap aman.
+
+\subsection{Manajemen Sesi}
+LiveView mendukung manajemen sesi dengan meneruskan data sesi ke callback `mount/3`. Pendekatan ini memungkinkan informasi spesifik pengguna diakses secara aman di dalam LiveView, memungkinkan penerapan kontrol akses berdasarkan peran pengguna atau kriteria lainnya.
+
+\subsection{Perlindungan Cross-Site Request Forgery (CSRF)}
+LiveView terintegrasi dengan perlindungan CSRF Phoenix untuk mencegah tindakan tidak sah atas nama pengguna. Fitur ini memastikan bahwa semua pengiriman form dan interaksi diamankan, melindungi dari ancaman keamanan potensial.
+
+\section{Keunggulan dan Keterbatasan Phoenix LiveView}
+LiveView menawarkan pendekatan yang kuat untuk aplikasi real-time tetapi mungkin tidak cocok untuk setiap kasus penggunaan. Pemahaman mengenai kekuatan dan keterbatasannya penting untuk menentukan penggunaannya yang efektif.
+
+\subsection{Keunggulan}
+\begin{itemize}
+	\item \textbf{Pengembangan yang Disederhanakan:} Mengurangi ketergantungan pada framework di sisi klien.
+	\item \textbf{Rendering Efisien oleh Server:} Memanfaatkan konkurensi Elixir untuk pembaruan real-time.
+	\item \textbf{Penggunaan Sumber Daya Klien yang Lebih Rendah:} Karena rendering terjadi di server, perangkat klien memerlukan lebih sedikit sumber daya.
+\end{itemize}
+
+\subsection{Keterbatasan}
+\begin{itemize}
+	\item \textbf{Ketergantungan pada WebSocket:} Membutuhkan dukungan WebSocket, yang mungkin tidak cocok untuk lingkungan dengan bandwidth rendah.
+	\item \textbf{Beban Server untuk Aplikasi dengan Lalu Lintas Tinggi:} Untuk aplikasi interaktif dengan ribuan pengguna, rendering di sisi server dapat meningkatkan beban pada server secara signifikan.
+\end{itemize}
+
+\section{Membuat Tampilan Kontrol Akses Berdasarkan Pengguna pada LiveView}
+
+Bagian ini membahas kode template \texttt{index.html.heex} untuk komponen antrian (\texttt{queue}). Perbaharui kode pada file  \texttt{lib/hello\_web/controllers/queue\_html/index.html.heex}. Kode pada file ini mengatur tampilan berdasarkan otorisasi pengguna yang sedang aktif di aplikasi. Penggunaan pengecekan akses pengguna memastikan bahwa hanya pengguna yang memiliki otorisasi terhadap data antrian tertentu yang dapat melihat dan mengakses tautan kontrol seperti \texttt{Control}, \texttt{Display}, \texttt{Edit}, dan \texttt{Delete}. Berikut adalah potongan kode:
+
+\begin{lstlisting}[language=Elixir]
+	<%= if  @conn.assigns.user && @conn.assigns.user.id == queue.user_id do %>
+	<div>
+	|
+	<.link href={~p"/queues/#{queue.id}/control"}>Control</.link>
+	|
+	<.link href={~p"/queues/#{queue.id}/display"}>Display</.link>
+	|
+	<.link href={~p"/queues/#{queue.id}/edit"}>Edit</.link>
+	|
+	<.link href={~p"/queues/#{queue.id}/delete"} method="delete">Delete</.link>
+	|
+	</div>
+	<% end %>
+\end{lstlisting}
+
+\subsection{Penjelasan Kode}
+Baris pertama pada potongan kode ini memeriksa apakah \texttt{@conn.assigns.user} terisi dan \texttt{user.id} dari pengguna aktif cocok dengan \texttt{queue.user\_id}. Pengecekan ini memastikan bahwa akses terhadap tautan kontrol hanya tersedia jika pengguna yang sedang masuk adalah pemilik data antrian tersebut.
+
+Setelah kondisi terpenuhi, beberapa tautan disajikan dalam elemen \texttt{<div>}, memungkinkan pengguna untuk:
+\begin{itemize}
+	\item Mengontrol antrian (\texttt{Control}) - Mengarah ke tampilan kontrol untuk antrian tertentu.
+	\item Menampilkan antrian (\texttt{Display}) - Mengarah ke tampilan khusus untuk melihat informasi antrian.
+	\item Mengedit antrian (\texttt{Edit}) - Mengarah ke tampilan pengeditan untuk memperbarui informasi antrian.
+	\item Menghapus antrian (\texttt{Delete}) - Menyediakan metode HTTP \texttt{delete} untuk menghapus data antrian yang terkait.
+\end{itemize}
+
+\subsection{Fungsi Tautan Dinamis}
+Pada setiap tautan, \texttt{\textasciitilde p"/queues/\#{queue.id}/[aksi]"} digunakan untuk menghasilkan URL dinamis sesuai \texttt{queue.id}. Phoenix LiveView memanfaatkan fitur ini untuk mempermudah navigasi antar halaman berdasarkan \texttt{id} antrian yang spesifik.
+
+\subsection{Pentingnya Kontrol Akses}
+Pengaturan kontrol akses ini penting untuk menjaga agar hanya pengguna yang berwenang dapat memodifikasi atau menghapus data antrian mereka. Hal ini juga mencegah pengguna yang tidak berhak dari mengakses data antrian milik pengguna lain, sehingga memastikan keamanan dan privasi data.
+
+Kode di atas merupakan bagian penting dari proses kontrol otorisasi dan autentikasi di aplikasi, yang perlu diterapkan pada halaman atau komponen lain yang membutuhkan kontrol akses serupa.
+
+\section{Menambahkan Rute LiveView pada \texttt{router.ex}}
+
+Bagian ini membahas penambahan rute untuk \texttt{LiveView} di dalam file \texttt{router.ex}. Perbaharui perbaharui file \texttt{lib/hello\_web/router.ex}. Rute-rute ini berfungsi untuk menangani permintaan HTTP dan memberikan akses ke berbagai halaman serta fungsionalitas aplikasi, termasuk tampilan yang dibuat menggunakan \texttt{LiveView}.
+
+Berikut adalah potongan kode \texttt{router.ex}:
+
+\begin{lstlisting}[language=Elixir]
+	scope "/", HelloWeb do
+	pipe_through :browser
+	
+	get "/", QueueController, :index
+	get "/about", PageController, :about
+	get "/queues/new", QueueController, :new
+	post "/queues", QueueController, :create
+	get "/queues/:id/edit", QueueController, :edit
+	put "/queues/:id", QueueController, :update
+	delete "/queues/:id/delete", QueueController, :delete
+	
+	live "/queues/:id/control", ModifiableLive
+	live "/queues/:id/display", DisplayOnlyLive
+	live "/queues/thermostat", ThermostatLive
+	end
+\end{lstlisting}
+
+\subsection{Penjelasan Kode}
+Bagian pertama dari kode menggunakan metode \texttt{get}, \texttt{post}, \texttt{put}, dan \texttt{delete} untuk mengatur rute standar yang diproses oleh controller, yaitu:
+\begin{itemize}
+	\item \texttt{"/"}: Mengarah ke \texttt{QueueController} dengan aksi \texttt{:index}, menampilkan halaman utama.
+	\item \texttt{"/about"}: Mengarah ke \texttt{PageController} dengan aksi \texttt{:about}, menampilkan informasi tentang aplikasi.
+	\item \texttt{"/queues/new"} dan \texttt{"/queues/:id/edit"}: Mengarah ke \texttt{QueueController} untuk menambahkan atau mengedit antrian.
+	\item \texttt{"/queues"} dengan \texttt{post}, \texttt{"/queues/:id"} dengan \texttt{put}, dan \texttt{"/queues/:id/delete"} dengan \texttt{delete}: Mengarah ke \texttt{QueueController} untuk membuat, memperbarui, atau menghapus antrian.
+\end{itemize}
+
+\subsection{Penggunaan LiveView untuk Tampilan Real-Time}
+Pada bagian ini, beberapa rute menggunakan \texttt{live} untuk mengarahkan ke modul \texttt{LiveView} tertentu. Rute \texttt{LiveView} memungkinkan pembuatan tampilan yang responsif dan real-time tanpa membutuhkan pembaruan halaman secara penuh. Penjelasan dari setiap rute yang menggunakan \texttt{live} adalah sebagai berikut:
+
+\begin{itemize}
+	\item \textbf{\texttt{live "/queues/:id/control", ModifiableLive}}: Rute ini mengarahkan ke modul \texttt{ModifiableLive} untuk halaman kontrol antrian. Penggunaan \texttt{LiveView} di sini memungkinkan pengguna untuk mengontrol atau mengubah status antrian secara real-time sesuai dengan kebutuhan aplikasi.
+	\item \textbf{\texttt{live "/queues/:id/display", DisplayOnlyLive}}: Rute ini mengarahkan ke modul \texttt{DisplayOnlyLive}, yang hanya menampilkan informasi antrian tanpa kemampuan modifikasi. Dengan menggunakan \texttt{LiveView}, halaman ini dapat memperbarui data tampilan secara langsung jika ada perubahan di server.
+	\item \textbf{\texttt{live "/queues/thermostat", ThermostatLive}}: Rute ini mengarahkan ke modul \texttt{ThermostatLive}. Dengan \texttt{LiveView}, halaman ini dapat menampilkan pembaruan temperatur secara real-time, ideal untuk aplikasi yang membutuhkan pemantauan data yang sering berubah seperti termostat.
+\end{itemize}
+
+\subsection{Keunggulan Menggunakan Rute \texttt{LiveView}}
+Penggunaan \texttt{live} di rute ini memungkinkan aplikasi untuk menangani tampilan yang interaktif dan responsif, terutama untuk halaman yang membutuhkan pemantauan atau kontrol data secara langsung. Dengan memanfaatkan koneksi \texttt{WebSocket} yang dikelola oleh \texttt{LiveView}, aplikasi dapat memberikan pengalaman pengguna yang dinamis tanpa perlu memuat ulang halaman setiap kali terjadi perubahan.
+
+\subsection{Konteks Penggunaan Rute \texttt{LiveView} dalam Aplikasi}
+Rute \texttt{LiveView} ini sangat berguna dalam konteks aplikasi yang memerlukan pembaruan data secara real-time. Sebagai contoh, pengguna dapat mengakses \texttt{ModifiableLive} untuk mengontrol status antrian, atau melihat informasi antrian terkini di \texttt{DisplayOnlyLive}. Pada kasus \texttt{ThermostatLive}, pengguna dapat memonitor dan melihat pembaruan temperatur yang terjadi tanpa harus menyegarkan halaman.
+
+Pengaturan rute ini juga menyederhanakan penanganan berbagai jenis tampilan dalam aplikasi dan memungkinkan pengembang untuk mengelola logika real-time dalam modul \texttt{LiveView}.
+
+\section{Pengaturan Komponen \texttt{if-else} pada \texttt{live.html.heex}}
+
+Bagian ini membahas penggunaan struktur \texttt{if-else-end} pada file \texttt{live.html.heex} di dalam aplikasi, yang digunakan untuk menentukan tampilan berdasarkan status autentikasi pengguna. Kode ini mengatur tampilan header dan tautan navigasi berdasarkan apakah pengguna sudah masuk atau belum. 
+
+Berikut adalah potongan kode \texttt{live.html.heex}:
+
+\begin{lstlisting}[language=Elixir]
+	<header class="px-4 sm:px-6 lg:px-8">
+	<div class="flex items-center justify-between border-b border-zinc-100 py-3 text-sm">
+	<div class="flex items-center gap-4">
+	<a href="/">
+	<img src={~p"/images/logo.svg"} width="36" />
+	</a>
+	<p class="bg-brand/5 text-brand rounded-full px-2 font-medium leading-6">
+	v<%= Application.spec(:phoenix, :vsn) %>
+	</p>
+	</div>
+	<div class="flex items-center gap-4 font-semibold leading-6 text-zinc-900">
+	<%= if @user_id do %>
+	<a href={~p"/auth/signout"} class="hover:text-zinc-700">
+	Signout
+	</a> 
+	<% else %>
+	<a href={~p"/auth/github"} class="hover:text-zinc-700">
+	Login with GitHub
+	</a>
+	<% end %> 
+	<a href="https://twitter.com/elixirphoenix" class="hover:text-zinc-700">
+	@elixirphoenix
+	</a>
+	<a href="https://github.com/phoenixframework/phoenix" class="hover:text-zinc-700">
+	GitHub
+	</a>
+	<a
+	href="https://hexdocs.pm/phoenix/overview.html"
+	class="rounded-lg bg-zinc-100 px-2 py-1 hover:bg-zinc-200/80"
+	>
+	Get Started <span aria-hidden="true">&rarr;</span>
+	</a>
+	</div>
+	</div>
+	</header>
+	<main class="px-4 py-20 sm:px-6 lg:px-8">
+	<div class="mx-auto max-w-2xl">
+	<.flash_group flash={@flash} />
+	<%= @inner_content %>
+	</div>
+	</main>
+\end{lstlisting}
+
+\subsection{Penjelasan Struktur \texttt{if-else-end}}
+Bagian kode ini menggunakan kondisi \texttt{if-else-end} untuk memeriksa status autentikasi pengguna melalui variabel \texttt{@user\_id}. Berdasarkan keberadaan nilai \texttt{@user\_id}, aplikasi menampilkan tautan \texttt{Signout} atau \texttt{Login with GitHub}.
+
+\subsubsection{Baris Kondisional \texttt{if-else}}
+\begin{itemize}
+	\item \textbf{\texttt{if @user\_id do}}: Mengecek apakah \texttt{@user\_id} memiliki nilai, yang menunjukkan bahwa pengguna sedang dalam sesi login.
+	\item \textbf{\texttt{<a href={~p"/auth/signout"} class="hover:text-zinc-700"> Signout </a>}}: Jika \texttt{@user\_id} ditemukan, maka tautan \texttt{Signout} ditampilkan, memungkinkan pengguna untuk keluar dari sesi.
+	\item \textbf{\texttt{else}}: Jika \texttt{@user\_id} tidak ada (pengguna belum login), bagian \texttt{else} akan dijalankan.
+	\item \textbf{\texttt{<a href={~p"/auth/github"} class="hover:text-zinc-700"> Login with GitHub </a>}}: Jika kondisi \texttt{else} dijalankan, tautan \texttt{Login with GitHub} ditampilkan untuk memungkinkan pengguna melakukan autentikasi melalui GitHub.
+	\item \textbf{\texttt{end}}: Menutup blok kondisi \texttt{if-else}.
+\end{itemize}
+
+\subsection{Tautan Navigasi Tambahan}
+Selain kontrol autentikasi, beberapa tautan navigasi statis disediakan di header:
+\begin{itemize}
+	\item \textbf{\texttt{@elixirphoenix}}: Tautan ke akun Twitter proyek Elixir Phoenix.
+	\item \textbf{\texttt{GitHub}}: Tautan ke repositori GitHub Phoenix Framework.
+	\item \textbf{\texttt{Get Started}}: Tautan untuk mengakses dokumentasi Phoenix, dengan tampilan tombol yang lebih menonjol untuk mengarahkan pengguna baru.
+\end{itemize}
+
+\subsection{Pengaturan Dinamis untuk Pengguna Autentikasi}
+Dengan menggunakan struktur \texttt{if-else-end}, kode ini memungkinkan aplikasi menampilkan opsi autentikasi yang sesuai berdasarkan status pengguna. Hal ini tidak hanya meningkatkan pengalaman pengguna tetapi juga memastikan kontrol akses yang sesuai. Pendekatan ini dapat diterapkan di bagian lain dari aplikasi yang membutuhkan logika kontrol akses berbasis status autentikasi.
+
+Pengaturan ini juga mendukung fleksibilitas desain, karena tampilan tautan dapat dengan mudah disesuaikan dengan kondisi pengguna masuk atau keluar. Hal ini memperkuat implementasi autentikasi dan navigasi yang lebih terstruktur di seluruh aplikasi.
+
+\section{Implementasi LiveView pada \texttt{ThermostatLive}}
+
+Bagian ini membahas implementasi modul \texttt{ThermostatLive} yang menggunakan \texttt{Phoenix LiveView} untuk mengelola tampilan suhu yang dapat diubah secara real-time. Modul ini menyediakan antarmuka yang menampilkan suhu saat ini dan memungkinkan pengguna untuk menaikkan suhu dengan menekan tombol.
+
+Berikut adalah potongan kode di \texttt{thermostat\_live.ex} dan \texttt{thermostat\_live.html.heex}.
+
+\begin{lstlisting}[language=Elixir]
+	# lib/hello_web/live/thermostat_live.ex
+	
+	defmodule HelloWeb.ThermostatLive do
+	use HelloWeb, :live_view
+	
+	def render(assigns) do
+	~H"""
+	Current temperature: <%= @temperature %>°C
+	<button phx-click="inc_temperature">+</button>
+	"""
+	end
+	
+	def mount(_params, _session, socket) do
+	{:ok, assign(socket, :temperature, 30)}
+	end
+	
+	def handle_event("inc_temperature", _params, socket) do
+	{:noreply, update(socket, :temperature, &(&1 + 1))}
+	end
+	end
+\end{lstlisting}
+
+\begin{lstlisting}[language=HTML]
+	# lib/hello_web/live/thermostat_live.html.heex
+	
+	Current temperature: <%= @temperature %>°C
+	<button phx-click="inc_temperature">+</button>
+\end{lstlisting}
+
+\subsection{Penjelasan Kode}
+Modul \texttt{ThermostatLive} menggunakan LiveView untuk mengelola dan menampilkan suhu secara dinamis. Berikut ini adalah penjelasan masing-masing fungsi dalam modul ini:
+
+\begin{itemize}
+	\item \textbf{\texttt{use HelloWeb, :live\_view}}: Mengaktifkan fungsionalitas LiveView pada modul ini, memungkinkan render dinamis dan pengelolaan event di sisi server.
+	
+	\item \textbf{\texttt{render/1}}: Fungsi ini bertanggung jawab untuk merender tampilan suhu saat ini. Template HTML yang didefinisikan di dalam \texttt{~H"""} menampilkan suhu dalam variabel \texttt{@temperature} dan menyediakan tombol dengan atribut \texttt{phx-click} yang terhubung dengan event \texttt{"inc\_temperature"}. Setiap kali tombol \texttt{"+"} diklik, event ini akan terpicu, yang memungkinkan perubahan nilai suhu secara real-time.
+	
+	\item \textbf{\texttt{mount/3}}: Fungsi ini diinisialisasi ketika LiveView pertama kali dimuat. Fungsi ini meng-assign nilai awal suhu sebesar 30°C ke \texttt{@temperature} pada \texttt{socket}. Menggunakan fungsi \texttt{assign/3}, nilai ini diatur agar dapat diakses dan ditampilkan di template \texttt{render/1}.
+	
+	\item \textbf{\texttt{handle\_event/3}}: Fungsi ini menangani event \texttt{"inc\_temperature"} yang terpicu ketika tombol \texttt{"+"} diklik. Fungsi ini memperbarui nilai \texttt{@temperature} dengan menambah 1 pada nilai suhu saat ini. Dengan menggunakan \texttt{update/3}, nilai \texttt{socket} diperbarui dan dirender ulang secara otomatis pada tampilan tanpa memuat ulang halaman.
+\end{itemize}
+
+\subsection{Integrasi \texttt{thermostat\_live.html.heex}}
+File \texttt{thermostat\_live.html.heex} juga menyertakan bagian kode HTML yang menampilkan suhu saat ini dan tombol \texttt{"+"}. Kode HTML ini dihasilkan melalui fungsi \texttt{render/1} dalam modul \texttt{ThermostatLive}. Menggunakan LiveView, setiap perubahan nilai \texttt{@temperature} diperbarui secara otomatis pada elemen \texttt{<button>} dan teks suhu, memberikan pengalaman interaksi secara real-time bagi pengguna.
+
+\subsection{Keunggulan Menggunakan Event \texttt{handle\_event/3}}
+Penggunaan \texttt{handle\_event/3} di sini memungkinkan penanganan event \texttt{phx-click} secara efisien di sisi server, memanfaatkan koneksi WebSocket yang dikelola oleh LiveView. Ketika event terpicu, fungsi ini memperbarui nilai state tanpa perlu memuat ulang halaman, sehingga menciptakan pengalaman pengguna yang lebih interaktif dan responsif.
+
+\subsection{Pentingnya Fungsi \texttt{mount/3} dan \texttt{render/1}}
+Fungsi \texttt{mount/3} menginisialisasi nilai state awal yang akan ditampilkan, sedangkan \texttt{render/1} bertanggung jawab untuk merender tampilan. Kombinasi kedua fungsi ini memastikan bahwa tampilan suhu dapat disajikan dan diubah secara dinamis sesuai interaksi pengguna. Dengan demikian, pengguna dapat melihat pembaruan suhu secara langsung setiap kali tombol ditekan.
+
+Kode di atas memperlihatkan penggunaan LiveView untuk mengelola tampilan interaktif yang memperbarui state secara real-time di sisi server. Struktur ini ideal untuk aplikasi yang membutuhkan pembaruan data secara langsung tanpa interaksi yang berat di sisi klien.
+
+\section{Implementasi \texttt{GenServer} pada Modul \texttt{QueueCounter}}
+
+Modul \texttt{Hello.QueueCounter} menggunakan \texttt{GenServer} untuk mengelola jumlah kasus yang ditangani dalam aplikasi secara real-time. Modul ini menyimpan dan memperbarui data kasus, serta menyiarkan pembaruan menggunakan \texttt{Phoenix.PubSub} sehingga perubahan dapat disinkronkan ke seluruh komponen lain yang berlangganan.
+
+Berikut adalah kode lengkap dari \texttt{queue\_counter.ex}:
+
+\begin{lstlisting}[language=Elixir]
+	defmodule Hello.QueueCounter do
+	use GenServer
+	
+	alias Phoenix.PubSub
+	
+	# Initialize with the starting number of cases handled
+	def init(initial_number) do
+	{:ok, initial_number}
+	end
+	
+	# Start the GenServer with an initial number of 0 cases handled
+	def start_link(_) do
+	GenServer.start_link(__MODULE__, 0, name: __MODULE__)
+	end
+	
+	# Public API to get the current number of cases handled
+	def get_current_number do
+	GenServer.call(__MODULE__, :get_current_number)
+	end
+	
+	# Public API to set the current number of cases handled
+	def set_current_number(new_number) do
+	GenServer.cast(__MODULE__, {:set_current_number, new_number})
+	end
+	
+	# Handle getting the current number
+	def handle_call(:get_current_number, _from, current_number) do
+	{:reply, current_number, current_number}
+	end
+	
+	# Handle setting the current number and broadcasting the update
+	def handle_cast({:set_current_number, new_number}, _current_number) do
+	PubSub.broadcast(Hello.PubSub, "queue_counter:updates", {:number_update, new_number})
+	{:noreply, new_number}
+	end
+	end
+\end{lstlisting}
+
+\subsection{Penjelasan Kode}
+Modul \texttt{Hello.QueueCounter} ini memiliki beberapa fungsi yang masing-masing berperan dalam mengelola dan menyiarkan jumlah kasus yang ditangani. Berikut penjelasan dari fungsi-fungsi tersebut:
+
+\begin{itemize}
+	\item \textbf{\texttt{init/1}}: Fungsi \texttt{init/1} menerima \texttt{initial\_number} sebagai parameter, yang akan menjadi nilai awal jumlah kasus yang ditangani oleh aplikasi. Fungsi ini mengembalikan tuple \texttt{\{:ok, initial\_number\}}, yang akan diatur sebagai state awal dari \texttt{GenServer} ini.
+	
+	\item \textbf{\texttt{start\_link/1}}: Fungsi ini memulai \texttt{GenServer} dengan nilai awal \texttt{0} untuk jumlah kasus yang ditangani. Penggunaan \texttt{name: \_\_MODULE\_\_} memungkinkan \texttt{GenServer} ini diakses secara global dalam aplikasi menggunakan nama modulnya.
+	
+	\item \textbf{\texttt{get\_current\_number/0}}: Fungsi ini merupakan API publik untuk mendapatkan jumlah kasus yang sedang ditangani saat ini. Dengan menggunakan \texttt{GenServer.call/2}, fungsi ini mengirimkan permintaan untuk mendapatkan state saat ini dari \texttt{GenServer}, yang kemudian akan diproses oleh \texttt{handle\_call/3}.
+	
+	\item \textbf{\texttt{set\_current\_number/1}}: Fungsi ini merupakan API publik untuk memperbarui jumlah kasus yang ditangani. Fungsi ini menggunakan \texttt{GenServer.cast/2} untuk mengirimkan pesan secara asinkron ke \texttt{GenServer} agar memperbarui state. Permintaan ini akan diproses oleh \texttt{handle\_cast/2}.
+\end{itemize}
+
+\subsection{Penanganan Panggilan dan Cast dengan \texttt{handle\_call/3} dan \texttt{handle\_cast/2}}
+
+\begin{itemize}
+	\item \textbf{\texttt{handle\_call/3}}: Fungsi ini menangani panggilan \texttt{:get\_current\_number}. Fungsi ini mengembalikan jumlah kasus saat ini sebagai \texttt{current\_number} dengan format \texttt{\{:reply, current\_number, current\_number\}}, yang akan dijawab kepada pemanggil melalui API \texttt{get\_current\_number/0}.
+	
+	\item \textbf{\texttt{handle\_cast/2}}: Fungsi ini menangani permintaan untuk memperbarui jumlah kasus yang ditangani. Ketika \texttt{set\_current\_number/1} dipanggil, fungsi \texttt{handle\_cast/2} menerima \texttt{new\_number} sebagai nilai baru untuk menggantikan \texttt{current\_number}. Setelah memperbarui state, fungsi ini menggunakan \texttt{PubSub.broadcast/3} untuk menyiarkan pesan \texttt{\{:number\_update, new\_number\}} pada topik \texttt{"queue\_counter:updates"}. Penyiaran ini memungkinkan komponen lain yang berlangganan topik ini untuk menerima pembaruan jumlah kasus secara real-time.
+\end{itemize}
+
+\subsection{Penggunaan \texttt{Phoenix.PubSub} untuk Sinkronisasi State}
+Dengan mengintegrasikan \texttt{Phoenix.PubSub}, modul ini menyiarkan pembaruan jumlah kasus ke seluruh komponen yang berlangganan topik \texttt{"queue\_counter:updates"}. Sinkronisasi real-time ini penting untuk memastikan bahwa semua pengguna dan komponen yang relevan memiliki data yang konsisten tanpa harus melakukan refresh manual.
+
+\subsection{Manfaat Menggunakan \texttt{GenServer} pada \texttt{QueueCounter}}
+Penggunaan \texttt{GenServer} dalam modul ini memungkinkan manajemen state secara aman dan efisien, sekaligus menyediakan API publik untuk mengambil dan memperbarui jumlah kasus yang ditangani. Dengan pendekatan ini, data yang sering diperbarui seperti jumlah kasus dapat diakses dan dikelola secara terpusat, yang memperkuat kontrol dan efisiensi pengelolaan state dalam aplikasi.
+
+Modul \texttt{Hello.QueueCounter} merupakan bagian penting dari sistem yang membutuhkan pengelolaan state secara global dan penyiaran pembaruan ke berbagai komponen, memastikan bahwa semua pengguna dapat melihat perubahan secara langsung dan konsisten.
+
+\section{Konfigurasi \texttt{Application} untuk Memulai \texttt{Hello.QueueCounter}}
+
+Pada file \texttt{application.ex}, modul \texttt{Hello.Application} dikonfigurasi untuk memulai berbagai komponen utama aplikasi, termasuk GenServer \texttt{Hello.QueueCounter}. Penambahan \texttt{Hello.QueueCounter} sebagai child dalam aplikasi memastikan bahwa modul ini akan berjalan saat aplikasi dimulai, memberikan pengelolaan jumlah kasus yang ditangani secara real-time di seluruh sesi aplikasi.
+
+Berikut adalah potongan kode dalam \texttt{application.ex}:
+
+\begin{lstlisting}[language=Elixir]
+	def start(_type, _args) do
+	children = [
+	HelloWeb.Telemetry,
+	Hello.Repo,
+	{DNSCluster, query: Application.get_env(:hello, :dns_cluster_query) || :ignore},
+	{Phoenix.PubSub, name: Hello.PubSub},
+	# Start the QueueCounter GenServer
+	Hello.QueueCounter,
+	# Start the Finch HTTP client for sending emails
+	{Finch, name: Hello.Finch},
+	# Start a worker by calling: Hello.Worker.start_link(arg)
+	# {Hello.Worker, arg},
+	# Start to serve requests, typically the last entry
+	HelloWeb.Endpoint
+	]
+\end{lstlisting}
+
+\subsection{Penjelasan Komponen \texttt{Hello.QueueCounter} sebagai Child}
+\texttt{Hello.QueueCounter} ditambahkan ke daftar \texttt{children}, sehingga GenServer ini akan diinisialisasi dan dijalankan saat aplikasi \texttt{Hello} dimulai. Fungsi \texttt{start\_link} dari modul \texttt{Hello.QueueCounter} akan secara otomatis dipanggil untuk menginisialisasi state awal, memungkinkan aplikasi untuk memantau jumlah kasus yang ditangani sejak awal aplikasi berjalan.
+
+\subsection{Peran \texttt{Hello.QueueCounter} dalam Struktur Aplikasi}
+Dengan menambahkan \texttt{Hello.QueueCounter} ke dalam daftar child, aplikasi mendapatkan akses langsung ke pengelolaan jumlah kasus melalui GenServer ini. Komponen \texttt{Hello.QueueCounter} akan tetap berjalan secara independen selama siklus hidup aplikasi, menyediakan API publik untuk mengakses dan memperbarui data kasus. Pengelolaan state di dalam \texttt{QueueCounter} terintegrasi dengan \texttt{Phoenix.PubSub}, memungkinkan pembaruan data disiarkan ke berbagai komponen dan sesi pengguna.
+
+\subsection{Deskripsi Komponen Lain pada \texttt{Application}}
+Selain \texttt{Hello.QueueCounter}, beberapa komponen lain yang disertakan dalam daftar \texttt{children} adalah sebagai berikut:
+
+\begin{itemize}
+	\item \textbf{\texttt{HelloWeb.Telemetry}}: Memulai layanan telemetry untuk pemantauan performa aplikasi.
+	\item \textbf{\texttt{Hello.Repo}}: Menghubungkan aplikasi ke database menggunakan \texttt{Ecto.Repo}.
+	\item \textbf{\texttt{DNSCluster}}: Mengatur konfigurasi untuk pengelolaan cluster DNS.
+	\item \textbf{\texttt{Phoenix.PubSub}}: Menyediakan PubSub untuk siaran pesan antar komponen dan mendukung real-time komunikasi dalam aplikasi.
+	\item \textbf{\texttt{Hello.Finch}}: Memulai client HTTP \texttt{Finch} yang dapat digunakan untuk mengirim email atau request HTTP lainnya.
+	\item \textbf{\texttt{HelloWeb.Endpoint}}: Memulai \texttt{Endpoint} sebagai entry terakhir untuk menangani permintaan HTTP dan WebSocket, yang biasanya menjadi komponen terakhir dalam daftar \texttt{children}.
+\end{itemize}
+
+\subsection{Pentingnya \texttt{Hello.QueueCounter} dalam Daftar Child}
+Dengan mengonfigurasi \texttt{Hello.QueueCounter} sebagai bagian dari struktur aplikasi, aplikasi memiliki kontrol yang kuat dan konsisten terhadap pengelolaan jumlah kasus yang ditangani. Selain itu, integrasi \texttt{QueueCounter} dengan \texttt{Phoenix.PubSub} memungkinkan sinkronisasi data secara real-time di seluruh komponen aplikasi. Hal ini memberikan fleksibilitas dalam penanganan data real-time dan meningkatkan performa serta konsistensi data pada aplikasi berbasis Phoenix Framework ini.
+
+Kode di atas menunjukkan bagaimana setiap komponen diatur untuk bekerja secara harmonis dalam aplikasi, dengan \texttt{Hello.QueueCounter} sebagai elemen penting untuk pengelolaan state dan sinkronisasi data.
+
+
+\section{Implementasi Modul \texttt{ModifiableLive} untuk Pengelolaan Kasus dengan \texttt{LiveView}}
+
+Modul \texttt{HelloWeb.ModifiableLive} menggunakan \texttt{Phoenix LiveView} untuk menampilkan dan mengelola kasus secara real-time. Modul ini berinteraksi dengan \texttt{QueueCounter} sebagai GenServer untuk mengelola jumlah kasus yang ditangani, dan memanfaatkan \texttt{Phoenix.PubSub} untuk memperbarui data secara sinkron pada tampilan pengguna. 
+
+Berikut adalah kode \texttt{modifiable\_live.ex}:
+
+\begin{lstlisting}[language=Elixir]
+	defmodule HelloWeb.ModifiableLive do
+	use HelloWeb, :live_view
+	alias Hello.QueueCounter
+	alias Hello.Queue
+	alias Hello.Repo
+	
+	def mount(params, session, socket) do
+	%{"id" => queue_id} = params
+	
+	case session do
+	%{"user_id" => user_id} ->
+	:ok = Phoenix.PubSub.subscribe(Hello.PubSub, "queue_counter:updates")
+	current_number = QueueCounter.get_current_number()
+	queue = Repo.get!(Queue, queue_id)
+	
+	socket =
+	socket
+	|> assign(:current_number, current_number)
+	|> assign(:queue_id, queue_id)
+	|> assign(:user_id, user_id)
+	|> assign(:queue, queue)
+	
+	{:ok, socket, layout: {HelloWeb.Layouts, :live}}
+	
+	_ ->
+	socket =
+	socket
+	|> put_flash(:error, "You haven't signed in.")
+	
+	{:ok, push_navigate(socket, to: "/")}
+	end
+	end
+	
+	@spec handle_event(<<_::128>>, any(), map()) :: {:noreply, map()}
+	def handle_event("increment_number", _params, socket) do
+	old_queue = Repo.get!(Queue, socket.assigns.queue_id)
+	new_state = %{"current_number" => old_queue.current_number + 1}
+	changeset = Queue.changeset(old_queue, new_state)
+	Repo.update(changeset)
+	
+	current_queue = Repo.get!(Queue, socket.assigns.queue_id)
+	new_number = current_queue.current_number
+	
+	QueueCounter.set_current_number(new_number)
+	
+	{:noreply, assign(socket, :current_number, new_number)}
+	end
+	
+	def handle_info({:number_update, new_number}, socket) do
+	{:noreply, assign(socket, :current_number, new_number)}
+	end
+	end
+\end{lstlisting}
+
+\subsection{Fungsi \texttt{mount/3}}
+Fungsi \texttt{mount/3} bertanggung jawab untuk menginisialisasi state awal pada \texttt{socket} saat LiveView pertama kali dimuat. Dalam fungsi ini:
+\begin{itemize}
+	\item ID antrian diperoleh dari parameter \texttt{params}, lalu diekstrak untuk mencari data antrian dari database.
+	\item Kondisi \texttt{case} memeriksa apakah sesi \texttt{user\_id} tersedia. Jika \texttt{user\_id} ditemukan, pengguna akan berlangganan ke topik \texttt{"queue\_counter:updates"} melalui \texttt{Phoenix.PubSub}.
+	\item \texttt{QueueCounter.get\_current\_number()} digunakan untuk mendapatkan jumlah kasus yang sedang aktif.
+	\item Data antrian (\texttt{queue}), \texttt{queue\_id}, \texttt{user\_id}, dan \texttt{current\_number} diassign ke \texttt{socket}.
+	\item Jika sesi tidak ada, flash pesan kesalahan ditampilkan dan pengguna diarahkan ke halaman utama.
+\end{itemize}
+
+\subsection{Fungsi \texttt{handle\_event/3}}
+Fungsi \texttt{handle\_event/3} menangani event \texttt{"increment\_number"} yang dipicu oleh pengguna saat menambah jumlah kasus.
+\begin{itemize}
+	\item Fungsi ini pertama kali mengambil data antrian terkini dari database.
+	\item \texttt{current\_number} dinaikkan sebesar 1 dan diupdate di database melalui \texttt{Repo.update(changeset)}.
+	\item Setelah nilai \texttt{current\_number} diperbarui, \texttt{QueueCounter.set\_current\_number(new\_number)} memanggil \texttt{QueueCounter} untuk memperbarui nilai kasus di GenServer.
+	\item \texttt{socket} kemudian diperbarui dengan nilai \texttt{current\_number} yang baru, memungkinkan tampilan untuk disegarkan tanpa memuat ulang halaman.
+\end{itemize}
+
+\subsection{Fungsi \texttt{handle\_info/2}}
+Fungsi \texttt{handle\_info/2} menangani pesan yang disiarkan oleh \texttt{QueueCounter} melalui \texttt{Phoenix.PubSub} setiap kali ada pembaruan data jumlah kasus.
+\begin{itemize}
+	\item Jika ada pesan dengan topik \texttt{:number\_update}, nilai \texttt{new\_number} diperoleh dan diassign ke \texttt{socket}.
+	\item Penggunaan fungsi ini memungkinkan LiveView untuk menerima pembaruan dari \texttt{QueueCounter} dan menampilkan data yang sinkron di seluruh tampilan pengguna secara real-time.
+\end{itemize}
+
+\subsection{Pentingnya Interaksi dengan \texttt{Hello.QueueCounter}}
+Interaksi modul \texttt{ModifiableLive} dengan \texttt{Hello.QueueCounter} memastikan bahwa setiap pembaruan jumlah kasus dapat diakses oleh seluruh pengguna yang melihat data ini. Penggunaan PubSub memungkinkan sinkronisasi antar komponen dan halaman secara real-time, memberikan pengalaman pengguna yang lebih responsif dan konsisten tanpa perlu penyegaran halaman.
+
+Kode ini menciptakan alur kerja real-time yang optimal untuk aplikasi yang membutuhkan pembaruan data secara konstan dan konsisten antar pengguna atau sesi.
+
+
+\section{Desain Antarmuka untuk \texttt{ModifiableLive} pada \texttt{modifiable\_live.html.heex}}
+
+Template \texttt{modifiable\_live.html.heex} menampilkan antarmuka pengguna untuk modul \texttt{ModifiableLive}, yang berfungsi menampilkan detail antrian serta tombol untuk meningkatkan nomor antrian secara real-time. Tampilan ini terdiri dari dua area utama: bagian kiri untuk informasi detail antrian dan bagian kanan untuk menampilkan nomor antrian secara besar.
+
+Berikut adalah potongan kode dari \texttt{modifiable\_live.html.heex}:
+
+\begin{lstlisting}[language=HTML]
+	<div class="flex">
+	<!-- Left Area (Top Aligned with Double Text Size) -->
+	<div class="w-1/2 p-4 bg-gray-100 flex flex-col justify-start">
+	<h1 class="text-4xl font-bold">Queue</h1>
+	<div class="text-2xl font-semibold hover:text-zinc-700">Name: <%= @queue.name %></div>
+	<div class="text-2xl font-semibold hover:text-zinc-700">Description:</div>
+	<div class="text-2xl"><%= @queue.description %></div>
+	<div class="text-2xl font-semibold hover:text-zinc-700">Max Number: <%= @queue.max_number %></div>
+	<button class="mt-4 px-4 py-2 bg-blue-500 text-white text-2xl rounded hover:bg-blue-600" phx-click="increment_number">Next Number</button>
+	</div>
+	
+	<!-- Right Area (Centered Content with Triple Text Size) -->
+	<div class="w-1/2 p-4 flex items-center justify-center bg-white">
+	<div class="text-9xl font-bold"><%= @queue.prefix %><%= @current_number %></div>
+	</div>
+	</div>
+\end{lstlisting}
+
+\subsection{Penjelasan Struktur HTML dan CSS}
+
+\begin{itemize}
+	\item \textbf{Container Utama (\texttt{<div class="flex">})}: Elemen \texttt{flex} utama membagi tampilan menjadi dua kolom, yaitu bagian kiri untuk informasi detail antrian dan bagian kanan untuk menampilkan nomor antrian dengan ukuran besar.
+	
+	\item \textbf{Bagian Kiri (Area Informasi)}: 
+	\begin{itemize}
+		\item \texttt{<h1 class="text-4xl font-bold">Queue</h1>}: Menampilkan judul "Queue" dengan ukuran teks besar.
+		\item \texttt{<div class="text-2xl font-semibold">Name: <\%= @queue.name \%></div>}: Menampilkan nama antrian dalam ukuran teks ganda, dan memberikan efek hover untuk perubahan warna teks.
+		\item \texttt{<div class="text-2xl">Description:</div> \texttt{<\%= @queue.description \%>}}: Menampilkan deskripsi antrian.
+		\item \texttt{<div class="text-2xl font-semibold">Max Number: <\%= @queue.max\_number \%></div>}: Menampilkan jumlah maksimum antrian.
+		\item \texttt{<button class="..."} \texttt{phx-click="increment\_number"}>: Tombol ini digunakan untuk menambah nomor antrian. Dengan \texttt{phx-click="increment\_number"}, tombol ini terhubung ke event yang memicu fungsi \texttt{handle\_event} pada modul \texttt{ModifiableLive} untuk memperbarui nomor antrian.
+	\end{itemize}
+	
+	\item \textbf{Bagian Kanan (Nomor Antrian)}:
+	\begin{itemize}
+		\item \texttt{<div class="text-9xl font-bold"><\%= @queue.prefix \%><\%= @current\_number \%></div>}: Bagian ini menampilkan nomor antrian yang sedang aktif dalam ukuran teks yang sangat besar (\texttt{text-9xl}), dikombinasikan dengan prefix dari \texttt{@queue.prefix}. Tampilan ini bertujuan untuk memberikan visibilitas yang tinggi bagi pengguna yang membutuhkan nomor antrian secara langsung dan jelas.
+	\end{itemize}
+\end{itemize}
+
+\subsection{Penggunaan \texttt{phx-click} untuk Interaksi Real-Time}
+Tombol \texttt{"Next Number"} pada bagian kiri memiliki atribut \texttt{phx-click="increment\_number"}, yang menghubungkan event \texttt{click} dari tombol ke fungsi \texttt{handle\_event("increment\_number", \_params, socket)} di modul \texttt{ModifiableLive}. Dengan menambahkan event ini, setiap kali pengguna mengklik tombol, nomor antrian akan meningkat dan diperbarui secara real-time, ditampilkan di sisi kanan.
+
+\subsection{Pengaturan Visual dan Responsivitas}
+Pengaturan kelas CSS, seperti \texttt{text-4xl}, \texttt{bg-gray-100}, \texttt{bg-blue-500}, dan \texttt{hover:bg-blue-600}, memberikan tampilan yang bersih dan responsif pada antarmuka. Bagian kiri diatur untuk menyajikan informasi detail antrian dengan tampilan teks yang besar, sementara bagian kanan memberikan fokus penuh pada nomor antrian aktif, sehingga mudah terlihat oleh pengguna.
+
+\subsection{Fungsionalitas Antarmuka secara Real-Time}
+Desain antarmuka ini memastikan bahwa pengguna dapat mengakses informasi penting terkait antrian dengan mudah, sekaligus memungkinkan peningkatan nomor antrian secara instan melalui \texttt{LiveView}. Dengan menggunakan \texttt{Phoenix LiveView} untuk menampilkan dan memperbarui data real-time, antarmuka ini menyediakan pengalaman pengguna yang responsif tanpa memerlukan refresh halaman manual.
+
+\section{Implementasi Modul \texttt{DisplayOnlyLive} untuk Tampilan Nomor Antrian}
+
+Modul \texttt{HelloWeb.DisplayOnlyLive} digunakan untuk menampilkan nomor antrian secara real-time tanpa kemampuan modifikasi. Modul ini berlangganan ke pembaruan dari \texttt{QueueCounter} dan hanya menampilkan data nomor antrian aktif dan detail antrian terkait. Tujuan utama modul ini adalah untuk menyediakan tampilan read-only yang diperbarui secara langsung dengan menggunakan \texttt{Phoenix LiveView}.
+
+Berikut adalah kode dari \texttt{display\_only\_live.ex}:
+
+\begin{lstlisting}[language=Elixir]
+	defmodule HelloWeb.DisplayOnlyLive do
+	use HelloWeb, :live_view
+	alias Hello.QueueCounter
+	alias Hello.Queue
+	alias Hello.Repo
+	
+	def mount(params, _session, socket) do
+	%{"id" => queue_id} = params
+	
+	# Subscribe to updates from the QueueCounter
+	:ok = Phoenix.PubSub.subscribe(Hello.PubSub, "queue_counter:updates")
+	
+	# Get the initial current number of cases handled from QueueCounter
+	current_number = QueueCounter.get_current_number()
+	
+	queue = Repo.get!(Queue, queue_id)
+	
+	socket =
+	socket
+	|> assign(:current_number, current_number)
+	|> assign(:queue_name, queue.name)
+	|> assign(:queue_prefix, queue.prefix)
+	
+	{:ok, socket, layout: false}
+	end
+	
+	def handle_info({:number_update, new_number}, socket) do
+	# Update the socket state when a new number is broadcasted
+	{:noreply, assign(socket, :current_number, new_number)}
+	end
+	end
+\end{lstlisting}
+
+\subsection{Fungsi \texttt{mount/3}}
+Fungsi \texttt{mount/3} bertugas untuk menginisialisasi state pada \texttt{socket} saat LiveView pertama kali dimuat, serta menetapkan data awal untuk tampilan nomor antrian. Proses yang dilakukan oleh fungsi ini antara lain:
+\begin{itemize}
+	\item Menangkap \texttt{queue\_id} dari \texttt{params} untuk mendapatkan data antrian terkait dari database.
+	\item Berlangganan ke topik \texttt{"queue\_counter:updates"} di \texttt{Hello.PubSub}, memungkinkan tampilan untuk menerima pembaruan nomor antrian secara real-time dari \texttt{QueueCounter}.
+	\item Mendapatkan \texttt{current\_number} dari \texttt{QueueCounter} melalui \texttt{QueueCounter.get\_current\_number()} untuk diassign ke \texttt{socket}.
+	\item Mengassign data tambahan seperti \texttt{queue\_name} dan \texttt{queue\_prefix} ke dalam \texttt{socket} untuk digunakan dalam tampilan.
+\end{itemize}
+
+Setelah data berhasil diassign, fungsi ini mengembalikan \texttt{\{:ok, socket, layout: false\}}, yang menonaktifkan layout standar agar tampilan fokus pada nomor antrian saja.
+
+\subsection{Fungsi \texttt{handle\_info/2}}
+Fungsi \texttt{handle\_info/2} digunakan untuk menangani pesan yang disiarkan oleh \texttt{QueueCounter} setiap kali ada pembaruan nomor antrian.
+\begin{itemize}
+	\item Saat pesan \texttt{\{:number\_update, new\_number\}} diterima dari topik \texttt{"queue\_counter:updates"}, fungsi ini mengassign \texttt{new\_number} ke dalam \texttt{socket} sebagai \texttt{:current\_number}.
+	\item Dengan mengassign nilai \texttt{:current\_number} yang baru, tampilan akan diperbarui secara otomatis tanpa memuat ulang halaman, memastikan bahwa pengguna melihat nomor antrian terbaru secara real-time.
+\end{itemize}
+
+\subsection{Fokus pada Tampilan Read-Only dengan Sinkronisasi Real-Time}
+Modul \texttt{DisplayOnlyLive} difokuskan untuk menyediakan tampilan read-only dari nomor antrian yang diperbarui secara real-time. Dengan berlangganan ke pembaruan dari \texttt{QueueCounter}, modul ini memastikan bahwa tampilan nomor antrian tetap sinkron dengan data terbaru tanpa perlu mekanisme pembaruan manual. Hal ini ideal untuk skenario di mana informasi hanya perlu dilihat tanpa perlu dilakukan modifikasi.
+
+\subsection{Manfaat Penggunaan \texttt{Phoenix.PubSub}}
+Integrasi \texttt{Phoenix.PubSub} dalam modul ini memungkinkan modul \texttt{DisplayOnlyLive} untuk menerima notifikasi ketika ada perubahan nomor antrian dari \texttt{QueueCounter}. Dengan demikian, setiap pembaruan yang terjadi di \texttt{QueueCounter} langsung disampaikan ke \texttt{DisplayOnlyLive}, sehingga antarmuka pengguna selalu menunjukkan nomor antrian terbaru.
+
+Desain ini memudahkan pengguna untuk memantau nomor antrian secara real-time dalam antarmuka yang sederhana, hanya menampilkan informasi yang relevan tanpa distraksi atau interaksi tambahan.
+
+
+\section{Implementasi \texttt{QueueCounterComponent} sebagai \texttt{LiveComponent} untuk Menampilkan Nomor Antrian}
+
+Modul \texttt{HelloWeb.QueueCounterComponent} adalah sebuah \texttt{LiveComponent} yang digunakan untuk menampilkan nomor antrian dengan prefix tertentu. Dengan menggunakan \texttt{Phoenix.LiveComponent}, modul ini memungkinkan tampilan yang dapat diperbarui secara dinamis, dan memungkinkan penggunaan kembali komponen ini di berbagai modul LiveView lainnya.
+
+Berikut adalah kode dari \texttt{counter\_component.ex}:
+
+\begin{lstlisting}[language=Elixir]
+	defmodule HelloWeb.QueueCounterComponent do
+	use Phoenix.LiveComponent
+	
+	def render(assigns) do
+	~H"""
+	<div><%= @queue_prefix %><%= @current_number %></div>
+	"""
+	end
+	end
+\end{lstlisting}
+
+\subsection{Penggunaan \texttt{Phoenix.LiveComponent}}
+Dengan mendefinisikan \texttt{QueueCounterComponent} sebagai \texttt{LiveComponent}, komponen ini dapat digunakan dalam berbagai LiveView lainnya tanpa perlu menjalankan modul LiveView yang terpisah. Hal ini membuat komponen ini fleksibel dan efisien dalam menampilkan informasi yang membutuhkan pembaruan real-time, seperti nomor antrian.
+
+\subsection{Fungsi \texttt{render/1}}
+Fungsi \texttt{render/1} pada komponen ini digunakan untuk merender tampilan HTML yang menampilkan nomor antrian dengan format:
+\begin{itemize}
+	\item \texttt{@queue\_prefix}: Menampilkan prefix dari antrian yang ditentukan dalam assign.
+	\item \texttt{@current\_number}: Menampilkan nomor antrian saat ini.
+\end{itemize}
+
+\texttt{LiveComponent} ini menerima data melalui \texttt{assigns} yang di-pass dari modul LiveView utama yang menggunakannya. Penggunaan interpolasi variabel \texttt{@queue\_prefix} dan \texttt{@current\_number} dalam komponen ini memastikan tampilan nomor antrian sesuai dengan data yang diberikan oleh modul induk.
+
+\subsection{Manfaat Penggunaan \texttt{QueueCounterComponent}}
+Dengan \texttt{QueueCounterComponent}, aplikasi dapat dengan mudah menampilkan nomor antrian secara konsisten di berbagai halaman atau modul. Beberapa manfaat dari menggunakan komponen ini adalah:
+\begin{itemize}
+	\item \textbf{Efisiensi dalam Penggunaan Ulang}: \texttt{LiveComponent} ini dapat diembed dalam berbagai LiveView lainnya, memungkinkan penggunaan kembali tanpa perlu mendefinisikan ulang tampilan nomor antrian.
+	\item \textbf{Pembaruan Dinamis}: Komponen ini secara otomatis akan memperbarui tampilannya ketika nilai dari \texttt{@queue\_prefix} atau \texttt{@current\_number} berubah, sehingga dapat menampilkan data real-time dengan lebih efisien.
+	\item \textbf{Konsistensi Tampilan}: Dengan menggunakan komponen ini, aplikasi dapat mempertahankan tampilan nomor antrian yang seragam di seluruh bagian aplikasi, meningkatkan pengalaman pengguna secara keseluruhan.
+\end{itemize}
+
+\subsection{Integrasi dengan LiveView Utama}
+\texttt{QueueCounterComponent} ini biasanya diintegrasikan ke dalam modul LiveView yang mengelola data nomor antrian secara langsung, seperti \texttt{ModifiableLive} atau \texttt{DisplayOnlyLive}. Dengan pendekatan ini, data nomor antrian dapat ditampilkan dalam bentuk komponen terpisah, yang memperbarui tampilan sesuai perubahan data pada LiveView induk.
+
+Penggunaan \texttt{QueueCounterComponent} memberikan fleksibilitas dalam menampilkan nomor antrian secara real-time di berbagai bagian aplikasi tanpa harus menduplikasi logika atau tampilan.
+
+
+\section{Desain Tampilan \texttt{DisplayOnlyLive} pada \texttt{display\_only\_live.html.heex}}
+
+Template \texttt{display\_only\_live.html.heex} menampilkan antarmuka yang sederhana dan menarik untuk menampilkan informasi nomor antrian secara real-time. Tampilan ini berfokus pada menampilkan nama antrian dan nomor antrian aktif di layar dengan ukuran besar, sehingga mudah dilihat oleh pengguna. Komponen \texttt{QueueCounterComponent} digunakan untuk merender nomor antrian dalam tampilan read-only.
+
+Berikut adalah kode dari \texttt{display\_only\_live.html.heex}:
+
+\begin{lstlisting}[language=HTML]
+	<div class="h-screen flex flex-col items-center">
+	<!-- Name at the Top Center -->
+	<div class="pt-8">
+	<h1 class="text-8xl font-bold text-center"><%= @queue_name %></h1>
+	</div>
+	
+	<!-- Number in the Center, Adjusted Upwards -->
+	<div class="flex-grow flex items-center justify-center -mt-24">
+	<div class="text-[16rem] font-bold text-center">
+	<.live_component
+	module={HelloWeb.QueueCounterComponent}
+	id="queue_counter"
+	queue_prefix={@queue_prefix}
+	current_number={@current_number}
+	/>
+	</div>
+	</div>
+	</div>
+\end{lstlisting}
+
+\subsection{Struktur dan Tata Letak Tampilan}
+
+\begin{itemize}
+	\item \textbf{Container Utama (\texttt{<div class="h-screen flex flex-col items-center">})}: Elemen ini mengatur seluruh tampilan agar memenuhi tinggi layar (\texttt{h-screen}) dan menyusun konten secara vertikal (\texttt{flex-col}) dengan perataan di tengah (\texttt{items-center}).
+	
+	\item \textbf{Nama Antrian di Bagian Atas}: 
+	\begin{itemize}
+		\item \texttt{<h1 class="text-8xl font-bold text-center"><\%= @queue\_name \%></h1>}: Elemen ini menampilkan nama antrian dalam ukuran teks yang besar (\texttt{text-8xl}) dan tebal (\texttt{font-bold}), serta diatur untuk tampil di bagian atas tengah layar. Penggunaan variabel \texttt{@queue\_name} memastikan nama antrian yang relevan tampil sesuai data yang diassign di modul LiveView utama.
+	\end{itemize}
+	
+	\item \textbf{Nomor Antrian di Bagian Tengah}: 
+	\begin{itemize}
+		\item \texttt{<div class="text-[16rem] font-bold text-center">}: Nomor antrian ditampilkan di tengah layar dengan ukuran teks sangat besar (\texttt{text-[16rem]}) agar mudah terlihat. Pengaturan ini memastikan visibilitas yang tinggi bagi pengguna yang hanya ingin melihat nomor antrian saat ini.
+		\item \texttt{<.live\_component module={HelloWeb.QueueCounterComponent} ...>}: Komponen \texttt{QueueCounterComponent} diembed di dalam tampilan ini. Komponen ini menerima atribut \texttt{queue\_prefix} dan \texttt{current\_number} yang diassign dari variabel \texttt{@queue\_prefix} dan \texttt{@current\_number}, sehingga nomor antrian dapat dirender secara real-time. Dengan \texttt{id="queue\_counter"}, komponen ini memiliki identitas unik dalam tampilan LiveView.
+	\end{itemize}
+\end{itemize}
+
+\subsection{Penggunaan \texttt{QueueCounterComponent} untuk Menampilkan Nomor Antrian}
+Komponen \texttt{QueueCounterComponent} ditambahkan menggunakan sintaks \texttt{<.live\_component>} dan memanfaatkan variabel \texttt{@queue\_prefix} serta \texttt{@current\_number}. Dengan menyisipkan komponen ini, nomor antrian dapat diperbarui secara dinamis sesuai dengan pembaruan data dari \texttt{QueueCounter}. 
+
+\subsection{Tata Letak dan Efek Visual}
+Penggunaan kelas-kelas CSS, seperti \texttt{h-screen}, \texttt{text-8xl}, \texttt{text-[16rem]}, dan \texttt{font-bold}, memastikan tampilan yang rapi, menarik, dan mudah dilihat. Struktur antarmuka ini menjadikan informasi utama (nama antrian dan nomor saat ini) fokus utama dalam tampilan, tanpa elemen lain yang mengganggu. Penempatan nama antrian di bagian atas dan nomor antrian di tengah layar dengan ukuran besar memberikan visibilitas optimal.
+
+\subsection{Implementasi Tampilan Read-Only dengan Real-Time Update}
+Dengan mengintegrasikan \texttt{QueueCounterComponent} di dalam \texttt{DisplayOnlyLive}, tampilan ini menyediakan fungsionalitas read-only yang diperbarui secara real-time tanpa interaksi pengguna. Setiap pembaruan nomor antrian yang diterima dari \texttt{QueueCounter} melalui PubSub secara otomatis di-render oleh komponen ini, memastikan bahwa pengguna melihat data yang selalu terbarui.
+
+Desain ini cocok untuk skenario di mana nomor antrian perlu ditampilkan secara besar dan mudah dilihat, seperti pada layar publik di pusat layanan atau loket.
+
+

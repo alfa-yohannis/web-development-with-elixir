@@ -25,13 +25,10 @@ defmodule HelloWeb.Router do
     get "/queues/:id/edit", QueueController, :edit
     put "/queues/:id", QueueController, :update
     delete "/queues/:id/delete", QueueController, :delete
-    # get "/queues/:id/show", QueueController, :show
 
     live "/queues/:id/control", ModifiableLive
     live "/queues/:id/display", DisplayOnlyLive
-    # live "/thermostat", ThermostatLive
-    # live "/modifiable", ModifiableLive
-    # live "/display", DisplayOnlyLive
+    live "/queues/thermostat", ThermostatLive
   end
 
   scope "/auth", HelloWeb do

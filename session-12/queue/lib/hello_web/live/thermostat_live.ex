@@ -3,13 +3,13 @@ defmodule HelloWeb.ThermostatLive do
 
   def render(assigns) do
     ~H"""
-    Current temperature: <%= @temperature %>°F
+    Current temperature: <%= @temperature %>°C
     <button phx-click="inc_temperature">+</button>
     """
   end
 
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, :temperature, 70)}
+    {:ok, assign(socket, :temperature, 30)}
   end
 
   def handle_event("inc_temperature", _params, socket) do

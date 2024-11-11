@@ -2,8 +2,7 @@
 <ul>
   <%= for queue <- @queues do %>
     <li class="action-links">
-        <%= queue.name %>
-      <%!-- <% IO.inspect(@conn.assigns) %> --%>
+      <%= queue.name %>
       <%= if  @conn.assigns.user && @conn.assigns.user.id==queue.user_id do %>
         <div>
           |
