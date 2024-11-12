@@ -28,7 +28,7 @@ defmodule HelloWeb.Router do
 
     live "/queues/:id/control", ModifiableLive
     live "/queues/:id/display", DisplayOnlyLive
-    live "/queues/thermostat", ThermostatLive
+    live "/thermostat", ThermostatLive
   end
 
   scope "/auth", HelloWeb do

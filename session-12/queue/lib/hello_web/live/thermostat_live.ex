@@ -9,10 +9,14 @@ defmodule HelloWeb.ThermostatLive do
   end
 
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, :temperature, 30)}
+    {:ok, assign(socket, :temperature, 30), layout: false}
   end
 
   def handle_event("inc_temperature", _params, socket) do
-    {:noreply, update(socket, :temperature, &(&1 + 1))}
+    {:noreply, update(socket, :temperature, &increase/1)}
+  end
+
+  defp increase(x) do
+    x + 1
   end
 end

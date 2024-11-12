@@ -693,7 +693,7 @@ Dengan \texttt{QueueCounterComponent}, aplikasi dapat dengan mudah menampilkan n
 Penggunaan \texttt{QueueCounterComponent} memberikan fleksibilitas dalam menampilkan nomor antrian secara real-time di berbagai bagian aplikasi tanpa harus menduplikasi logika atau tampilan.
 
 
-\section{Desain Tampilan \texttt{DisplayOnlyLive} pada \texttt{display\_only\_live.html.heex}}
+\section{Pembuatan File \texttt{display\_only\_live.html.heex} untuk Desain Tampilan \texttt{DisplayOnlyLive}}
 
 Template \texttt{display\_only\_live.html.heex} menampilkan antarmuka yang sederhana dan menarik untuk menampilkan informasi nomor antrian secara real-time. Tampilan ini berfokus pada menampilkan nama antrian dan nomor antrian aktif di layar dengan ukuran besar, sehingga mudah dilihat oleh pengguna. Komponen \texttt{QueueCounterComponent} digunakan untuk merender nomor antrian dalam tampilan read-only.
 
@@ -727,13 +727,13 @@ Berikut adalah kode dari \texttt{display\_only\_live.html.heex}:
 	
 	\item \textbf{Nama Antrian di Bagian Atas}: 
 	\begin{itemize}
-		\item \texttt{<h1 class="text-8xl font-bold text-center"><\%= @queue\_name \%></h1>}: Elemen ini menampilkan nama antrian dalam ukuran teks yang besar (\texttt{text-8xl}) dan tebal (\texttt{font-bold}), serta diatur untuk tampil di bagian atas tengah layar. Penggunaan variabel \texttt{@queue\_name} memastikan nama antrian yang relevan tampil sesuai data yang diassign di modul LiveView utama.
+		\item \texttt{<h1 class="text-8xl font-bold text-center"><\%= @queue\_name \%></h1>}: Kode ini menampilkan nama antrian dalam ukuran teks yang besar (\texttt{text-8xl}) dan tebal (\texttt{font-bold}), serta diatur untuk tampil di bagian atas tengah layar. Penggunaan variabel \texttt{@queue\_name} memastikan nama antrian yang relevan tampil sesuai data yang diassign di modul LiveView utama.
 	\end{itemize}
 	
 	\item \textbf{Nomor Antrian di Bagian Tengah}: 
 	\begin{itemize}
 		\item \texttt{<div class="text-[16rem] font-bold text-center">}: Nomor antrian ditampilkan di tengah layar dengan ukuran teks sangat besar (\texttt{text-[16rem]}) agar mudah terlihat. Pengaturan ini memastikan visibilitas yang tinggi bagi pengguna yang hanya ingin melihat nomor antrian saat ini.
-		\item \texttt{<.live\_component module={HelloWeb.QueueCounterComponent} ...>}: Komponen \texttt{QueueCounterComponent} diembed di dalam tampilan ini. Komponen ini menerima atribut \texttt{queue\_prefix} dan \texttt{current\_number} yang diassign dari variabel \texttt{@queue\_prefix} dan \texttt{@current\_number}, sehingga nomor antrian dapat dirender secara real-time. Dengan \texttt{id="queue\_counter"}, komponen ini memiliki identitas unik dalam tampilan LiveView.
+		\item \texttt{<.live\_component module={HelloWeb.QueueCounterComponent} ...>}: Kode tersebut meng-\textit{embed} Komponen \texttt{QueueCounterComponent} ke dalam tampilan tsb. Komponen ini menerima atribut \texttt{queue\_prefix} dan \texttt{current\_number} yang diassign dari variabel \texttt{@queue\_prefix} dan \texttt{@current\_number}, sehingga nomor antrian dapat dirender secara real-time. Dengan \texttt{id="queue\_counter"}, komponen ini memiliki identitas unik dalam tampilan LiveView.
 	\end{itemize}
 \end{itemize}
 
