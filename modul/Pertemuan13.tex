@@ -1,4 +1,403 @@
-\chapter{Web Socket pada Phoenix Framework (Bagian 2)}
+\chapter{Phoenix LiveView: Aplikasi Web Real-Time (bagian 2)}
 
 \section{Pendahuluan}
-Test
+
+Bab sebelumnya sudah membahas bagaimana aplikasi manajemen antrian yang dibangun mengelola nomor antrian. Akan tetapi, masih terdapat kekurangan di mana antrian satu masih bercampur dengan antrian yang lain. Misalnya, antrian A dinaikan satu nomor, maka antrian B juga akan naik. Bab ini berisi perbaikan dari masalah tersebut tidak ada pencampuran antara antrian dengan memberikan \texttt{topic} tersediri untuk masing-masing antrian.
+
+\section{Penggunaan \texttt{Topic} Tersediri untuk Tiap Antrian pada \texttt{GenServer}}
+
+Modul praktik ini menunjukkan penggunaan \texttt{GenServer} di Elixir untuk mengelola nomor antrian. Setiap antrian memiliki identitas unik berupa \texttt{queue\_id}. Modul ini menyediakan API untuk membaca dan memperbarui nomor antrian, serta menyiarkan pembaruan menggunakan \texttt{Phoenix.PubSub}. Desain ini memungkinkan pengelolaan status yang dinamis dan pembaruan secara real-time dalam sistem terdistribusi.
+
+\subsection{Ikhtisar Modul}
+
+Modul \texttt{Hello.QueueCounter} memiliki fungsi berikut:
+\begin{enumerate}
+	\item Mengelola status dalam bentuk \texttt{map}, di mana setiap kunci adalah \texttt{queue\_id} dan nilai adalah nomor saat ini untuk antrian tersebut.
+	\item Menyediakan fungsi untuk membaca dan memperbarui nomor antrian.
+	\item Menyiarkan pembaruan ke topik tertentu menggunakan \texttt{Phoenix.PubSub}.
+\end{enumerate}
+
+\subsection{Implementasi Kode}
+
+Berikut adalah implementasi lengkapnya:
+
+\begin{lstlisting}[language=Elixir, caption={lib/hello/queue\_counter.ex}]
+	defmodule Hello.QueueCounter do
+	use GenServer
+	
+	alias Phoenix.PubSub
+	
+	# Inisialisasi dengan map kosong untuk menyimpan nomor antrian
+	def init(initial_map_state) do
+	IO.puts("## initial_map_state")
+	IO.inspect(initial_map_state)
+	{:ok, initial_map_state}
+	end
+	
+	# Memulai GenServer dengan map kosong
+	def start_link(_) do
+	start_link_initial_map_state = %{}
+	IO.puts("## start_link_initial_map_state")
+	IO.inspect(start_link_initial_map_state)
+	GenServer.start_link(__MODULE__, start_link_initial_map_state, name: __MODULE__)
+	end
+	
+	# API publik untuk mendapatkan nomor saat ini untuk queue_id tertentu
+	def get_current_number(queue_id) do
+	GenServer.call(__MODULE__, {:get_current_number, queue_id})
+	end
+	
+	# API publik untuk memperbarui nomor saat ini untuk queue_id tertentu
+	def set_current_number(queue_id, new_number) do
+	GenServer.cast(__MODULE__, {:set_current_number, queue_id, new_number})
+	end
+	
+	# Menangani pengambilan nomor saat ini untuk queue_id tertentu
+	def handle_call({:get_current_number, queue_id}, _from, current_map_state) do
+	IO.puts("## current_map_state")
+	IO.inspect(current_map_state)
+	
+	# Default ke 0 jika queue_id tidak ditemukan
+	current_number = Map.get(current_map_state, queue_id, 0)
+	{:reply, current_number, current_map_state}
+	end
+	
+	# Menangani pembaruan nomor untuk queue_id tertentu dan menyiarkan pembaruan
+	def handle_cast({:set_current_number, queue_id, new_number}, current_map_state) do
+	updated_map_state = Map.put(current_map_state, queue_id, new_number)
+	
+	PubSub.broadcast(
+	Hello.PubSub,
+	"queue_counter:updates:#{queue_id}",
+	{:number_update, queue_id, new_number}
+	)
+	
+	{:noreply, updated_map_state}
+	end
+	end
+\end{lstlisting}
+
+\subsection{Penjelasan Detail}
+
+\paragraph{Inisialisasi Status}
+Status \texttt{GenServer} diinisialisasi dalam fungsi \texttt{init/1} sebagai \texttt{map} kosong:
+\begin{lstlisting}[language=Elixir]
+	def init(initial_map_state) do
+	{:ok, initial_map_state}
+	end
+\end{lstlisting}
+Setiap kunci dalam \texttt{map} mewakili \texttt{queue\_id}, dan nilainya adalah nomor saat ini untuk antrian tersebut.
+
+\paragraph{Memulai GenServer}
+Fungsi \texttt{start\_link/1} memulai GenServer dengan status awal berupa \texttt{map} kosong:
+\begin{lstlisting}[language=Elixir]
+	def start_link(_) do
+	GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
+	end
+\end{lstlisting}
+
+\paragraph{Membaca Nomor Antrian}
+Fungsi \texttt{get\_current\_number/1} mengambil nomor saat ini untuk \texttt{queue\_id} tertentu:
+\begin{lstlisting}[language=Elixir]
+	def handle_call({:get_current_number, queue_id}, _from, current_map_state) do
+	current_number = Map.get(current_map_state, queue_id, 0)
+	{:reply, current_number, current_map_state}
+	end
+\end{lstlisting}
+Jika \texttt{queue\_id} tidak ditemukan, nilai default adalah \texttt{0}.
+
+\paragraph{Memperbarui Nomor Antrian}
+Fungsi \texttt{set\_current\_number/2} memperbarui nomor untuk \texttt{queue\_id} tertentu dan menyiarkan pembaruan:
+\begin{lstlisting}[language=Elixir]
+	def handle_cast({:set_current_number, queue_id, new_number}, current_map_state) do
+	updated_map_state = Map.put(current_map_state, queue_id, new_number)
+	PubSub.broadcast("queue_counter:updates:#{queue_id}", {:number_update, queue_id, new_number})
+	{:noreply, updated_map_state}
+	end
+\end{lstlisting}
+
+\paragraph{Penyiaran Perubahan}
+Pembaruan disiarkan ke topik \texttt{"queue\_counter:updates:\{queue\_id\}"}, sehingga komponen lain dapat merespons pembaruan secara real-time.
+
+\subsection{Contoh Penggunaan}
+
+Berikut adalah contoh penggunaan modul:
+\begin{enumerate}
+	\item Memulai \texttt{QueueCounter}:
+	\begin{lstlisting}[language=Elixir]
+		{:ok, _pid} = Hello.QueueCounter.start_link([])
+	\end{lstlisting}
+	
+	\item Memperbarui dan membaca nomor antrian:
+	\begin{lstlisting}[language=Elixir]
+		Hello.QueueCounter.set_current_number(:queue_1, 5)
+		IO.inspect(Hello.QueueCounter.get_current_number(:queue_1)) # Output: 5
+	\end{lstlisting}
+	
+	\item Membaca nomor untuk antrian yang tidak ada:
+	\begin{lstlisting}[language=Elixir]
+		IO.inspect(Hello.QueueCounter.get_current_number(:queue_2)) # Output: 0
+	\end{lstlisting}
+	
+	\item Mendengarkan pembaruan menggunakan PubSub:
+	\begin{lstlisting}[language=Elixir]
+		Hello.QueueCounter.set_current_number(:queue_1, 10)
+		# Subscriber pada "queue_counter:updates:queue_1" akan menerima {:number_update, :queue_1, 10}
+	\end{lstlisting}
+\end{enumerate}
+
+\section{Mengapa \texttt{queue\_counter:updates:\{queue\_id\}}?}
+
+Pemilihan format topik \texttt{"queue\_counter:updates:\{queue\_id\}"} dalam fungsi \texttt{handle\_cast/2} dilakukan untuk mendukung skenario yang lebih fleksibel dan efisien dibandingkan hanya menggunakan topik umum seperti \texttt{"queue\_counter:updates"}. Berikut adalah alasannya:
+
+\begin{enumerate}
+	\item \textbf{Isolasi Notifikasi untuk Tiap Queue.} Format \texttt{"queue\_counter:updates:\{queue\_id\}"} membuat pembaruan nomor antrian dapat difokuskan hanya pada \texttt{queue\_id} tertentu. Subscriber (pihak yang mendengarkan pembaruan) hanya akan menerima notifikasi untuk antrian yang relevan. Sebagai contoh:
+	\begin{itemize}
+		\item Jika pembaruan dilakukan pada \texttt{queue\_id = :queue\_1}, maka hanya subscriber pada topik \texttt{"queue\_counter:updates:queue\_1"} yang akan menerima pemberitahuan.
+		\item Hal ini mencegah subscriber lain menerima notifikasi yang tidak relevan.
+	\end{itemize}
+	Jika hanya menggunakan \texttt{"queue\_counter:updates"} sebagai topik global, maka semua subscriber akan menerima semua pembaruan, yang dapat menyebabkan:
+	\begin{itemize}
+		\item Beban komunikasi yang tidak perlu.
+		\item Kebingungan karena subscriber harus memfilter data berdasarkan \texttt{queue\_id} secara manual.
+	\end{itemize}
+	
+	\item \textbf{Efisiensi Kinerja.} Format \texttt{"queue\_counter:updates:\{queue\_id\}"} membuat topik menjadi spesifik sehingga pembaruan disiarkan hanya kepada subscriber yang benar-benar membutuhkan informasi tersebut. Ini mengurangi:
+	\begin{itemize}
+		\item Konsumsi bandwidth, karena data tidak dikirim ke subscriber yang tidak memerlukannya.
+		\item Beban pemrosesan pada subscriber, karena mereka tidak perlu memeriksa apakah pembaruan relevan untuk \texttt{queue\_id} tertentu.
+	\end{itemize}
+	Sebaliknya, jika menggunakan topik umum, sistem akan mengirimkan pembaruan ke semua subscriber, yang dapat mengakibatkan bottleneck ketika jumlah subscriber atau frekuensi pembaruan meningkat.
+	
+	\item \textbf{Skalabilitas dan Ekspansi.} Pendekatan ini mendukung desain sistem yang skalabel:
+	\begin{itemize}
+		\item Dengan topik spesifik, mudah untuk menambah atau menghapus antrian tanpa memengaruhi subscriber lain.
+		\item Jika aplikasi berkembang untuk mendukung ribuan \texttt{queue\_id}, desain ini tetap efisien karena setiap antrian dapat diisolasi secara logis.
+	\end{itemize}
+	Sebagai perbandingan, topik umum seperti \texttt{"queue\_counter:updates"} akan menyebabkan subscriber harus memproses semua pembaruan, yang tidak efisien jika jumlah antrian meningkat.
+	
+	\item \textbf{Pengelompokan yang Jelas.} 
+	Topik yang spesifik memberikan struktur hierarki yang lebih jelas. Dalam format \texttt{"queue\_counter:updates:\{queue\_id\}"}, setiap antrian memiliki ruang pembaruan yang terpisah, sehingga mudah untuk:
+	\begin{itemize}
+		\item Melacak pembaruan berdasarkan \texttt{queue\_id}.
+		\item Melakukan debugging jika terjadi masalah pada antrian tertentu.
+	\end{itemize}
+	
+	\item \textbf{Contoh Implementasi.} Berikut adalah contoh kasus penggunaan dengan topik spesifik:
+	\begin{enumerate}
+		\item Subscriber hanya perlu mendengarkan topik \texttt{"queue\_counter:updates:queue\_1"} untuk \texttt{:queue\_1}:
+		\begin{lstlisting}[language=Elixir]
+			Phoenix.PubSub.subscribe(Hello.PubSub, "queue_counter:updates:queue_1")
+		\end{lstlisting}
+		
+		\item Jika ada pembaruan untuk \texttt{:queue\_1}, hanya subscriber ini yang akan menerima pesan:
+		\begin{lstlisting}[language=Elixir]
+			Hello.QueueCounter.set_current_number(:queue_1, 10)
+			# Subscriber akan menerima {:number_update, :queue_1, 10}
+		\end{lstlisting}
+	\end{enumerate}
+\end{enumerate}
+
+
+\section{DisplayOnlyLive: Komponen LiveView untuk Menampilkan Nomor Antrian}
+
+Modul \texttt{HelloWeb.DisplayOnlyLive} adalah komponen LiveView yang bertanggung jawab untuk menampilkan nomor antrian secara real-time. Modul ini memanfaatkan PubSub untuk menerima pembaruan dari \texttt{QueueCounter} dan secara dinamis memperbarui tampilan pengguna.
+
+\subsection{Kode Implementasi}
+
+Berikut adalah implementasi lengkap dari \texttt{DisplayOnlyLive}:
+
+\begin{lstlisting}[language=Elixir, caption={lib/hello\_web/live/display\_only\_live.ex}]
+	defmodule HelloWeb.DisplayOnlyLive do
+	use HelloWeb, :live_view
+	alias Hello.QueueCounter
+	alias Hello.Queue
+	alias Hello.Repo
+	
+	def mount(params, _session, socket) do
+	%{"id" => queue_id} = params
+	
+	# Subscribe to updates from the QueueCounter
+	:ok = Phoenix.PubSub.subscribe(Hello.PubSub, "queue_counter:updates:#{queue_id}")
+	
+	# Get the initial current number of cases handled from QueueCounter
+	current_number = QueueCounter.get_current_number(queue_id)
+	
+	queue = Repo.get!(Queue, queue_id)
+	
+	socket =
+	socket
+	|> assign(:current_number, current_number)
+	|> assign(:queue_name, queue.name)
+	|> assign(:queue_prefix, queue.prefix)
+	|> assign(:queue_id, queue_id)
+	
+	{:ok, socket, layout: false}
+	end
+	
+	def handle_info({:number_update, queue_id, new_number}, socket) do
+	# Update the socket state when a new number is broadcasted
+	socket =
+	socket
+	|> assign(:current_number, new_number)
+	|> assign(:queue_id, queue_id)
+	{:noreply,socket}
+	end
+	end
+\end{lstlisting}
+
+\subsection{Penjelasan Detail}
+
+\textbf{1. Tujuan Modul.} Modul ini dirancang untuk menampilkan informasi nomor antrian yang diperbarui secara real-time kepada pengguna. Komunikasi real-time dicapai melalui integrasi dengan Phoenix PubSub.
+
+\textbf{2. Fungsi \texttt{mount/3}.} Fungsi ini dijalankan ketika LiveView dimuat pertama kali. Berikut langkah-langkah yang dilakukan:
+\begin{enumerate}
+	\item \textbf{Mengambil Parameter.} Parameter \texttt{params} digunakan untuk mendapatkan \texttt{queue\_id} dari URL.
+	\item \textbf{Berlangganan ke Topik PubSub.} LiveView ini berlangganan ke topik \texttt{"queue\_counter:updates:\{queue\_id\}"}, sehingga akan menerima pesan setiap kali nomor antrian diperbarui.
+	\item \textbf{Mengambil Data Awal.} Nilai awal \texttt{current\_number} diambil dari modul \texttt{QueueCounter} menggunakan fungsi \texttt{get\_current\_number/1}.
+	\item \textbf{Mengambil Informasi Antrian.} Informasi tambahan tentang antrian, seperti \texttt{queue\_name} dan \texttt{queue\_prefix}, diambil dari database menggunakan \texttt{Repo.get!/2}.
+	\item \textbf{Inisialisasi Socket.} Data yang telah diambil diassign ke \texttt{socket}, sehingga dapat digunakan di tampilan.
+\end{enumerate}
+
+\textbf{3. Fungsi \texttt{handle\_info/2}.} Fungsi ini menangani pesan broadcast dari PubSub. Ketika nomor antrian diperbarui, fungsi ini:
+\begin{enumerate}
+	\item \textbf{Menerima Pesan Broadcast.} Pesan dalam format \texttt{\{:number\_update, queue\_id, new\_number\}} diterima dari PubSub.
+	\item \textbf{Memperbarui Socket.} Nilai \texttt{current\_number} di \texttt{socket} diperbarui dengan nilai baru (\texttt{new\_number}), sehingga perubahan akan otomatis terlihat di antarmuka pengguna.
+\end{enumerate}
+
+\subsection{Poin Penting}
+
+\begin{enumerate}
+	\item \textbf{Integrasi PubSub.} Modul ini memanfaatkan \texttt{Phoenix.PubSub} untuk menerima pembaruan secara real-time, menjadikannya efisien untuk skenario di mana banyak pengguna mengakses data yang sama.
+	\item \textbf{Pengelolaan Data.} Informasi yang relevan untuk tampilan, seperti \texttt{current\_number}, \texttt{queue\_name}, dan \texttt{queue\_prefix}, diambil dari modul \texttt{QueueCounter} dan database.
+	\item \textbf{Desain yang Responsif.} Perubahan data pada backend langsung dipantulkan ke frontend tanpa perlu muat ulang halaman.
+\end{enumerate}
+
+\subsection{Contoh Penggunaan}
+
+Berikut adalah contoh alur kerja LiveView ini:
+\begin{enumerate}
+	\item Ketika halaman LiveView dimuat, LiveView berlangganan ke topik PubSub untuk \texttt{queue\_id} tertentu dan menampilkan nomor antrian saat ini.
+	\item Jika ada pembaruan nomor antrian (misalnya melalui \texttt{QueueCounter.set\_current\_number/2}), pesan broadcast dikirim ke topik \texttt{"queue\_counter:updates:\{queue\_id\}"}, dan fungsi \texttt{handle\_info/2} memperbarui tampilan pengguna.
+\end{enumerate}
+
+\section{ModifiableLive: Komponen LiveView untuk Memodifikasi Nomor Antrian}
+
+Modul \texttt{HelloWeb.ModifiableLive} adalah komponen LiveView yang bertugas menampilkan dan memodifikasi nomor antrian secara real-time. Modul ini memungkinkan pengguna dengan otentikasi untuk meningkatkan nomor antrian, serta menerima pembaruan dari \texttt{QueueCounter} melalui PubSub.
+
+\subsection{Kode Implementasi}
+
+Berikut adalah implementasi lengkap dari \texttt{ModifiableLive}:
+
+\begin{lstlisting}[language=Elixir, caption={lib/hello\_web/live/modifiable\_live.ex}]
+	defmodule HelloWeb.ModifiableLive do
+	use HelloWeb, :live_view
+	alias Hello.QueueCounter
+	alias Hello.Queue
+	alias Hello.Repo
+	
+	def mount(params, session, socket) do
+	%{"id" => queue_id} = params
+	
+	case session do
+	%{"user_id" => user_id} ->
+	# Subscribe to updates from the QueueCounter
+	:ok = Phoenix.PubSub.subscribe(Hello.PubSub, "queue_counter:updates:#{queue_id}")
+	
+	# Get the current number of cases handled from QueueCounter
+	current_number = QueueCounter.get_current_number(queue_id)
+	
+	queue = Repo.get!(Queue, queue_id)
+	
+	socket =
+	socket
+	|> assign(:current_number, current_number)
+	|> assign(:queue_id, queue_id)
+	|> assign(:user_id, user_id)
+	|> assign(:queue, queue)
+	
+	{:ok, socket, layout: {HelloWeb.Layouts, :live}}
+	
+	_ ->
+	socket =
+	socket
+	|> put_flash(:error, "You haven't signed in.")
+	
+	{:ok, push_navigate(socket, to: "/")}
+	end
+	end
+	
+	def handle_event("increment_number", _params, socket) do
+	queue_id = socket.assigns.queue_id
+	old_queue = Repo.get!(Queue, queue_id)
+	new_state = %{"current_number" => old_queue.current_number + 1}
+	changeset = Queue.changeset(old_queue, new_state)
+	Repo.update(changeset)
+	
+	current_queue = Repo.get!(Queue, queue_id)
+	
+	# Increment the current number
+	new_number = current_queue.current_number
+	
+	# Update QueueCounter with the new number
+	QueueCounter.set_current_number(queue_id, new_number)
+	
+	# Update the socket state with the new number
+	socket =
+	socket
+	|> assign(:current_number, new_number)
+	|> assign(:queue_id, queue_id)
+	{:noreply,socket}
+	end
+	
+	def handle_info({:number_update, queue_id, new_number}, socket) do
+	# Update the socket state when a new number is broadcasted
+	socket =
+	socket
+	|> assign(:current_number, new_number)
+	|> assign(:queue_id, queue_id)
+	{:noreply,socket}
+	end
+	end
+\end{lstlisting}
+
+\subsection{Penjelasan Detail}
+
+\textbf{1. Tujuan Modul.} Modul ini memungkinkan pengguna untuk melihat dan memodifikasi nomor antrian secara real-time. Modul ini menggunakan PubSub untuk menerima pembaruan nomor antrian dan menyediakan event untuk mengubah nilai antrian.
+
+\textbf{2. Fungsi \texttt{mount/3}.} Fungsi ini dijalankan ketika LiveView dimuat pertama kali. Berikut adalah langkah-langkah utamanya:
+\begin{enumerate}
+	\item \textbf{Mengambil Parameter dan Otentikasi.} Parameter \texttt{params} digunakan untuk mendapatkan \texttt{queue\_id}, dan \texttt{session} digunakan untuk memverifikasi keberadaan \texttt{user\_id}.
+	\item \textbf{Berlangganan ke PubSub.} Jika pengguna sudah login, LiveView berlangganan ke topik \texttt{"queue\_counter:updates:\{queue\_id\}"} untuk menerima pembaruan nomor antrian.
+	\item \textbf{Mengambil Data Awal.} Data awal, termasuk nomor antrian dan informasi tambahan (\texttt{queue\_name} dan \texttt{queue\_prefix}), diambil dari database menggunakan modul \texttt{Repo}.
+	\item \textbf{Otentikasi Gagal.} Jika pengguna belum login, pesan error ditampilkan menggunakan \texttt{put\_flash}, dan pengguna diarahkan ke halaman login.
+\end{enumerate}
+
+\textbf{3. Fungsi \texttt{handle\_event/3}.} Fungsi ini menangani event \texttt{"increment\_number"}, yang dipicu ketika pengguna meningkatkan nomor antrian. Berikut langkah-langkahnya:
+\begin{enumerate}
+	\item \textbf{Mengambil Data Saat Ini.} Data antrian diambil dari database, dan nomor antrian saat ini ditingkatkan sebesar satu.
+	\item \textbf{Memperbarui Database.} Perubahan nomor antrian diperbarui ke database menggunakan \texttt{Repo.update/1}.
+	\item \textbf{Memperbarui QueueCounter.} Nomor antrian yang baru dikirim ke \texttt{QueueCounter} untuk disiarkan ke subscriber.
+	\item \textbf{Memperbarui State Socket.} Nilai \texttt{current\_number} pada \texttt{socket} diperbarui, sehingga perubahan langsung terlihat di tampilan pengguna.
+\end{enumerate}
+
+\textbf{4. Fungsi \texttt{handle\_info/2}.} Fungsi ini menangani pesan broadcast dari PubSub. Ketika nomor antrian diperbarui oleh komponen lain, nilai \texttt{current\_number} di \texttt{socket} diperbarui untuk mencerminkan perubahan tersebut.
+
+\subsection{Poin Penting}
+
+\begin{enumerate}
+	\item \textbf{Otentikasi Pengguna.} Modul ini memastikan bahwa hanya pengguna yang telah login dapat memodifikasi nomor antrian.
+	\item \textbf{Integrasi PubSub.} Sistem PubSub memastikan bahwa semua subscriber menerima pembaruan nomor antrian secara real-time.
+	\item \textbf{Modifikasi Data.} Fungsi \texttt{handle\_event/3} memungkinkan pengguna untuk memodifikasi data secara langsung dan aman.
+	\item \textbf{Responsivitas Tinggi.} Perubahan data langsung dipantulkan ke antarmuka pengguna tanpa memerlukan refresh halaman.
+\end{enumerate}
+
+\subsection{Contoh Penggunaan}
+
+Berikut adalah contoh alur kerja LiveView ini:
+\begin{enumerate}
+	\item Ketika halaman LiveView dimuat, pengguna harus login untuk mengakses fitur modifikasi antrian.
+	\item Jika pengguna meningkatkan nomor antrian melalui tombol di antarmuka, event \texttt{"increment\_number"} dipicu, dan nomor antrian diperbarui.
+	\item Semua subscriber yang berlangganan ke topik terkait menerima pembaruan secara real-time.
+\end{enumerate}
+
