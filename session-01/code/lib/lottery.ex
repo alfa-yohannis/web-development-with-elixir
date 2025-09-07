@@ -4,16 +4,17 @@ defmodule Lottery do
   end
 
   def generate_pool do
-    numbers = ["Number 1", "Number 2", "Number 3",
-      "Number 4", "Number 5", "Number 6"]
+    numbers = ["Number 1", "Number 2", "Number 3", "Number 4", "Number 5", "Number 6"]
     pots = ["Pot 1", "Pot 2", "Pot 3", "Pot 4"]
 
     # for pot <- pots do
     #   "Nomor #{pot}"
     # end
-    pool = for pot <- pots, number <- numbers do
-      "#{number} in #{pot}"
-    end
+    pool =
+      for pot <- pots, number <- numbers do
+        "#{number} in #{pot}"
+      end
+
     pool
   end
 
@@ -21,7 +22,7 @@ defmodule Lottery do
     Enum.shuffle(pool)
   end
 
-#@spec contains?(any(), any()) :: boolean()
+  # @spec contains?(any(), any()) :: boolean()
   def contains?(pool, number) do
     Enum.member?(pool, number)
   end

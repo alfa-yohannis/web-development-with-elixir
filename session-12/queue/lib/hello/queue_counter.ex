@@ -19,6 +19,7 @@ defmodule Hello.QueueCounter do
   end
 
   # Public API to set the current number of cases handled
+  @spec set_current_number(any()) :: :ok
   def set_current_number(new_number) do
     GenServer.cast(__MODULE__, {:set_current_number, new_number})
   end
@@ -30,7 +31,8 @@ defmodule Hello.QueueCounter do
 
   # Handle setting the current number and broadcasting the update
   def handle_cast({:set_current_number, new_number}, _current_number) do
-    PubSub.broadcast(Hello.PubSub, "queue_counter:updates", {:number_update, new_number})
+    PubSub.broadcast(Hello.PubSub,
+    "queue_counter:updates", {:number_update, new_number})
     {:noreply, new_number}
   end
 end

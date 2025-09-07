@@ -7,9 +7,13 @@
 
 \subtitle{IF140303-Web Application Development}
 
-\title{\LARGE{Session-01:\\Introduction to Elixir}
-	\vspace{20pt}}
-\date[Serial]{\scriptsize {PRU/SPMI/FR-BM-18/0222}}
+\title{Session-01:\\
+\vspace{10pt}
+\Huge{Introduction to Elixir}
+%\vspace{5pt}
+}
+
+\date[Serial]{\\\vspace{15pt}\scriptsize {PRU/SPMI/FR-BM-18/0222}}
 \author[Pradita]{\small{\textbf{Alfa Yohannis}}}
 
 \lstdefinelanguage{Elixir} {
@@ -17,6 +21,32 @@
 	basicstyle=\ttfamily\small,
 	keywordstyle=\color{blue}\bfseries,
 	ndkeywords={@moduledoc, iex, Enum, @doc},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	showstringspaces=false,
+	% string settings
+	morestring=[b]",
+	morestring=[b]',
+	stringstyle=\color{black}\ttfamily, % default, will be overridden
+	moredelim=[s][\color{blue}\ttfamily]{"}{"},   % double quotes
+	moredelim=[s][\color{teal}\ttfamily]{'}{'}    % single quotes
+}
+
+
+\lstdefinelanguage{bash} {
+	keywords={},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={iex},
 	ndkeywordstyle=\color{purple}\bfseries,
 	sensitive=true,
 	commentstyle=\color{gray},
@@ -37,216 +67,656 @@
 \begin{document}
 	
 	\frame{\titlepage}
-	
-	\begin{frame}
-		\frametitle{What is Elixir?}
-		\begin{itemize}
-			\item Elixir is a dynamic, functional programming language designed for building scalable and maintainable applications.
-			\item It runs on the Erlang VM (BEAM), known for its ability to handle large amounts of concurrent processes.
-			\item Elixir leverages Erlang's capabilities for distributed systems, fault-tolerance, and low-latency messaging.
-			\item Its syntax is inspired by Ruby, making it accessible for developers familiar with Ruby.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}
-		\frametitle{How to Install Elixir}
+
+
+	\begin{frame}[fragile]
+		\frametitle{Contents}
 		\vspace{20pt}
-		\begin{itemize}
-			\item \textbf{On macOS:}
-			\begin{itemize}
-				\item Use Homebrew: \texttt{brew install elixir}
-			\end{itemize}
-			\item \textbf{On Ubuntu:}
-			\begin{itemize}
-				\item Install dependencies: \texttt{sudo apt-get install wget gnupg}
-				\item Add the Elixir repository:\\\texttt{wget -qO- \url{https://deb.nodesource.com/setup\_16.x} | sudo -E bash -}
-				\item Install Elixir: \texttt{sudo apt-get install elixir}
-			\end{itemize}
-			\item \textbf{On Windows:}
-			\begin{itemize}
-				\item Download the installer from the Elixir website: \url{https://elixir-lang.org/install.html}
-			\end{itemize}
-			\item Verify the installation by running: \texttt{elixir --version}
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Module Documentation}
-		\begin{lstlisting}[language=Elixir]
-			defmodule Lottery do
-			@moduledoc """
-			This module provides functionalities for managing a lottery system.
-			It includes functions for creating, shuffling, checking for numbers, and distributing numbers within the lottery pool.
-			"""
-		\end{lstlisting}
-		\begin{itemize}
-			\item \texttt{@moduledoc} provides documentation for the \texttt{Lottery} module.
-			\item Describes the module's purpose and the functionalities it offers.
-			\item Includes functions for creating, shuffling, checking, and distributing numbers.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Elixir: Lottery Module}
-		\begin{lstlisting}[language=Elixir]
-			defmodule Lottery do
-			def greet do
-			"Good luck!"
-			end
-		\end{lstlisting}
-		\begin{itemize}
-			\item The \texttt{Lottery} module handles lottery operations such as creating pools, shuffling, and checking numbers.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Greeting Function}
-		\begin{lstlisting}[language=Elixir]
-			def greet do
-			"Good luck!"
-			end
-		\end{lstlisting}
-		\begin{itemize}
-			\item The \texttt{greet/0} function returns a simple greeting message.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Generating Lottery Pool}
-		\begin{lstlisting}[language=Elixir]
-			@spec generate_pool() :: [<<_::24, _::_*16>>, ...]
-			def generate_pool do
-			numbers = ["Number 1", "Number 2", "Number 3", "Number 4", "Number 5", "Number 6"]
-			pots = ["Pot 1", "Pot 2", "Pot 3", "Pot 4"]
+		\begin{columns}[t]
+			\column{0.5\textwidth}
+			\tableofcontents[sections={1-5}]
 			
-			for pot <- pots, number <- numbers do
-			"#{number} in #{pot}"
-			end
-			end
-		\end{lstlisting}
-		\begin{itemize}
-			\item \texttt{generate\_pool/0} creates a list of lottery numbers across multiple pots.
-			\item The nested \texttt{for} comprehensions combine numbers with pot labels.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Shuffling the Pool}
-		\begin{lstlisting}[language=Elixir]
-			def randomize(pool) do
-			Enum.shuffle(pool)
-			end
-		\end{lstlisting}
-		\begin{itemize}
-			\item \texttt{randomize/1} shuffles the list of lottery numbers.
-			\item Utilizes \texttt{Enum.shuffle/1} to randomize the order.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Checking Number Presence}
-		\begin{lstlisting}[language=Elixir]
-			@spec contains?(any(), any()) :: boolean()
-			def contains?(pool, number) do
-			Enum.member?(pool, number)
-			end
-		\end{lstlisting}
-		\begin{itemize}
-			\item \texttt{contains?/2} checks if a number is present in the lottery pool.
-			\item Uses \texttt{Enum.member?/2} to verify presence.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Distributing the Pool}
-		\begin{lstlisting}[language=Elixir]
-			def distribute(pool, draw_size) do
-			Enum.split(pool, draw_size)
-			end
-			end
-		\end{lstlisting}
-		\begin{itemize}
-			\item \texttt{distribute/2} splits the pool into two lists based on the draw size.
-			\item Returns a tuple containing two lists.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Function Documentation (1)}
-		\begin{lstlisting}[language=Elixir]
-			@doc """
-			Splits the pool into two parts based on draw_size.
-			
-			## Parameters
-			
-			- pool: List of lottery numbers.
-			- draw_size: Number of items in the first part.
-			
-			## Returns
-			
-			- A tuple with two lists: the first with draw_size items, and the second with the rest.
-			
-			## Example
-			
-			iex> Lottery.distribute(["Number 1 in Pot 1", "Number 2 in Pot 2"], 1)
-			{["Number 1 in Pot 1"], ["Number 2 in Pot 2"]}
-			"""
-		\end{lstlisting}
+			\column{0.5\textwidth}
+			\tableofcontents[sections={6-20}]
+		\end{columns}
 	\end{frame}
 
-	\begin{frame}[fragile]
-		\frametitle{Function Documentation (2)}
-		\begin{itemize}
-			\item \texttt{@doc} provides documentation for the \texttt{distribute/2} function.
-			\item Describes the parameters: \texttt{pool} and \texttt{draw\_size}.
-			\item Details the return value: a tuple with two lists.
-			\item Provides an example usage.
-		\end{itemize}
-	\end{frame}
+\section{About Elixir}
 
-	\begin{frame}
-		\frametitle{Function Name/Number}
-		\begin{itemize}
-			\item In Elixir, \texttt{function name/number} refers to the arity of a function.
-			\item The number after the slash (/) indicates the number of arguments the function takes.
-			\item For example:
-			\begin{itemize}
-				\item \texttt{greet/0} has 0 arguments.
-				\item \texttt{generate\_pool/0} has 0 arguments.
-				\item \texttt{contains?/2} has 2 arguments.
-				\item \texttt{distribute/2} has 2 arguments.
-			\end{itemize}
-			\item This notation is useful for distinguishing between different functions with the same name but different arity.
-		\end{itemize}
-	\end{frame}
-
-
-\begin{frame}
-	\frametitle{What is Functional Programming?}
+\begin{frame}{Why Elixir Exists}
+	\vspace{20pt}
 	\begin{itemize}
-		\item Functional programming is a paradigm that treats computation as the evaluation of mathematical functions.
-		\item It avoids changing-state and mutable data.
-		\item Functions are first-class citizens, meaning they can be passed as arguments, returned from other functions, and assigned to variables.
-		\item It emphasizes the use of pure functions, which have no side effects and always produce the same output for the same input.
+		\item \textbf{Overcoming Limitations.} Elixir was designed to solve scalability, reliability, and concurrency issues often found in traditional programming languages.  
+		\item \textbf{Built on BEAM.} Running on the Erlang Virtual Machine (BEAM, Bogdan/Björn’s Erlang Abstract Machine), Elixir inherits proven features such as fault tolerance, distribution, and massive concurrency.  
+		\item \textbf{Developer Productivity.} Clean syntax, metaprogramming, and expressive design make coding faster, clearer, and easier to maintain.  
+		\item \textbf{Modern Web Support.} With Phoenix, Elixir enables real-time communication and scalable, interactive web applications suitable for today’s demands.  
 	\end{itemize}
 \end{frame}
 
-\begin{frame}
-	\frametitle{Key Concepts of Functional Programming (1)}
+\subsection{Sejarah Elixir}
+
+\begin{frame}{History of Elixir}
+	\vspace{20pt}
 	\begin{itemize}
-		\item \textbf{Immutability:} Data cannot be modified after it is created. Instead, new data structures are created.
-		\item \textbf{Pure Functions:} Functions that do not cause side effects and return the same result for the same inputs.
-		\item \textbf{Higher-Order Functions:} Functions that can take other functions as arguments or return them as results.
-		\item \textbf{First-Class Functions:} Functions are treated as first-class citizens, allowing them to be assigned to variables, passed as arguments, and returned from other functions.
+		\item \textbf{2011.} José Valim introduced Elixir as an open-source project, aiming to combine Erlang’s scalability and fault tolerance with modern syntax.  
+		\item \textbf{2014.} Version 1.0 was released, marking stability and readiness for production use, with robust features and integration support.  
+		\item \textbf{2015.} The Phoenix web framework launched, enabling real-time, dynamic web applications with LiveView and advanced tooling.  
+		\item \textbf{2018.} Adoption expanded across industries like fintech and telecom, supported by an active community and growing ecosystem.  
+		\item \textbf{2021+.} Elixir continues to evolve with better tooling, libraries, and support for modern technologies.  
 	\end{itemize}
 \end{frame}
 
-\begin{frame}
-	\frametitle{Key Concepts of Functional Programming (2)}
+\subsection{Keunggulan Elixir}
+
+\begin{frame}{Strengths of Elixir}
+	\vspace{20pt}
 	\begin{itemize}
-		\item \textbf{Declarative Style:} Focuses on what to compute rather than how to compute it, emphasizing expressions and declarations over statements.
-		\item \textbf{Recursion:} Functional programming often uses recursion as the primary mechanism for iteration, avoiding traditional loops.
+		\item \textbf{Concurrency and Parallelism.} Lightweight processes communicate via message passing, enabling applications to efficiently manage thousands of concurrent tasks.  
+		\item \textbf{Fault Tolerance.} Following Erlang’s “let it crash” philosophy with supervision trees, systems remain reliable even when individual components fail.  
+		\item \textbf{Scalability.} Supports both vertical and horizontal scaling across distributed nodes, handling increasing workloads with ease.  
+		\item \textbf{Metaprogramming.} Developers can generate code at compile time, build DSLs, and extend the language flexibly.  
+		\item \textbf{Web Development.} Phoenix framework provides real-time communication, distributed components, and tools for responsive web applications.  
 	\end{itemize}
 \end{frame}
+
+\subsection{Kelemahan Elixir}
+
+\begin{frame}{Weaknesses of Elixir}
+	\vspace{20pt}
+	\begin{itemize}
+		\item \textbf{Learning Curve.} Developers unfamiliar with functional programming or Erlang may struggle with concepts like immutability, recursion, and concurrency models.  
+		\item \textbf{Limited Ecosystem.} While growing, Elixir still lacks the extensive libraries and third-party integrations found in JavaScript or Python.  
+		\item \textbf{CPU-Intensive Tasks.} Elixir excels at concurrency and I/O-bound work but performs less efficiently in heavy computations or complex algorithms.  
+		\item \textbf{Community and Documentation.} Resources are smaller compared to more popular languages, posing challenges for beginners seeking guidance.  
+		\item \textbf{Legacy Integration.} Connecting Elixir with older systems often requires extra effort in compatibility and maintenance.  
+	\end{itemize}
+\end{frame}
+
+\section{Installation and Project}
+
+\begin{frame}[fragile]{Installing Elixir with Homebrew}
+	\vspace{20pt}
+	\begin{itemize}
+		\item \textbf{Unified Installation.} The easiest way to install Elixir across macOS, Linux (including Ubuntu), and Windows (via WSL or Homebrew for Windows) is by using Homebrew.  
+		\item \textbf{Install Homebrew.} If not already installed, follow the instructions at \url{https://brew.sh/}.  
+		\item \textbf{Install Elixir.} Once Homebrew is available, run the following command in your terminal:
+	\end{itemize}
+	
+	\begin{lstlisting}[language=bash]
+		brew install elixir
+	\end{lstlisting}
+	
+	\begin{itemize}
+		\item \textbf{Verify Installation.} Confirm Elixir is ready by checking its version:
+	\end{itemize}
+	
+	\begin{lstlisting}[language=bash]
+		elixir --version
+	\end{lstlisting}
+\end{frame}
+
+
+\begin{frame}[fragile]{Elixir Project in VS Code}
+	\vspace{20pt}
+	\begin{itemize}
+		\item \textbf{Create Project.} Open a terminal, navigate to your chosen directory, and run:
+	\end{itemize}
+	
+	\begin{lstlisting}[language=bash]
+		mix new project_name
+		cd project_name
+	\end{lstlisting}
+	
+	\begin{itemize}
+		\item \textbf{Open in VS Code.} Launch VS Code, select \texttt{File > Open Folder}, and choose the new project. Alternatively, run:
+	\end{itemize}
+	
+	\begin{lstlisting}[language=bash]
+		code .
+	\end{lstlisting}
+	
+	\begin{itemize}
+		\item \textbf{Install Plugin.} From the VS Code Marketplace, install \textbf{ElixirLS: Elixir support and debugger} to enable syntax highlighting, IntelliSense, debugging, and test integration.
+		\item \textbf{Start Coding.} With the plugin active and project open, you are ready to develop Elixir applications.
+	\end{itemize}
+\end{frame}
+
+
+\section{Object-oriented vs Functional Programming}
+
+\begin{frame}{Object-Oriented Programming (OOP)}
+	\vspace{20pt}
+	\begin{itemize}
+		\item \textbf{Definition.} OOP emphasizes creating objects that represent real-world entities, combining attributes (data) and methods (functions).  
+		\item \textbf{Mutable State.} Objects can change their state during execution, e.g., methods modify attribute values.  
+		\item \textbf{Key Concepts.}
+		\begin{itemize}
+			\item \textbf{Classes and Objects:} Blueprint and its instances.  
+			\item \textbf{Encapsulation:} Bundling data and methods for controlled access.  
+			\item \textbf{Inheritance:} Building new classes from existing ones.  
+			\item \textbf{Polymorphism:} One interface, multiple implementations.  
+		\end{itemize}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{OOP Illustration}
+	\vspace{10pt}
+	\begin{columns}[]
+		\column{0.35\textwidth}
+		\textbf{Explanation.}  
+		The method \texttt{generate\_pool} initializes \texttt{coupons} in object \texttt{lottery1},  
+		while \texttt{randomize} modifies the state of \texttt{coupons}.  
+		
+		\vspace{10pt}
+		This illustrates how objects in OOP can mutate their internal state  
+		through methods that operate directly on their attributes.
+		
+		\column{0.65\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{../../assets/object-oriented.pdf}
+	\end{columns}
+\end{frame}
+
+\begin{frame}{Functional Programming (FP)}
+	\vspace{20pt}
+	\begin{itemize}
+		\item \textbf{Definition.} FP is based on mathematical functions without side effects, always returning the same result for identical input.  
+		\item \textbf{Immutable Data.} State is never changed directly; each operation produces a new copy of data (e.g., \texttt{copy list} then \texttt{randomize list}).  
+		\item \textbf{Pure Functions.} Functions do not alter external state and are predictable in behavior.  
+		\item \textbf{Recursion.} Iteration is achieved by self-calling functions instead of imperative loops.  
+		\item \textbf{First-Class Functions.} Functions can be passed, returned, and stored like values.  
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{FP Illustration}
+	\vspace{20pt}
+	\begin{columns}
+		\column{0.45\textwidth}
+		\textbf{Explanation.}  
+		In functional programming, data is immutable.  
+		For example, \texttt{coupons = [A, B, C]} is first duplicated  
+		(\texttt{copy list}), then randomized (\texttt{randomize list})  
+		to produce \texttt{coupons = [C, A, B]}.  
+		
+		\vspace{10pt}
+		This demonstrates that FP transformations return new data  
+		rather than mutating the existing state.  
+		
+		\column{0.55\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{../../assets/functional.pdf}
+	\end{columns}
+\end{frame}
+
+\begin{frame}{Comparison: OOP vs FP}
+	\vspace{20pt}
+	\begin{itemize}
+		\item \textbf{State Management.} OOP emphasizes objects that store and mutate state through methods, while FP relies on pure functions that avoid mutation and instead return new transformed copies of data.  
+		\item \textbf{Mutability vs Immutability.} In OOP, mutable state changes are common; in FP, data is immutable and modifications are expressed by creating new versions.  
+		\item \textbf{Iteration.} OOP typically uses imperative loops; FP uses recursion and higher-order functions like \texttt{map}, \texttt{filter}, and \texttt{reduce}.  
+		\item \textbf{Use Cases.} OOP suits interactive systems (e.g., GUIs, games), while FP is efficient for mathematical computation and data processing.  
+	\end{itemize}
+\end{frame}
+
+\section{IEx (Repeat-Evaluate-Print-Loop)}
+\begin{frame}[fragile]{Run and Test Elixir Code with IEx}
+	\vspace{20pt}
+\begin{columns}[t]
+\column[t]{0.5\textwidth}
+\textbf{About REPL.}  
+IEx is Elixir’s REPL (\textit{Read–Eval–Print Loop}),  
+an interactive environment to quickly test expressions,  
+explore functions, and debug code.  
+
+\begin{lstlisting}[language=Elixir]
+$ iex
+Interactive Elixir (1.16.0)
+iex(1)>
+
+iex(1)> 1 + 2 * 3
+7
+
+iex(2)> String.upcase("hello world")
+"HELLO WORLD"
+\end{lstlisting}
+
+\column[t]{0.5\textwidth}
+\begin{lstlisting}[language=Elixir]
+# hello.exs
+defmodule Hello do
+def greet(name) do
+"Hello, #{name}!"
+end
+end
+
+iex(1)> c("hello.exs")
+[Hello]
+
+iex(2)> Hello.greet("Alice")
+"Hello, Alice!"
+\end{lstlisting}
+\end{columns}
+\end{frame}
+
+\section{Elixir Project}
+
+\begin{frame}[fragile]{Create \& Run an Elixir Project with Mix}
+\vspace{20pt}
+\begin{lstlisting}[language=Elixir]
+$ mix new project_name
+$ cd project_name
+$ iex -S mix
+\end{lstlisting}
+
+\begin{itemize}
+\item \textbf{Create Project.} \texttt{mix new} generates a new Elixir project with a standard structure.  
+\item \textbf{Enter Directory.} Move into the project folder before running further commands.  
+\item \textbf{Run in IEx.} \texttt{iex -S mix} starts IEx and loads the project so modules and dependencies are instantly available.  
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]{Creating and Running Hello Project}
+\begin{columns}[t]
+\column{0.5\textwidth}
+\begin{lstlisting}[language=Elixir]
+$ mix new project_name
+$ cd project_name
+
+# lib/hello.ex
+defmodule Hello do
+	def greet(name) do
+		"Hello, #{name}!"
+	end
+end
+\end{lstlisting}
+
+\column{0.5\textwidth}
+\begin{lstlisting}[language=Elixir]
+$ iex -S mix
+Interactive Elixir (1.16.0)
+
+iex(1)> Hello.greet("Alice")
+"Hello, Alice!"
+\end{lstlisting}
+
+\textbf{Steps:}
+\begin{itemize}
+\item Create project with Mix.
+\item Add \texttt{Hello} module in \texttt{lib/}.
+\item Run with \texttt{iex -S mix}.
+\item Test function in IEx.
+\end{itemize}
+\end{columns}
+\end{frame}
+
+\section{\texttt{String} Operations}
+
+\begin{frame}[fragile]{Basic String Operations in Elixir}
+\begin{columns}[t]
+\column{0.5\textwidth}
+\begin{lstlisting}[language=Elixir]
+# Concatenate strings
+greeting = "Hello, " <> "world!"
+IO.puts(greeting)
+
+# String interpolation
+name = "Elixir"
+message = "Welcome to #{name} programming!"
+IO.puts(message)
+\end{lstlisting}
+
+\column{0.5\textwidth}
+\begin{lstlisting}[language=Elixir]
+# String length
+len = String.length("Hello")
+IO.puts(len)
+
+# Uppercase
+IO.puts(String.upcase("elixir"))
+
+# Lowercase
+IO.puts(String.downcase("ELIXIR"))
+\end{lstlisting}
+
+\vspace{8pt}
+
+\end{columns}
+\textbf{Explanation.}  
+Strings can be concatenated, interpolated,  
+measured, and converted to upper/lower case.  
+These are the most common basic operations in Elixir.
+\end{frame}
+
+
+\section{\texttt{List} operations}
+
+\begin{frame}[fragile]{Basic List Operations in Elixir}
+\begin{columns}[t]
+\column{0.5\textwidth}
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\small]
+# Create a list
+list = [1, 2, 3, 4, 5]
+IO.inspect(list)
+# [1, 2, 3, 4, 5]
+
+# Add element at head
+new_list = [0 | list]
+IO.inspect(new_list)
+# [0, 1, 2, 3, 4, 5]
+\end{lstlisting}
+
+\vspace{6pt}
+\textbf{Summary.}  
+Lists can be created, concatenated,  
+pattern matched, measured, and searched.  
+
+\column{0.5\textwidth}
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\small]
+# Pattern matching
+[head | tail] = list
+IO.puts("Head: #{head}")
+# Head: 1
+IO.inspect(tail)
+# [2, 3, 4, 5]
+
+# Length
+IO.puts("Length: #{length(list)}")
+# Length: 5
+
+# Membership
+IO.puts(Enum.member?(list, 3))
+# true
+\end{lstlisting}
+\end{columns}
+\end{frame}
+
+\section{\texttt{Enum} Module}
+
+\begin{frame}[fragile]{Enum Module in Elixir}
+\begin{columns}[t]
+\column{0.5\textwidth}
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\scriptsize]
+# Shuffle
+list = [1, 2, 3, 4, 5]
+IO.inspect(Enum.shuffle(list))
+# e.g. [3, 1, 4, 5, 2]
+
+# Member?
+list = [1, 2, 3, 4, 5]
+IO.puts(Enum.member?(list, 3))
+# true
+
+# Split
+{first, second} = Enum.split(list, 2)
+IO.inspect(first)   # [1, 2]
+IO.inspect(second)  # [3, 4, 5]
+\end{lstlisting}
+
+\vspace{6pt}
+\textbf{Summary.}  
+\texttt{Enum} supports shuffle, split,  
+map, filter, and reduce.
+
+
+\column{0.5\textwidth}
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\scriptsize]
+# Map
+list = [1, 2, 3, 4, 5]
+squares = Enum.map(list, fn x -> x * x end)
+IO.inspect(squares)
+# [1, 4, 9, 16, 25]
+
+# Filter
+evens = Enum.filter(list, fn x -> rem(x, 2) == 0 end)
+IO.inspect(evens)
+# [2, 4]
+
+# Reduce
+sum = Enum.reduce(list, 0, fn x, acc -> x + acc end)
+IO.puts(sum)
+# 15
+\end{lstlisting}
+\end{columns}
+	
+
+\end{frame}
+
+\section{For Loops}
+
+\begin{frame}[fragile]{For Loops in Elixir}
+\begin{columns}[t]
+\column{0.5\textwidth}
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\scriptsize]
+# Single Looping
+numbers = [1, 2, 3, 4, 5]
+
+doubled = for n <- numbers do
+n * 2
+end
+
+IO.inspect(doubled)
+# [2, 4, 6, 8, 10]
+\end{lstlisting}
+
+\vspace{6pt}
+\textbf{Summary.}  
+\texttt{for} provides simple iteration and  
+nested looping to generate new collections.
+
+
+\column{0.5\textwidth}
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\scriptsize]
+# Nested Looping
+colors = ["red", "green", "blue"]
+shapes = ["circle", "square"]
+
+combos = for c <- colors,
+s <- shapes do
+{c, s}
+end
+
+IO.inspect(combos)
+# [{"red","circle"}, {"red","square"},
+#  {"green","circle"}, {"green","square"},
+#  {"blue","circle"}, {"blue","square"}]
+\end{lstlisting}
+\end{columns}
+
+\end{frame}
+
+
+\section{Lottery Module Overview}
+\begin{frame}[fragile]{Lottery Module Overview}
+\vspace{20pt}
+\begin{lstlisting}[language=Elixir]
+defmodule Lottery do
+  # greet/0
+  # generate_pool/0
+  # randomize/1
+  # contains?/2
+  # distribute/2
+end
+\end{lstlisting}
+
+\textbf{Explanation.}  
+The number after the slash (\texttt{/}) shows the function’s  
+\textbf{arity} in Elixir — the number of arguments it accepts.  
+For example:  
+\begin{itemize}
+  \item \texttt{greet/0} → no arguments.  
+  \item \texttt{randomize/1} → takes one argument.  
+  \item \texttt{contains?/2} → takes two arguments.  
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}[fragile]{Function: greet/0}
+\vspace{20pt}
+\begin{lstlisting}[language=Elixir]
+def greet do
+  "Good luck!"
+end
+\end{lstlisting}
+
+\textbf{Explanation.}  
+Returns a simple greeting string. Useful for confirming  
+the module is loaded or as a friendly output.  
+\end{frame}
+
+\begin{frame}[fragile]{Function: generate\_pool/0}
+\vspace{20pt}
+\begin{lstlisting}[language=Elixir]
+def generate_pool do
+  numbers = ["Number 1", "Number 2", ...]
+  pots = ["Pot 1", "Pot 2", "Pot 3", "Pot 4"]
+
+  pool = for pot <- pots, number <- numbers do
+    "#{number} in #{pot}"
+  end
+  pool
+end
+\end{lstlisting}
+
+\textbf{Explanation.}  
+Creates all combinations of numbers and pots using  
+nested \texttt{for} loops, generating a structured pool.  
+\end{frame}
+
+\begin{frame}[fragile]{Function: randomize/1}
+\vspace{20pt}
+\begin{lstlisting}[language=Elixir]
+def randomize(pool) do
+  Enum.shuffle(pool)
+end
+\end{lstlisting}
+
+\textbf{Explanation.}  
+Takes the pool as input and shuffles the order of  
+its elements with \texttt{Enum.shuffle/1}.  
+\end{frame}
+
+\begin{frame}[fragile]{Function: contains?/2}
+\vspace{20pt}
+\begin{lstlisting}[language=Elixir]
+def contains?(pool, number) do
+  Enum.member?(pool, number)
+end
+\end{lstlisting}
+
+\textbf{Explanation.}  
+The question mark \texttt{?} in the name is a convention in Elixir,  
+used to signal that the function returns a boolean value.  
+Here, it checks whether a given element exists in the pool  
+and returns \texttt{true} or \texttt{false}.  
+\end{frame}
+
+
+\begin{frame}[fragile]{Function: distribute/2}
+\vspace{20pt}
+\begin{lstlisting}[language=Elixir]
+def distribute(pool, draw_size) do
+  Enum.split(pool, draw_size)
+end
+\end{lstlisting}
+
+\textbf{Explanation.}  
+Splits the pool into two lists:  
+the first part of \texttt{draw\_size} elements,  
+and the remainder.  
+\end{frame}
+
+\section{Lottery Demo}
+
+\begin{frame}[fragile]{Lottery Demo in \texttt{iex -S mix} (Part 1)}
+\vspace{20pt}
+\begin{lstlisting}[language=Elixir]
+$ iex -S mix
+Interactive Elixir (1.16.0)
+
+iex(1)> Lottery.greet()
+"Good luck!"
+
+# Build pool: 6 numbers x 4 pots = 24
+iex(2)> pool = Lottery.generate_pool()
+["Number 1 in Pot 1", "Number 2 in Pot 1", ...]
+iex(3)> length(pool)
+24
+\end{lstlisting}
+
+\textbf{Explanation.}  
+Start IEx, call \texttt{greet/0}, and build the full pool  
+of lottery entries with \texttt{generate\_pool/0}.  
+\end{frame}
+
+\begin{frame}[fragile]{Lottery Demo in \texttt{iex -S mix} (Part 2)}
+\vspace{20pt}
+\begin{lstlisting}[language=Elixir]
+# Shuffle for random draw
+iex(4)> shuffled = Lottery.randomize(pool)
+["Number 4 in Pot 2", "Number 1 in Pot 4", ...]
+
+iex(5)> Enum.take(shuffled, 5)
+["Number 4 in Pot 2", "Number 1 in Pot 4",
+ "Number 6 in Pot 1", "Number 2 in Pot 3",
+ "Number 3 in Pot 2"]
+\end{lstlisting}
+
+\textbf{Explanation.}  
+Use \texttt{randomize/1} to shuffle the pool, simulating  
+a random draw. Then preview 5 elements with \texttt{Enum.take/2}.  
+\end{frame}
+
+\begin{frame}[fragile]{Lottery Demo in \texttt{iex -S mix} (Part 3)}
+\vspace{20pt}
+\begin{lstlisting}[language=Elixir]
+# Membership check
+iex(6)> candidate = "Number 3 in Pot 2"
+"Number 3 in Pot 2"
+
+iex(7)> Lottery.contains?(pool, candidate)
+true
+\end{lstlisting}
+
+\textbf{Explanation.}  
+The function \texttt{contains?/2} checks if a value exists  
+in the pool, returning a boolean result.  
+\end{frame}
+
+\begin{frame}[fragile]{Lottery Demo in \texttt{iex -S mix} (Part 4)}
+\vspace{20pt}
+\begin{lstlisting}[language=Elixir]
+# Split into draw + rest
+iex(8)> {draw, rest} = Lottery.distribute(shuffled, 5)
+{["Number 4 in Pot 2", "Number 1 in Pot 4",
+  "Number 6 in Pot 1", "Number 2 in Pot 3",
+  "Number 3 in Pot 2"], [... 19 more]}
+
+iex(9)> length(draw)
+5
+iex(10)> length(rest)
+19
+\end{lstlisting}
+
+\textbf{Explanation.}  
+The function \texttt{distribute/2} splits the pool into  
+two parts: the drawn items and the remaining entries.  
+\end{frame}
+
+
+\begin{frame}{Session Summary \& Next Steps}
+\vspace{20pt}
+\begin{itemize}
+  \item \textbf{Elixir \& BEAM.} Scalable, fault-tolerant apps on the Erlang VM. 
+  \item \textbf{OOP vs FP.} OOP mutates state; FP favors immutability and pure functions.
+  \item \textbf{IEx \& Mix.} Rapid REPL testing; create/run projects with \texttt{mix}.
+  \item \textbf{Core Ops.} Strings, Lists, \texttt{Enum} (map/filter/reduce), and \texttt{for} loops.
+  \item \textbf{Lottery Module.} \texttt{greet/0}, \texttt{generate\_pool/0}, \texttt{randomize/1}, \texttt{contains?/2}, \texttt{distribute/2}.
+  \item \textbf{Demo Flow.} Generate $\rightarrow$ Randomize $\rightarrow$ Check membership $\rightarrow$ Distribute.
+  \item \textbf{Practice.} Extend with scoring, constraints, or persistence (e.g., save draws).
+\end{itemize}
+\end{frame}
+
 
 \end{document}

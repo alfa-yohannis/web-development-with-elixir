@@ -79,55 +79,25 @@ Memahami kelemahan ini penting bagi pengembang untuk membuat keputusan yang teri
 
 \section{Instalasi Elixir}
 
-Untuk mulai menggunakan Elixir, Anda perlu menginstalnya di sistem operasi yang Anda gunakan. Berikut adalah panduan untuk menginstal Elixir di Windows, Mac, dan Ubuntu/Linux.
-
-\subsection{Instalasi di Windows}
+Untuk memulai menggunakan Elixir, cara termudah dan konsisten di berbagai sistem operasi adalah dengan menggunakan \textbf{Homebrew (brew)}. Homebrew dapat dijalankan di macOS, Linux (termasuk Ubuntu), maupun Windows (melalui WSL atau Homebrew for Windows).
 
 \begin{enumerate}
-\item Kunjungi halaman [download Elixir](https://elixir-lang.org/install.html) dan unduh installer Windows yang sesuai.
-\item Jalankan installer yang telah diunduh dan ikuti petunjuk di layar untuk menyelesaikan instalasi.
-\item Setelah instalasi selesai, buka Command Prompt atau PowerShell dan verifikasi instalasi dengan menjalankan perintah berikut:
-\begin{lstlisting}[language=bash]
-	elixir --version
-\end{lstlisting}
+	\item Pastikan Anda sudah menginstal Homebrew. Jika belum, ikuti petunjuk resmi di \url{https://brew.sh/}.  
+	\item Setelah Homebrew tersedia, jalankan perintah berikut untuk menginstal Elixir:  
+	\begin{lstlisting}[language=bash]
+		brew install elixir
+	\end{lstlisting}
+	\item Verifikasi instalasi dengan menjalankan:  
+	\begin{lstlisting}[language=bash]
+		elixir --version
+	\end{lstlisting}
 \end{enumerate}
 
-\subsection{Instalasi di Mac}
 
-\begin{enumerate}
-\item Pastikan Anda memiliki [Homebrew](https://brew.sh/) terinstal. Jika belum, instal Homebrew dengan perintah berikut di Terminal:
-\begin{lstlisting}[language=bash]
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com
-/Homebrew/install/HEAD/install.sh)"
-\end{lstlisting}
-\item Instal Elixir menggunakan Homebrew dengan perintah berikut:
-\begin{lstlisting}[language=bash]
-brew install elixir
-\end{lstlisting}
-\item Setelah instalasi selesai, verifikasi dengan menjalankan perintah berikut di Terminal:
-\begin{lstlisting}[language=bash]
-elixir --version
-\end{lstlisting}
-\end{enumerate}
-
-\subsection{Instalasi di Ubuntu/Linux}
-
-\begin{enumerate}
-\item Tambahkan repositori Elixir dan instal paket yang diperlukan dengan perintah berikut:
-\begin{lstlisting}[language=bash]
-sudo apt update
-sudo apt install -y esl-erlang
-sudo apt install -y elixir
-\end{lstlisting}
-\item Setelah instalasi selesai, verifikasi dengan menjalankan perintah berikut di Terminal:
-\begin{lstlisting}[language=bash]
-elixir --version
-\end{lstlisting}
-\end{enumerate}
 
 \section{Membuat Proyek Elixir dan Membukanya di VS Code}
 
-Untuk memulai pengembangan dengan Elixir, langkah pertama adalah membuat proyek Elixir baru dan kemudian membuka proyek tersebut di Visual Studio Code (VS Code).
+Untuk memulai pengembangan dengan Elixir, langkah pertama adalah membuat proyek Elixir baru dan kemudian membuka proyek tersebut di Visual Studio Code (VS Code) dengan dukungan plugin Elixir.
 
 \subsection{Membuat Proyek Elixir Baru}
 
@@ -154,10 +124,10 @@ Untuk memulai pengembangan dengan Elixir, langkah pertama adalah membuat proyek 
 	\begin{lstlisting}[language=bash]
 		code .
 	\end{lstlisting}
-	\item Setelah proyek terbuka, Anda dapat mulai mengembangkan kode Elixir di dalamnya.
+	\item Instal plugin resmi \textbf{ElixirLS: Elixir support and debugger} dari VS Code Marketplace untuk mendapatkan fitur seperti syntax highlighting, IntelliSense, debugging, dan test integration.
+	\item Setelah plugin terinstal dan proyek terbuka, Anda dapat langsung memulai pengembangan kode Elixir.
 \end{enumerate}
 
-Dengan mengikuti langkah-langkah di atas, Anda akan siap untuk memulai pengembangan proyek Elixir menggunakan VS Code.
 
 \section{Perbedaan Pemrograman Berorientasi Objek dan Pemrograman Fungsional}
 
@@ -208,6 +178,86 @@ Pemrograman fungsional lebih fokus pada transformasi data dengan fungsi, tanpa m
 Kedua paradigma ini dapat saling melengkapi dan sering digunakan secara bersamaan dalam berbagai bahasa pemrograman modern.
 
 
+\section{Menjalankan dan Menguji Kode dengan IEx}
+
+IEx (Interactive Elixir) merupakan REPL (\textit{Read--Eval--Print Loop}) bawaan Elixir yang memungkinkan pengembang untuk langsung mencoba potongan kode, mengevaluasi fungsi, serta melakukan eksplorasi tanpa harus membuat file secara terpisah. Hal ini sangat membantu dalam proses belajar maupun pengujian cepat.
+
+\subsection{Memulai IEx}
+Untuk membuka sesi IEx, jalankan perintah berikut pada terminal:
+
+\begin{lstlisting}[language=Elixir]
+	$ iex
+\end{lstlisting}
+
+Jika berhasil, Anda akan masuk ke lingkungan interaktif dengan prompt seperti:
+
+\begin{lstlisting}[language=Elixir]
+	Interactive Elixir (1.16.0) - press Ctrl+C to exit
+	iex(1)>
+\end{lstlisting}
+
+\subsection{Menjalankan Ekspresi Sederhana}
+Anda dapat langsung menuliskan ekspresi atau fungsi bawaan Elixir. Contoh:
+
+\begin{lstlisting}[language=Elixir]
+	iex(1)> 1 + 2 * 3
+	7
+	
+	iex(2)> String.upcase("hello world")
+	"HELLO WORLD"
+\end{lstlisting}
+
+\subsection{Menguji Fungsi Buatan Sendiri}
+Jika memiliki modul Elixir di dalam file, misalnya `hello.exs`:
+
+\begin{lstlisting}[language=Elixir]
+	defmodule Hello do
+	def greet(name) do
+	"Hello, #{name}!"
+	end
+	end
+\end{lstlisting}
+
+Maka Anda dapat memuat dan menguji fungsi tersebut di IEx:
+
+\begin{lstlisting}[language=Elixir]
+	iex(1)> c("hello.exs")
+	[Hello]
+	
+	iex(2)> Hello.greet("Alice")
+	"Hello, Alice!"
+\end{lstlisting}
+
+\subsection{Membuat Proyek Elixir dengan Mix}
+
+Mix adalah build tool bawaan Elixir yang digunakan untuk membuat, mengelola, dan menjalankan proyek Elixir. Dengan Mix, pengembang dapat dengan mudah membuat struktur proyek, menambahkan dependensi, menjalankan test, serta membangun aplikasi.
+
+Untuk membuat proyek baru, jalankan perintah berikut di terminal:
+
+\begin{lstlisting}[language=Elixir]
+	$ mix new nama_proyek
+	$ cd nama_proyek
+\end{lstlisting}
+
+Perintah pertama membuat direktori proyek dengan struktur standar Elixir, sedangkan perintah kedua memindahkan Anda ke dalam direktori proyek tersebut.
+
+\subsection{Menjalankan Script Sekaligus Masuk IEx}
+Elixir juga mendukung menjalankan file dan langsung masuk ke mode interaktif menggunakan opsi `-S`:
+
+\begin{lstlisting}[language=Elixir]
+	$ iex -S mix
+\end{lstlisting}
+
+Perintah ini akan memuat proyek Mix yang sedang aktif sehingga modul dan dependensi dapat langsung digunakan dalam IEx.
+
+\subsection{Ringkasan}
+IEx menyediakan lingkungan praktis untuk:
+\begin{enumerate}
+	\item Mencoba ekspresi Elixir sederhana.
+	\item Menguji fungsi buatan tanpa membuat aplikasi penuh.
+	\item Mengeksplorasi modul, dokumentasi, dan debug.
+\end{enumerate}
+Dengan demikian, IEx merupakan alat yang esensial dalam pengembangan maupun pembelajaran Elixir.
 
 
 
