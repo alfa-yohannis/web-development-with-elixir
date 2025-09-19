@@ -38,4 +38,10 @@ defmodule Lottery do
     |> Lottery.randomize()
     |> Lottery.distribute(draw_size)
   end
+
+  def create_hand(draw_size, pool) do
+    pool
+    |> Lottery.randomize()
+    |> Lottery.distribute(draw_size)
+  end
 end

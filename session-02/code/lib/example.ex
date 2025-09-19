@@ -7,6 +7,10 @@ defmodule Example do
 end
 
 defmodule FileReader do
+  def write_file(filename, content) do
+    File.write(filename, content)
+  end
+
   def read_file(filename) do
     case File.read(filename) do
       {:ok, content} ->

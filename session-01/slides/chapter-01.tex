@@ -650,73 +650,40 @@ Start IEx, call \texttt{greet/0}, and build the full pool
 of lottery entries with \texttt{generate\_pool/0}.  
 \end{frame}
 
-\begin{frame}[fragile]{Lottery Demo in \texttt{iex -S mix} (Part 2)}
+\begin{frame}[fragile]{Saving Data in JSON Format}
 \vspace{20pt}
-\begin{lstlisting}[language=Elixir]
-# Shuffle for random draw
-iex(4)> shuffled = Lottery.randomize(pool)
-["Number 4 in Pot 2", "Number 1 in Pot 4", ...]
+\begin{columns}[t]
 
-iex(5)> Enum.take(shuffled, 5)
-["Number 4 in Pot 2", "Number 1 in Pot 4",
- "Number 6 in Pot 1", "Number 2 in Pot 3",
- "Number 3 in Pot 2"]
+\column{0.6\textwidth}
+\textbf{Module Example (\texttt{lib/json_file_handler.ex}):}
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\scriptsize]
+defmodule JsonFileHandler do
+  # Save data to a JSON file
+  def save_json(filename, data) do
+    File.write(filename, Jason.encode!(data))
+  end
+end
 \end{lstlisting}
 
-\textbf{Explanation.}  
-Use \texttt{randomize/1} to shuffle the pool, simulating  
-a random draw. Then preview 5 elements with \texttt{Enum.take/2}.  
-\end{frame}
-
-\begin{frame}[fragile]{Lottery Demo in \texttt{iex -S mix} (Part 3)}
-\vspace{20pt}
-\begin{lstlisting}[language=Elixir]
-# Membership check
-iex(6)> candidate = "Number 3 in Pot 2"
-"Number 3 in Pot 2"
-
-iex(7)> Lottery.contains?(pool, candidate)
-true
+\textbf{IEx Usage:}
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\scriptsize]
+filename = "data.json"
+data = %{"greeting" => "Hello, Elixir!", "count" => 42}
+JsonFileHandler.save_json(filename, data)
 \end{lstlisting}
 
-\textbf{Explanation.}  
-The function \texttt{contains?/2} checks if a value exists  
-in the pool, returning a boolean result.  
-\end{frame}
-
-\begin{frame}[fragile]{Lottery Demo in \texttt{iex -S mix} (Part 4)}
-\vspace{20pt}
-\begin{lstlisting}[language=Elixir]
-# Split into draw + rest
-iex(8)> {draw, rest} = Lottery.distribute(shuffled, 5)
-{["Number 4 in Pot 2", "Number 1 in Pot 4",
-  "Number 6 in Pot 1", "Number 2 in Pot 3",
-  "Number 3 in Pot 2"], [... 19 more]}
-
-iex(9)> length(draw)
-5
-iex(10)> length(rest)
-19
-\end{lstlisting}
-
-\textbf{Explanation.}  
-The function \texttt{distribute/2} splits the pool into  
-two parts: the drawn items and the remaining entries.  
-\end{frame}
-
-
-\begin{frame}{Session Summary \& Next Steps}
-\vspace{20pt}
+\column{0.4\textwidth}
+\textbf{Explanation:}
 \begin{itemize}
-  \item \textbf{Elixir \& BEAM.} Scalable, fault-tolerant apps on the Erlang VM. 
-  \item \textbf{OOP vs FP.} OOP mutates state; FP favors immutability and pure functions.
-  \item \textbf{IEx \& Mix.} Rapid REPL testing; create/run projects with \texttt{mix}.
-  \item \textbf{Core Ops.} Strings, Lists, \texttt{Enum} (map/filter/reduce), and \texttt{for} loops.
-  \item \textbf{Lottery Module.} \texttt{greet/0}, \texttt{generate\_pool/0}, \texttt{randomize/1}, \texttt{contains?/2}, \texttt{distribute/2}.
-  \item \textbf{Demo Flow.} Generate $\rightarrow$ Randomize $\rightarrow$ Check membership $\rightarrow$ Distribute.
-  \item \textbf{Practice.} Extend with scoring, constraints, or persistence (e.g., save draws).
+  \item \texttt{Jason.encode!/1} converts Elixir data into JSON format.
+  \item \texttt{File.write/2} saves the JSON string into the file.
+  \item If the file does not exist, it will be created automatically.
 \end{itemize}
+
+\end{columns}
 \end{frame}
+
+
 
 
 \end{document}

@@ -5,15 +5,16 @@
 Diagram berikut menggambarkan hubungan antara Elixir, Erlang, dan BEAM:
 
 \begin{center}
-	\begin{tikzpicture}[node distance=2cm]
-		\node (elixir) [rectangle, draw, text centered, minimum height=1.5cm, minimum width=3cm] {Elixir};
-		\node (erlang) [rectangle, draw, below of=elixir, text centered, minimum height=1.5cm, minimum width=3cm] {Erlang};
-		\node (beam) [rectangle, draw, below of=erlang, text centered, minimum height=1.5cm, minimum width=3cm] {BEAM};
-		
-		\draw[->] (elixir) -- (erlang);
-		\draw[->] (erlang) -- (beam);
-	\end{tikzpicture}
+\begin{tikzpicture}[node distance=4cm]
+	\node (elixir) [rectangle, draw, text centered, minimum height=1.5cm, minimum width=3cm, fill=purple!20] {Elixir};
+	\node (erlang) [rectangle, draw, right of=elixir, text centered, minimum height=1.5cm, minimum width=3cm, fill=red!20] {Erlang};
+	\node (beam) [rectangle, draw, right of=erlang, text centered, minimum height=1.5cm, minimum width=3cm, fill=blue!20] {BEAM};
+	
+	\draw[->, thick] (elixir) -- (erlang);
+	\draw[->, thick] (erlang) -- (beam);
+\end{tikzpicture}
 \end{center}
+
 
 \subsection{Elixir}
 

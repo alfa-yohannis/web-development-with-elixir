@@ -7,16 +7,48 @@
 
 \subtitle{IF140303-Web Application Development}
 
-\title{\LARGE{Session-03:\\ Elixir Documentation and Testing}
-	\vspace{20pt}}
-\date[Serial]{\scriptsize {PRU/SPMI/FR-BM-18/0222}}
+\title{Session-03:\\
+\Huge{
+Elixir Documentation\\
+\vspace{10pt}
+and Testing
+\vspace{-20pt}
+}
+}
+\date[Serial]{\scriptsize{PRU/SPMI/FR-BM-18/0222}}
 \author[Pradita]{\small{\textbf{Alfa Yohannis}}}
 
 \lstdefinelanguage{Elixir} {
-	keywords={def, defmodule, do, end, for, if, else, true, false},
+	keywords={case, def, defmodule, do, end, for, if, else, true, false},
 	basicstyle=\ttfamily\small,
 	keywordstyle=\color{blue}\bfseries,
 	ndkeywords={@moduledoc, iex, Enum, @doc},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	showstringspaces=false,
+	% string settings
+	morestring=[b]",
+	morestring=[b]',
+	stringstyle=\color{black}\ttfamily, % default, will be overridden
+	moredelim=[s][\color{blue}\ttfamily]{"}{"},   % double quotes
+	moredelim=[s][\color{teal}\ttfamily]{'}{'}    % single quotes
+}
+
+
+\lstdefinelanguage{bash} {
+	keywords={},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={iex},
 	ndkeywordstyle=\color{purple}\bfseries,
 	sensitive=true,
 	commentstyle=\color{gray},
@@ -38,142 +70,562 @@
 	
 	\frame{\titlepage}
 	
-	\begin{frame}
-		\frametitle{Overview of Elixir Documentation}
-		\begin{itemize}
-			\item Elixir provides powerful tools for creating documentation directly within your code.
-			\item \texttt{@moduledoc} and \texttt{@doc} are used to document modules and functions.
-			\item Mix tasks like \texttt{mix docs} can generate HTML documentation from your code.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Adding Dependencies for Documentation}
-		\begin{itemize}
-			\item To generate documentation, add \texttt{ex\_doc} to your \texttt{mix.exs} dependencies.
-		\end{itemize}
-		\begin{lstlisting}[language=Elixir]
-			defp deps do
-			[
-			{:ex_doc, "~> 0.12"}
-			]
-			end
-		\end{lstlisting}
-	\end{frame}
-	
-	\begin{frame}
-		\frametitle{\texttt{@moduledoc}: Module Documentation}
-		\begin{itemize}
-			\item Use \texttt{@moduledoc} at the top of your module to provide an overview.
-			\item Describes the purpose, usage, and any relevant details of the module.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Example: \texttt{@moduledoc}}
-		\begin{lstlisting}[language=Elixir]
-			defmodule Lottery do
-			@moduledoc """
-			This module provides functionalities for managing a lottery system.
-			It includes functions for creating, shuffling, checking for numbers,
-			saving, loading, and distributing numbers within the lottery pool.
-			"""
-			end
-		\end{lstlisting}
-	\end{frame}
-	
-	\begin{frame}
-		\frametitle{\texttt{@doc}: Function Documentation}
-		\begin{itemize}
-			\item \texttt{@doc} is used to document individual functions.
-			\item Include descriptions, parameters, return values, and examples.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Example: \texttt{@doc}}
-		\begin{lstlisting}[language=Elixir]
-			@doc """
-			Generates a pool of lottery numbers with different pots.
+		\begin{frame}[fragile]
+		\frametitle{Contents}
+		\vspace{20pt}
+		\begin{columns}[t]
+			\column{0.4\textwidth}
+			\tableofcontents[sections={1-3}]
 			
-			## Returns
-			- A list of lottery numbers with their respective pot numbers.
-			
-			## Examples
-			iex> Lottery.generate_pool()
-			["Number 1 in Pot 1", "Number 2 in Pot 1", ...]
-			"""
-			def generate_pool do
-			# implementation
-			end
-		\end{lstlisting}
+			\column{0.6\textwidth}
+			\tableofcontents[sections={4-6}]
+		\end{columns}
 	\end{frame}
-	
-	\begin{frame}
-		\frametitle{Generating Documentation}
-		\begin{itemize}
-			\item Run \texttt{mix docs} to generate HTML documentation.
-			\item The output will be stored in the \texttt{doc} directory.
-			\item View it by opening \texttt{index.html} in your browser.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}
-		\frametitle{Overview of Testing in Elixir}
-		\begin{itemize}
-			\item Elixir uses \texttt{ExUnit} for writing and running tests.
-			\item \texttt{ExUnit.Case} is used to define a test module.
-			\item Tests are written as functions prefixed with \texttt{test}.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Basic Example of a Test}
-		\begin{lstlisting}[language=Elixir]
-			defmodule LotteryTest do
-			use ExUnit.Case
-			
-			test "generate_pool creates 20 lottery numbers" do
-			assert length(Lottery.generate_pool()) == 20
-			end
-			end
-		\end{lstlisting}
-	\end{frame}
-	
-	\begin{frame}
-		\frametitle{Doctests in Elixir}
-		\begin{itemize}
-			\item Doctests allow you to run the examples in your documentation as tests.
-			\item Ensure the examples in your \texttt{@doc} annotations are correct.
-			\item Use \texttt{doctest ModuleName} in your test module.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Adding Doctests to Your Tests}
-		\begin{lstlisting}[language=Elixir]
-			defmodule LotteryTest do
-			use ExUnit.Case
-			doctest Lottery
-			end
-		\end{lstlisting}
-	\end{frame}
-	
-	\begin{frame}
-		\frametitle{Running Tests}
-		\begin{itemize}
-			\item Run \texttt{mix test} to execute all your tests.
-			\item Ensure your code is thoroughly tested and your documentation examples are correct.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}
-		\frametitle{Summary}
-		\begin{itemize}
-			\item We covered how to document Elixir code using \texttt{@moduledoc} and \texttt{@doc}.
-			\item We explored how to write and run tests, including using doctests.
-			\item Proper documentation and testing are essential for maintainable and reliable code.
-		\end{itemize}
-	\end{frame}
-	
+
+\section{Documentation in Elixir}
+
+\begin{frame}[fragile]{Documentation in Elixir}
+\vspace{15pt}
+Elixir provides simple support for documentation in modules and functions.  
+\begin{itemize}
+  \item Documentation is written directly in the code using special annotations.  
+  \item Use \texttt{@moduledoc} to document a module.  
+  \item Use \texttt{@doc} to document functions.  
+  \item Documentation can be exported to HTML using the command:
+\end{itemize}
+
+\begin{lstlisting}[language=bash]
+mix docs
+\end{lstlisting}
+
+This command generates documentation in HTML format, which can be viewed in a browser.
+\end{frame}
+
+
+\subsection{Module-level Documentation}
+
+\begin{frame}[fragile]{Module-level Documentation}
+\vspace{15pt}
+To provide a description of the purpose, usage,  
+and examples for a module, use the \texttt{@moduledoc} annotation.  
+
+\begin{lstlisting}[language=Elixir]
+defmodule ExampleModule do
+  @moduledoc """
+  This module is an example of how to document a module in Elixir.
+
+  It demonstrates how module documentation can be written
+  and used as a reference when generating HTML documentation.
+  """
+
+  # Other functions and logic can be written here
+end
+\end{lstlisting}
+
+\end{frame}
+
+
+\subsection{Function-level Documentation}
+
+\begin{frame}[fragile]{Function-level Documentation}
+\vspace{15pt}
+
+\begin{columns}
+
+\begin{column}[t]{0.4\textwidth}
+
+In addition to modules, each function can also have documentation  
+with the \texttt{@doc} annotation. This usually describes:  
+\begin{itemize}
+  \item The purpose of the function.  
+  \item The parameters required.  
+  \item The return value.  
+  \item Examples of usage in IEx.  
+\end{itemize}
+\end{column}
+
+\begin{column}[t]{0.6\textwidth}
+
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\scriptsize]
+defmodule ExampleModule do
+  @moduledoc """
+  This module is an example of how to document a module in Elixir.
+  """
+
+  @doc """
+  This function adds two numbers.
+
+  ## Parameters
+  - a: the first number.
+  - b: the second number.
+
+  ## Example
+      iex> ExampleModule.add(2, 3)
+      5
+  """
+  def add(a, b) do
+    a + b
+  end
+end
+\end{lstlisting}
+\end{column}
+
+\end{columns}
+\end{frame}
+
+
+\section{Adding \texttt{ex\_doc} for Documentation}
+
+\subsection{Steps to Add \texttt{ex\_doc}}
+
+\begin{frame}[fragile]{Adding \texttt{ex\_doc} (Part 1)}
+\vspace{15pt}
+To generate project documentation in Elixir,  
+you need to add the \texttt{ex\_doc} library.  
+
+\begin{enumerate}
+  \item Open the \texttt{mix.exs} file in your project,  
+        then add \texttt{ex\_doc} to the list of dependencies  
+        in the \texttt{deps} function. Make sure it is included only in the \texttt{dev} environment.  
+
+\begin{lstlisting}[language=Elixir]
+defp deps do
+  [
+    {:ex_doc, "~> 0.34", only: :dev, runtime: false}
+  ]
+end
+\end{lstlisting}
+
+  \item Run the following command to download and install dependencies:  
+\begin{lstlisting}[language=bash]
+mix deps.get
+\end{lstlisting}
+\end{enumerate}
+\end{frame}
+
+
+\begin{frame}[fragile]{Adding \texttt{ex\_doc} (Part 2)}
+\vspace{15pt}
+\begin{enumerate}
+  \setcounter{enumi}{2}
+  \item After the dependency is installed,  
+        generate the documentation with the command:  
+
+\begin{lstlisting}[language=bash]
+mix docs
+\end{lstlisting}
+
+  \item The generated documentation will be stored in the \texttt{doc/} folder.  
+        Open the \texttt{index.html} file in a browser to view the HTML documentation.
+\end{enumerate}
+
+\begin{block}{Note}
+\texttt{ex\_doc} allows you to generate documentation  
+in multiple formats (HTML, EPUB, PDF),  
+making it very useful for both open-source and internal projects.
+\end{block}
+\end{frame}
+
+\section{Generating HTML Documentation}
+
+\begin{frame}[fragile]{Generating HTML Documentation}
+\vspace{15pt}
+To generate documentation in HTML format,  
+Elixir provides the simple command \texttt{mix docs}.  
+This command collects documentation from modules and functions,  
+and converts it into human-readable HTML pages.
+
+\begin{enumerate}
+  \item Make sure you are in the Elixir project directory.  
+  \item Run the following command in the terminal:  
+\begin{lstlisting}[language=bash]
+mix docs
+\end{lstlisting}
+  \item The HTML documentation will be stored in the \texttt{doc/} folder.  
+        Open the \texttt{index.html} file in a browser.  
+\end{enumerate}
+\vspace{5pt}
+\textbf{Benefit:}\\
+HTML documentation makes it easier for others (or yourself in the future)  
+to understand the code structure, functions, and how to use the modules.  
+\end{frame}
+
+\section{Unit Testing in Elixir}
+
+\begin{frame}{Unit Testing in Elixir}
+\vspace{15pt}
+Unit testing in Elixir can be done using the built-in module  
+\texttt{ExUnit}.  
+
+\begin{itemize}
+  \item Tests are written in dedicated files ending with \texttt{\_test.exs}.  
+  \item Test modules use \texttt{ExUnit.Case} as a template.  
+  \item Supports \texttt{assert}, \texttt{refute}, and additional verification features.  
+  \item Function documentation can also be tested with the \texttt{doctest} annotation.  
+\end{itemize}
+
+\vspace{5pt}
+\textbf{Benefit:} Unit tests ensure that functions work as expected,  
+and help prevent bugs when making code changes.  
+\end{frame}
+
+
+\subsection{Unit Test in a Separate File}
+\begin{frame}[fragile]{Unit Test in a Separate File}
+\vspace{20pt}
+Example of a test file inside the \texttt{test/} folder  
+with the name \texttt{example\_module\_test.exs}:  
+
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\scriptsize]
+defmodule ExampleModuleTest do
+  use ExUnit.Case
+
+  test "adds two numbers" do
+    assert ExampleModule.add(2, 3) == 5
+  end
+
+  test "subtracts two numbers" do
+    assert ExampleModule.subtract(5, 2) == 3
+  end
+end
+\end{lstlisting}
+
+\textbf{Running the Tests:} Execute all tests with the command:  
+\begin{lstlisting}[language=bash]
+mix test
+\end{lstlisting}
+\end{frame}
+
+\subsection{Function Documentation Tests (Doctest)}
+
+\begin{frame}[fragile]{Unit Tests in Function Docs (Doctest)}
+\vspace{20pt}
+\begin{columns}
+
+\begin{column}[t]{0.45\textwidth}
+Elixir also allows you to  
+write unit tests directly in function documentation using the  
+\texttt{doctest} annotation. These tests are executed automatically  
+when \texttt{ExUnit} runs.  
+
+\vspace{10pt}
+\textbf{Advantages:}
+\begin{itemize}
+  \item Documentation and tests always stay in sync.  
+  \item Code examples in \texttt{@doc} are actually verified.  
+  \item Easy for readers to understand and confirm correctness.  
+\end{itemize}
+\end{column}
+
+\begin{column}[t]{0.55\textwidth}
+\textbf{Example Module with Doctest:}
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\tiny]
+defmodule ExampleModule do
+  @moduledoc """
+  Demo module with documentation and tests.
+  """
+
+  @doc """
+  Adds two numbers.
+
+  ## Example
+      iex> ExampleModule.add(2, 3)
+      5
+  """
+  def add(a, b), do: a + b
+
+  @doc """
+  Subtracts two numbers.
+
+  ## Example
+      iex> ExampleModule.subtract(5, 2)
+      3
+  """
+  def subtract(a, b), do: a - b
+end
+\end{lstlisting}
+\end{column}
+
+\end{columns}
+\end{frame}
+
+
+
+\begin{frame}[fragile]{Enabling and Running Doctest}
+\vspace{15pt}
+To enable \texttt{doctest}, add it inside your test module:  
+
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\scriptsize]
+defmodule ExampleModuleTest do
+  use ExUnit.Case
+  doctest ExampleModule
+end
+\end{lstlisting}
+
+\vspace{10pt}
+\textbf{Execution:} Run the following command in the terminal:  
+
+\begin{lstlisting}[language=bash]
+mix test
+\end{lstlisting}
+
+Doctest will execute the example code written in the documentation  
+and verify that the results match the expected output.
+\end{frame}
+
+\subsection{Running Tests from the Command Prompt}
+\begin{frame}[fragile]{Running Tests from the Command Prompt}
+\vspace{15pt}
+Elixir makes it easy to run tests directly from the command prompt.  
+There are several options depending on your needs:
+\vspace{10pt}
+\begin{columns}
+
+\begin{column}[t]{0.48\textwidth}
+\textbf{Run All Tests}
+\begin{lstlisting}[language=bash]
+mix test
+\end{lstlisting}
+
+This command executes all tests  
+inside the \texttt{test} folder and displays  
+the results in the terminal.
+\end{column}
+
+\begin{column}[t]{0.52\textwidth}
+\textbf{Run Tests in a Specific File}
+\begin{lstlisting}[language=bash]
+mix test test/example_module_test.exs
+\end{lstlisting}
+
+This command executes tests only from a specific file,  
+for example \texttt{ExampleModuleTest}.
+\end{column}
+
+\end{columns}
+\end{frame}
+
+\subsection{Running Tests for a Specific Function}
+\begin{frame}[fragile]{Running Tests for a Specific Function}
+\vspace{15pt}
+You can run tests for a specific function in a module  
+by using a \textbf{line number tag}.  
+\vspace{10pt}
+\begin{columns}
+\begin{column}[t]{0.48\textwidth}
+\textbf{Example: \texttt{add} function}  
+If the test for \texttt{add} is on line 4:  
+\begin{lstlisting}[language=bash]
+mix test test/example_module_test.exs:4
+\end{lstlisting}
+\end{column}
+
+\begin{column}[t]{0.52\textwidth}
+\textbf{Example: \texttt{subtract} function}  
+If the test for \texttt{subtract} is on line 8:  
+\begin{lstlisting}[language=bash]
+mix test test/example_module_test.exs:8
+\end{lstlisting}
+\end{column}
+\end{columns}
+
+\vspace{8pt}
+With this approach, only the test on that line will be executed,  
+making debugging and partial testing easier.  
+\end{frame}
+
+\section{Exercises}
+
+\subsection{Writing Module Documentation}
+\begin{frame}[fragile]{Exercise 1: Writing Module Documentation}
+\vspace{15pt}
+\begin{columns}
+
+\begin{column}[t]{0.45\textwidth}
+\textbf{Instructions:}
+\begin{itemize}
+  \item Create an Elixir module named \texttt{Calculator}.  
+  \item Add two functions: \texttt{multiply/2} and \texttt{divide/2}.  
+  \item Use the \texttt{@doc} annotation to write documentation for each function.  
+  \item Include usage examples (doctest) for each function.  
+\end{itemize}
+\end{column}
+
+\begin{column}[t]{0.55\textwidth}
+\textbf{Code Example:}
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\tiny]
+defmodule Calculator do
+  @moduledoc """
+  A module for basic arithmetic operations.
+  """
+
+  @doc """
+  Multiplies two numbers.
+
+  ## Example
+      iex> Calculator.multiply(4, 5)
+      20
+  """
+  def multiply(x, y), do: x * y
+
+  @doc """
+  Divides two numbers.
+
+  ## Example
+      iex> Calculator.divide(10, 2)
+      5
+  """
+  def divide(x, y), do: x / y
+end
+\end{lstlisting}
+\end{column}
+
+\end{columns}
+\end{frame}
+
+\subsection{Writing Unit Tests for the Module}
+\begin{frame}[fragile]{Exercise 2: Writing Unit Tests for the Module}
+\vspace{20pt}
+\begin{columns}
+
+\begin{column}[t]{0.42\textwidth}
+\textbf{Instructions:}
+\begin{itemize}
+  \item Create a file named \texttt{calculator\_test.exs} in the \texttt{test} folder.  
+  \item Use \texttt{ExUnit.Case} and \texttt{doctest}.  
+  \item Write tests for:
+    \begin{itemize}
+      \item Multiplying two numbers.  
+      \item Dividing two numbers.  
+      \item Division by zero (should raise an error).  
+    \end{itemize}
+\end{itemize}
+\end{column}
+
+\begin{column}[t]{0.58\textwidth}
+\textbf{Example File:}
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\scriptsize]
+defmodule CalculatorTest do
+  use ExUnit.Case
+  doctest Calculator
+
+  test "multiplies two numbers" do
+    assert Calculator.multiply(4, 5) == 20
+  end
+
+  test "divides two numbers" do
+    assert Calculator.divide(10, 2) == 5
+  end
+
+  test "divides by zero raises an error" do
+    assert_raise ArithmeticError,
+      fn -> Calculator.divide(10, 0) end
+  end
+end
+\end{lstlisting}
+\end{column}
+
+\end{columns}
+\end{frame}
+
+\subsection{Running Tests for the Module}
+\begin{frame}[fragile]{Exercise 3: Running Tests for the Module}
+\vspace{15pt}
+After writing \texttt{calculator\_test.exs},  
+run the unit tests for the \texttt{Calculator} module with the following command:
+
+\begin{lstlisting}[language=bash]
+mix test test/calculator_test.exs
+\end{lstlisting}
+
+\textbf{Output:} The terminal will show the test results,  
+the number of successful tests, and details if any test fails.  
+\end{frame}
+
+\subsection{Running a Specific Test Function}
+\begin{frame}[fragile]{Exercise 4: Running a Specific Test Function}
+\vspace{15pt}
+Add a new test in \texttt{calculator\_test.exs} for the \texttt{multiply/2} function,  
+then run that test using its line number.  
+
+\begin{columns}
+\begin{column}[t]{0.6\textwidth}
+\textbf{Example File:}
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\tiny]
+defmodule CalculatorTest do
+  use ExUnit.Case
+  doctest Calculator
+
+  test "multiplies two numbers" do
+    assert Calculator.multiply(4, 5) == 20
+  end
+
+  # New test added for specific function
+  test "checks multiply with negative numbers" do
+    assert Calculator.multiply(-4, 5) == -20
+  end
+end
+\end{lstlisting}
+\end{column}
+
+\begin{column}[t]{0.4\textwidth}
+\textbf{Running the Test:}  
+If the new test was added at line 6, run the following command:  
+
+\begin{lstlisting}[language=bash]
+mix test test/calculator_test.exs:6
+\end{lstlisting}
+
+This command will only run the test on that line,  
+making debugging or partial testing easier.
+\end{column}
+\end{columns}
+\end{frame}
+
+\section{Summary}
+\begin{frame}{Summary}
+\vspace{15pt}
+\begin{columns}
+
+\begin{column}[t]{0.5\textwidth}
+\begin{itemize}
+  \item \textbf{Documentation in Elixir}  
+    \begin{itemize}
+      \item Use \texttt{@moduledoc} for modules  
+      \item Use \texttt{@doc} for functions  
+      \item Generate HTML docs with \texttt{ex\_doc} and \texttt{mix docs}  
+    \end{itemize}
+
+  \item \textbf{Exercises}  
+    \begin{itemize}
+      \item Create a module with documentation  
+      \item Write unit tests in a separate file  
+      \item Run tests for modules \& specific functions  
+    \end{itemize}
+\end{itemize}
+\end{column}
+
+\begin{column}[t]{0.5\textwidth}
+\begin{itemize}
+  \item \textbf{Unit Testing with ExUnit}  
+    \begin{itemize}
+      \item Write tests in \texttt{\_test.exs} files with \texttt{ExUnit.Case}  
+      \item Use \texttt{assert}, \texttt{refute}, \texttt{assert\_raise}  
+      \item Use \texttt{doctest} to verify examples in documentation  
+    \end{itemize}
+
+  \item \textbf{Running Tests}  
+    \begin{itemize}
+      \item \texttt{mix test} to run all tests  
+      \item \texttt{mix test test/file\_name.exs} for a specific file  
+      \item \texttt{mix test file.exs:line} for a specific function  
+    \end{itemize}
+\end{itemize}
+\end{column}
+
+\end{columns}
+\end{frame}
+
+
+
 \end{document}

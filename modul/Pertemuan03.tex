@@ -83,7 +83,10 @@ Untuk menghasilkan dokumentasi dalam proyek Elixir, Anda perlu menambahkan libra
 	\item Dokumentasi yang dihasilkan akan disimpan dalam folder \texttt{doc/} di dalam direktori proyek Anda. Anda dapat membuka file \texttt{index.html} di browser untuk melihat dokumentasi dalam format HTML.
 \end{enumerate}
 
-\section{Mengenerate Dokumentasi HTML}
+
+
+
+\subsection{Mengenerate Dokumentasi HTML}
 
 Untuk menggenerate dokumentasi dalam format HTML, Elixir menyediakan perintah sederhana, yaitu \texttt{mix docs}. Perintah ini akan mencari dokumentasi di dalam modul dan fungsi yang ada, lalu mengubahnya menjadi halaman HTML yang mudah dibaca. Langkah-langkahnya adalah sebagai berikut:
 
@@ -99,17 +102,14 @@ mix docs
 
 Dengan mendokumentasikan kode dengan baik dan mengenerate dokumentasi HTML, Anda dapat mempermudah orang lain (atau diri sendiri di masa depan) untuk memahami kode yang Anda tulis.
 
+\subsection{Kesimpulan}
+
+Dengan menambahkan \texttt{ex\_doc}, Anda dapat dengan mudah menghasilkan dokumentasi untuk proyek Elixir Anda. Dokumentasi ini membantu memudahkan pemahaman tentang kode yang ditulis dan berfungsi sebagai panduan bagi pengguna lain yang ingin menggunakan atau mengembangkan proyek tersebut.
 
 
 \section{Unit Test di Elixir}
 
 Unit testing di Elixir dapat dilakukan menggunakan modul bawaan bernama \texttt{ExUnit}. Elixir menyediakan fitur untuk membuat test dalam file khusus serta memungkinkan test ditulis dalam dokumentasi fungsi menggunakan anotasi \texttt{doctest}. Unit test sangat penting untuk memastikan bahwa fungsi-fungsi dalam kode bekerja sesuai harapan.
-
-
-
-\subsection{Kesimpulan}
-
-Dengan menambahkan \texttt{ex\_doc}, Anda dapat dengan mudah menghasilkan dokumentasi untuk proyek Elixir Anda. Dokumentasi ini membantu memudahkan pemahaman tentang kode yang ditulis dan berfungsi sebagai panduan bagi pengguna lain yang ingin menggunakan atau mengembangkan proyek tersebut.
 
 
 \subsection{Unit Test dalam File Khusus}
