@@ -1,6 +1,6 @@
 defmodule MathTest do
   use ExUnit.Case
-  doctest Math
+   doctest Math
 
   test "greets the world" do
     assert Math.hello() == "Hello World!"

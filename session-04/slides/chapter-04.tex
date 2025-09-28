@@ -7,16 +7,48 @@
 
 \subtitle{IF140303-Web Application Development}
 
-\title{\LARGE{Session-04:\\Atom, Map, Tuple, List, and\\Keywords in Elixir}
-	}
-\date[Serial]{\scriptsize {PRU/SPMI/FR-BM-18/0222}}
+\title{Session-04:\\
+\Huge{
+Atom, Map, Tuple,\\
+\vspace{5pt}
+List, Keyword List
+\vspace{-18pt}
+}
+}
+\date[Serial]{\scriptsize{PRU/SPMI/FR-BM-18/0222}}
 \author[Pradita]{\small{\textbf{Alfa Yohannis}}}
 
 \lstdefinelanguage{Elixir} {
-	keywords={def, defmodule, do, end, for, if, else, true, false},
+	keywords={case, def, defmodule, do, end, for, if, else, true, false},
 	basicstyle=\ttfamily\small,
 	keywordstyle=\color{blue}\bfseries,
 	ndkeywords={@moduledoc, iex, Enum, @doc},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	showstringspaces=false,
+	% string settings
+	morestring=[b]",
+	morestring=[b]',
+	stringstyle=\color{black}\ttfamily, % default, will be overridden
+	moredelim=[s][\color{blue}\ttfamily]{"}{"},   % double quotes
+	moredelim=[s][\color{teal}\ttfamily]{'}{'}    % single quotes
+}
+
+
+\lstdefinelanguage{bash} {
+	keywords={},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={iex},
 	ndkeywordstyle=\color{purple}\bfseries,
 	sensitive=true,
 	commentstyle=\color{gray},
@@ -38,116 +70,631 @@
 	
 	\frame{\titlepage}
 	
-	\begin{frame}
-		\frametitle{Overview of Maps in Elixir}
-		\begin{itemize}
-			\item Maps are key-value data structures in Elixir.
-			\item Keys can be of any type, allowing for flexible data representation.
-			\item Useful for representing structured data.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Creating and Accessing Maps}
-		\begin{lstlisting}[language=Elixir]
-			iex> colors = %{primary: "red"}
-			iex> colors.primary
-			"red"
-		\end{lstlisting}
-		\begin{itemize}
-			\item Maps are created using the \%{} syntax.
-			\item Access map values using the dot notation or via keys.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Pattern Matching with Maps}
-		\begin{lstlisting}[language=Elixir]
-			iex> colors = %{primary: "red", secondary: "blue"}
-			iex> %{secondary: secondary_color} = colors
-			iex> secondary_color
-			"blue"
-		\end{lstlisting}
-		\begin{itemize}
-			\item Maps can be pattern matched to extract values.
-			\item Allows for easy decomposition of map data.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Immutability and Updating Maps}
-		\begin{lstlisting}[language=Elixir]
-			iex> colors = %{primary: "red"}
-			iex> colors.primary = "blue"
-			** (MatchError) no match of right hand side value: "blue"
-		\end{lstlisting}
-		\begin{itemize}
-			\item Maps are immutable, meaning they cannot be directly updated.
-			\item Updates require creating a new map.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Updating Maps with \texttt{put/3} and the \texttt{\%{ | }} Syntax}
-		\begin{lstlisting}[language=Elixir]
-			iex> colors = %{primary: "red"}
-			iex> colors = Map.put(colors, :primary, "blue")
-			iex> colors
-			%{primary: "blue"}
+		\begin{frame}[fragile]
+		\frametitle{Contents}
+		\vspace{20pt}
+		\begin{columns}[t]
+			\column{0.4\textwidth}
+			\tableofcontents[sections={1-4}]
 			
-			iex> colors = %{colors | primary: "blue"}
-			iex> colors
-			%{primary: "blue"}
-		\end{lstlisting}
-		\begin{itemize}
-			\item Use \texttt{Map.put/3} or the \texttt{\%{ | }} syntax to update maps.
-			\item This creates a new map with the updated values.
-		\end{itemize}
+			\column{0.6\textwidth}
+			\tableofcontents[sections={5-8}]
+		\end{columns}
 	\end{frame}
-	
-	\begin{frame}
-		\frametitle{Overview of Keyword Lists}
-		\begin{itemize}
-			\item Keyword lists are lists of key-value pairs.
-			\item Keys must be atoms, and keys are ordered.
-			\item Commonly used in Ecto and other Elixir libraries.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Creating and Accessing Keyword Lists}
-		\begin{lstlisting}[language=Elixir]
-			iex> colors = [{:primary, "red"}, {:secondary, "green"}]
-			iex> colors[:primary]
-			"red"
-		\end{lstlisting}
-		\begin{itemize}
-			\item Keyword lists can be accessed using the key in square brackets.
-			\item Useful for simple, ordered collections of key-value pairs.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Updating Keyword Lists}
-		\begin{lstlisting}[language=Elixir]
-			iex> colors = [primary: "red", secondary: "blue"]
-			iex> colors = [primary: "red", primary: "blue"]
-			iex> colors[:primary]
-			"blue"
-		\end{lstlisting}
-		\begin{itemize}
-			\item Updating a keyword list involves reassigning it with new values.
-			\item Duplicate keys in keyword lists will result in the last value being used.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}
-		\frametitle{Summary}
-		\begin{itemize}
-			\item We explored Maps and Keyword Lists in Elixir.
-			\item We learned how to create, access, and update both data structures.
-			\item Understanding these structures is key for working with Elixir data and using libraries like Ecto.
-		\end{itemize}
-	\end{frame}
-	
+
+\section{Atom}
+
+\begin{frame}[fragile]{Atom: The Basics}
+\vspace{20pt}
+In Elixir, an \textbf{atom} is a constant whose value is its own name. Atoms are frequently used to label values or represent specific concepts within a program. They are efficient and lightweight, making them ideal for pattern matching and as labels.
+
+Atoms are created by prefixing a name with a colon (\texttt{:}).
+
+\begin{lstlisting}[language=Elixir]
+:ok       # An atom with the value :ok
+:error    # An atom with the value :error
+:my_value # An atom can also use snake_case
+\end{lstlisting}
+\end{frame}
+
+
+\begin{frame}[fragile]{Using Atoms in Elixir}
+\vspace{20pt}
+Atoms are commonly used for control flow in \textbf{pattern matching}, as keys in \textbf{keyword lists}, and to represent \textbf{module names}. Since atoms are immutable, they provide a reliable way to reference named values.
+
+\begin{lstlisting}[language=Elixir]
+status = :ok
+
+case status do
+  :ok -> "Operation successful"
+  :error -> "Operation failed"
+end
+#=> "Operation successful"
+
+# Atoms as keys
+options = [mode: :admin, visible: true]
+\end{lstlisting}
+\end{frame}
+
+\section{Map}
+
+\begin{frame}[fragile]{Map: The Basics}
+\vspace{20pt}
+In Elixir, a \textbf{Map} is a key-value data structure where keys can be of any type. Maps are unordered, meaning the key-value pairs are not stored in any specific sequence.
+
+They are created using the \texttt{\%\{\}} syntax, and values can be accessed using their key.
+
+\begin{lstlisting}[language=Elixir]
+# Creating a map
+user = %{"name" => "Alice", "age" => 30}
+
+# Accessing a value
+user["name"]  #=> "Alice"
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Modifying a Map}
+\vspace{20pt}
+To add or update an entry in a Map, you use the \texttt{Map.put/3} function. To remove an entry, you use the \texttt{Map.delete/2} function. Since Elixir data is immutable, these functions return a \textbf{new map} rather than changing the original one.
+
+\begin{lstlisting}[language=Elixir]
+user = %{"name" => "Alice", "age" => 30}
+
+# Add a new key-value pair
+updated_user = Map.put(user, "city", "New York")
+#=> %{"name" => "Alice", "age" => 30, "city" => "New York"}
+
+# Remove a key-value pair
+final_user = Map.delete(user, "age")
+#=> %{"name" => "Alice"}
+\end{lstlisting}
+\end{frame}
+
+\section{Tuple}
+
+\begin{frame}[fragile]{Tuple: The Basics}
+\vspace{20pt}
+A \textbf{Tuple} is an ordered collection of elements. A key characteristic of tuples is that they are \textbf{immutable}, meaning once a tuple is created, it cannot be changed. They are commonly used for returning multiple values from a function.
+
+Tuples are created with curly braces \texttt{\{\}}, and elements are accessed by their zero-based index using the \texttt{elem/2} function.
+
+\begin{lstlisting}[language=Elixir]
+# Creating a tuple
+person = {"Alice", 30, "New York"}
+
+# Accessing an element by index
+elem(person, 0)  #=> "Alice"
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Working with Immutable Tuples}
+\vspace{20pt}
+Since tuples are immutable, you cannot directly add, update, or remove elements. Any "modification" operation will create and return a \textbf{new tuple}, e.g., the \texttt{Tuple.append/2} function doesn't change the original tuple; it returns a new one with the element added to the end. The same principle applies to removing elements.
+
+\begin{lstlisting}[language=Elixir]
+person = {"Alice", 30}
+
+# "Appending" creates a new tuple
+new_person = Tuple.append(person, "Engineer")
+#=> {"Alice", 30, "Engineer"}
+
+person #=> {"Alice", 30} (The original is unchanged)
+\end{lstlisting}
+\end{frame}
+
+\section{List}
+
+\begin{frame}[fragile]{Lists: Creation and Adding Elements}
+\vspace{20pt}
+A \textbf{List} in Elixir is an ordered collection of elements. Lists are ideal for variable-length data. All Elixir data is \textbf{immutable}, so "adding" an element to a list actually creates and returns a \textbf{new list}. The most efficient way to add an element is to the front (or head) of the list using the cons operator \texttt{[ | ]}. You can also insert an element at any index.
+
+\begin{lstlisting}[language=Elixir]
+# 1. Create a list with square brackets
+list = [1, 2, 3]
+
+# 2. Add an element to the head (very fast)
+new_list = [0 | list]
+#=> [0, 1, 2, 3]
+
+# 3. Insert an element at a specific index
+inserted_list = List.insert_at(list, 1, 99)
+#=> [1, 99, 2, 3]
+\end{lstlisting}
+\end{frame}
+
+
+\begin{frame}[fragile]{Lists: Concatenating and Removing Elements}
+\vspace{20pt}
+To combine two lists, you can use the concatenation operator \texttt{++/2}. This is the most common and idiomatic way to join lists in Elixir. To remove an element, the \texttt{List.delete/2} function is used. It scans the list and removes the \textbf{first occurrence} of the specified element. Both of these operations are immutable and return a \textbf{new list}.
+
+\begin{lstlisting}[language=Elixir]
+# 1. Concatenate two lists using the ++ operator
+list1 = [1, 2]
+list2 = [3, 4]
+new_list = list1 ++ list2
+#=> [1, 2, 3, 4]
+
+# 2. Delete the first occurrence of an element
+list_with_duplicates = [10, 20, 30, 20]
+updated_list = List.delete(list_with_duplicates, 20)
+#=> [10, 30, 20]
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Lists: Accessing the Head Element}
+\vspace{20pt}
+Accessing elements in an Elixir list is most commonly done by interacting with its \textbf{head} (the first element) and its \textbf{tail} (the rest of the list). The most idiomatic way to do this is with \textbf{pattern matching}, which lets you deconstruct the list into variables. For convenience, Elixir also provides the \texttt{hd/1} function as a direct shortcut to get the head.
+
+\begin{lstlisting}[language=Elixir]
+list = [:a, :b, :c, :d]
+
+# 1. Using pattern matching to get the head
+[head | _tail] = list
+# head is now :a
+
+# 2. Using the hd/1 function for a direct shortcut
+hd(list)
+#=> :a
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Lists: Accessing the Tail and by Index}
+\vspace{20pt}
+To get all elements of a list \textbf{except for the first one}, you can use the \texttt{tl/1} function. This is the counterpart to the \texttt{hd/1} function and returns the "tail" of the list. To access an element by its specific numerical position, you should use \texttt{Enum.at/2}. Note that this can be a slow operation on very long lists, as Elixir must traverse the list from the beginning to find the element.
+
+\begin{lstlisting}[language=Elixir]
+list = [:a, :b, :c, :d]
+
+# 1. Get the tail of the list (all but the head)
+tl(list)
+#=> [:b, :c, :d]
+
+# 2. Get the element at a specific index (zero-based)
+Enum.at(list, 2)
+#=> :c
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Advanced: Index Access with Recursion}
+\vspace{20pt}
+This example implements index-based access from scratch using a recursive function with pattern matching. It works by repeatedly traversing the list's tail and decrementing the index, returning the current head when the index reaches zero.
+
+\begin{lstlisting}[language=Elixir , basicstyle=\ttfamily\footnotesize]
+defmodule ListUtils do
+  # Base case: when index is 0, return the head
+  def get_element_at([head | _tail], 0), do: head
+  # Recursive step: call again on the tail with index - 1
+  def get_element_at([_head | tail], index) when index > 0 do
+    get_element_at(tail, index - 1)
+  end
+  # Edge case: return nil for an empty list
+  def get_element_at([], _index), do: nil
+end
+list = [1, 2, 3, 4]
+IO.puts(ListUtils.get_element_at(list, 2)) # Outputs: 3
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Lists: Finding an Element's Index by Value}
+\vspace{20pt}
+To find the position of an element in a list based on its value, you can use the \texttt{Enum.find\_index/2} function. This function iterates through the list and returns the \textbf{zero-based index} of the \textbf{first element} for which the provided anonymous function returns a truthy value. If no element matches the condition, it returns \texttt{nil}.
+
+\begin{lstlisting}[language=Elixir]
+list = [10, 20, 30, 40, 30]
+
+# Find the index of the first element that equals 30
+index = Enum.find_index(list, fn x -> x == 30 end)
+
+IO.puts(index) # Outputs: 2
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Advanced: Finding an Index with Recursion}
+\vspace{20pt}
+This custom function finds an element's index using \textbf{recursion} and \textbf{pattern matching}. It defines separate clauses to handle the three key scenarios: the base case when a value is found, the recursive step to traverse the rest of the list, and the failure case for an empty list.
+
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\footnotesize]
+defmodule ListUtils do
+  # Case 1: The list is empty, so the value was not found.
+  def index_of([], _value, _index), do: nil
+  # Case 2: The head of the list matches the value. Return the index.
+  def index_of([value | _tail], value, index), do: index
+  # Case 3: No match. Recurse on the tail with an incremented index.
+  def index_of([_head | tail], value, index) do
+    index_of(tail, value, index + 1)
+  end
+end
+list = [10, 20, 30, 40]
+index = ListUtils.index_of(list, 30, 0) #=> 2
+\end{lstlisting}
+\end{frame}
+
+\section{Keyword List}
+
+\begin{frame}[fragile]{Keyword Lists: The Basics}
+\vspace{20pt}
+A \textbf{Keyword List} is a special type of list in Elixir that's commonly used for passing optional values to functions. Under the hood, it's a list of two-element tuples where the first element of each tuple is an \textbf{atom}. Elixir provides a convenient syntax for creating and accessing them.
+
+\begin{lstlisting}[language=Elixir]
+# Convenient syntax for creation
+options = [name: "Alice", age: 30]
+
+# The underlying structure is a list of tuples
+# [{:name, "Alice"}, {:age, 30}]
+
+# Accessing a value is simple
+options[:name] #=> "Alice"
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Modifying a Keyword List}
+\vspace{20pt}
+Since Keyword Lists are just lists, you can add a new key-value pair by prepending it. If a key already exists, this effectively "updates" it, as functions typically read the first value they find. To explicitly remove an element, the \texttt{Keyword} module provides helper functions like \texttt{Keyword.delete/2}.
+
+\begin{lstlisting}[language=Elixir]
+options = [name: "Alice", age: 30]
+
+# Add :city, creating a new list
+new_options = [city: "New York" | options]
+#=> [city: "New York", name: "Alice", age: 30]
+
+# Remove a key, creating another new list
+final_options = Keyword.delete(new_options, :age)
+#=> [city: "New York", name: "Alice"]
+\end{lstlisting}
+\end{frame}
+
+\section{Converting Between Data Structures}
+
+\begin{frame}[fragile]{Converting Between Tuples and Lists}
+\vspace{20pt}
+In Elixir, it's often necessary to convert between different data structures. The standard library provides simple, built-in functions to handle these transformations, most commonly between \textbf{tuples} and \textbf{lists}.
+
+\begin{lstlisting}[language=Elixir]
+# 1. Convert a Tuple to a List
+my_tuple = {:ok, "some data", 123}
+my_list = Tuple.to_list(my_tuple)
+#=> [:ok, "some data", 123]
+
+# 2. Convert a List to a Tuple
+another_list = [:error, "not found"]
+another_tuple = List.to_tuple(another_list)
+#=> {:error, "not found"}
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Converting Between Maps and Keyword Lists}
+\vspace{20pt}
+Elixir provides simple, built-in functions to convert between the general-purpose \textbf{Map} and the option-passing \textbf{Keyword List}. This is a common operation when dealing with function arguments or configuration data.
+
+\begin{lstlisting}[language=Elixir]
+# 1. Convert a Keyword List to a Map
+# Use Enum.into/2 with an empty map as the target.
+keyword_list = [name: "Budi", age: 25]
+map = Enum.into(keyword_list, %{})
+#=> %{name: "Budi", age: 25}
+
+
+# 2. Convert a Map to a Keyword List
+# The Map.to_list/1 function handles this directly.
+map = %{name: "Budi", age: 25}
+keyword_list = Map.to_list(map)
+#=> [name: "Budi", age: 25]
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Converting a List of Tuples to a Keyword List}
+\vspace{20pt}
+To convert a regular list into a \textbf{Keyword List}, the source list must follow a specific format: it must be a \textbf{list of two-element tuples}, where the first element of each tuple is an \textbf{atom}.
+
+While Elixir often treats both structures identically, you can ensure the special keyword syntax is used with the \texttt{Enum.into/2} function.
+
+\begin{lstlisting}[language=Elixir]
+# The source must be a list of 2-element tuples with atom keys.
+list_of_tuples = [{:name, "Budi"}, {:age, 25}]
+
+# Enum.into/2 converts it to the keyword list syntax.
+keyword_list = Enum.into(list_of_tuples, [])
+
+# The underlying data is the same, but the representation is new.
+IO.inspect(keyword_list)
+#=> [name: "Budi", age: 25]
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Converting Between Tuples and Keyword Lists}
+\vspace{20pt}
+While there isn't a single function to directly convert between a \textbf{Tuple} and a \textbf{Keyword List}, you can easily compose functions to achieve the transformation. The most common path is to use a regular \textbf{List} as an intermediate step.
+
+\begin{lstlisting}[language=Elixir]
+# 1. Convert a Tuple of Tuples to a Keyword List
+# A tuple containing key-value pairs can be turned into a list.
+tuple = {{:name, "Budi"}, {:age, 25}}
+keyword_list = Tuple.to_list(tuple)
+#=> [name: "Budi", age: 25]
+
+# 2. Convert a Keyword List to a Tuple (The Opposite Way)
+# A keyword list can be converted into a tuple of tuples.
+keyword_list = [name: "Budi", age: 25]
+tuple = List.to_tuple(keyword_list)
+#=> {{:name, "Budi"}, {:age, 25}}
+\end{lstlisting}
+\end{frame}
+
+
+\section{Exercises}
+
+\begin{frame}[fragile]{Exercise 1: Manipulating Maps}
+\vspace{20pt}
+\begin{columns}
+    \begin{column}[t]{0.45\textwidth} % Explicit begin for the first column
+        \textbf{Goal}: Understand how to add, update, delete, and access data in a Map.
+        \begin{enumerate}
+            \item Create a Map with \texttt{name}: "Budi", \texttt{age}: 25, and \texttt{city}: "Jakarta".
+            \item Add a new key, \texttt{job}, with the value "Engineer".
+            \item Update the value of the \texttt{age} key to 26.
+            \item Remove the \texttt{city} key from the Map.
+            \item Print the final values of the \texttt{name} and \texttt{age} keys.
+        \end{enumerate}
+    \end{column} % Explicit end for the first column
+
+    \begin{column}[T]{0.55\textwidth} % Explicit begin for the second column
+        \begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\scriptsize]
+# 1. Create the initial Map
+person = %{
+  "name" => "Budi", "age" => 25, 
+  "city" => "Jakarta"
+}
+# 2. Add a new key
+person = Map.put(person, "job", "Engineer")
+# 3. Update the value of the age key
+person = Map.put(person, "age", 26)
+# 4. Remove the city key
+person = Map.delete(person, "city")
+# 5. Access and print the values
+IO.puts("Name: #{person["name"]}")
+IO.puts("Age: #{person["age"]}")
+
+# Expected Output:
+# Name: Budi
+# Age: 26
+        \end{lstlisting}
+    \end{column} % Explicit end for the second column
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Exercise 2: Manipulating Tuples}
+\vspace{20pt}
+\begin{columns}
+    \begin{column}[T]{0.4\textwidth}
+        \textbf{Goal}: Understand how to create and modify a Tuple, keeping in mind its immutable nature.
+
+        \begin{enumerate}
+            \item Create a Tuple with the data: \texttt{"Budi"}, \texttt{25}, and \texttt{"Jakarta"}.
+            \item Access and print the second element (the age).
+            \item Add the new element \texttt{"Engineer"} to the Tuple.
+            \item Remove the second element from the Tuple and print the final result.
+        \end{enumerate}
+
+    \end{column}
+
+    \begin{column}[T]{0.6\textwidth}
+        \begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\footnotesize]
+# 1. Create the initial Tuple
+person = {"Budi", 25, "Jakarta"}
+# 2. Access the second element
+# The index is zero-based
+IO.puts("Age: #{elem(person, 1)}")
+# 3. Add a new element
+# This returns a new, larger tuple
+person = Tuple.append(person, "Engineer")
+# 4. Remove the second element
+# This also returns a new, smaller tuple
+person = Tuple.delete_at(person, 1)
+# Print the final tuple
+IO.inspect(person)
+# Expected Output:
+# Age: 25
+# {"Budi", "Jakarta", "Engineer"}
+        \end{lstlisting}
+    \end{column} % End of the second column
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Exercise 3: Manipulating Lists}
+\vspace{20pt}
+\begin{columns}
+    \begin{column}[T]{0.34\textwidth}
+        \textbf{Goal}: Understand how to add, delete, and access elements in a List.
+        \begin{enumerate}
+            \item Create a List containing the numbers 1 through 5.
+            \item Add the number 0 to the front of the List.
+            \item Remove the number 3 from the List.
+            \item Access and print the third element of the final List.
+        \end{enumerate}
+
+    \end{column}
+
+    \begin{column}[T]{0.66\textwidth}
+        \begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\footnotesize]
+# 1. Create the initial List
+numbers = [1, 2, 3, 4, 5]
+
+# 2. Add 0 to the front (prepend)
+numbers = [0 | numbers]
+#output => [0, 1, 2, 3, 4, 5]
+
+# 3. Remove the number 3
+numbers = List.delete(numbers, 3)
+#putput => [0, 1, 2, 4, 5]
+
+# 4. Access the third element
+# Index is 0-based, so we get index 2
+IO.puts("Third element: #{Enum.at(numbers, 2)}")
+# Expected Output:
+# Third element: 2
+        \end{lstlisting}
+    \end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Exercise 4: Manipulating Keyword Lists}
+\vspace{15pt}
+\begin{columns}
+    \begin{column}[T]{0.4\textwidth}
+        \textbf{Goal}: Understand how to create, add, update, delete, and access elements in a Keyword List.
+
+        \begin{enumerate}
+            \item Create a Keyword List with \texttt{name}: "Budi" and \texttt{age}: 25.
+            \item Add a new key, \texttt{city}, with the value "Jakarta".
+            \item Update the value of the \texttt{age} key to 26.
+            \item Remove the \texttt{city} key from the Keyword List.
+            \item Print the final values of the \texttt{name} and \texttt{age} keys.
+        \end{enumerate}
+
+    \end{column}
+
+    \begin{column}[T]{0.6\textwidth}
+        \begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\footnotesize]
+# 1. Create the initial Keyword List
+person_kw = [name: "Budi", age: 25]
+# 2. Add a new key by prepending
+person_kw = [city: "Jakarta" | person_kw]
+# 3. Update the value of the age key
+# This adds a new :age tuple at the front
+person_kw = Keyword.put(person_kw, :age, 26)
+# 4. Remove the city key
+person_kw = Keyword.delete(person_kw, :city)
+# 5. Access and print the values
+IO.puts("Name: #{person_kw[:name]}")
+IO.puts("Age: #{person_kw[:age]}")
+# Expected Output:
+# Name: Budi
+# Age: 26
+        \end{lstlisting}
+    \end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Exercise 5: Using Atoms}
+\vspace{20pt}
+\begin{columns}
+    \begin{column}[T]{0.4\textwidth}
+        \textbf{Goal}: Understand how to use atoms in pattern matching and as keys in data structures.
+        \begin{enumerate}
+            \item Create an atom named \texttt{:status} with the value \texttt{:ok}.
+            \item Use the atoms \texttt{:ok} and \texttt{:error} for pattern matching inside a \texttt{case} statement.
+            \item Create a Map with atom keys, such as \texttt{:name}, \texttt{:age}, and \texttt{:city}, then access and print their values.
+        \end{enumerate}
+
+    \end{column}
+
+    \begin{column}[T]{0.6\textwidth}
+        \begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\footnotesize]
+# 1. Create the status atom
+status = :ok
+# 2. Use atoms in pattern matching
+case status do
+  :ok -> IO.puts("Status: Success")
+  :error -> IO.puts("Status: Failure")
+end
+# 3. Create a Map with atom keys
+# Note: %{name: "Budi"} is syntax
+# sugar for %{:name => "Budi"}
+person_map = %{ name: "Budi", age: 25, city: "Jakarta" }
+# Access and print the values
+IO.puts("Name: #{person_map[:name]}")
+IO.puts("Age: #{person_map[:age]}")
+IO.puts("City: #{person_map[:city]}")
+        \end{lstlisting}
+    \end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Exercise 6: The `Person` Module}
+\vspace{15pt}
+\begin{columns}
+    \begin{column}[T]{0.45\textwidth}
+        \textbf{Goal}: Apply all the concepts learned in a single program.
+        \begin{enumerate}
+            \item Create a function \texttt{create\_person/3} that accepts a Name, Age, and City.
+            \item The function should return a Map using atom keys.
+            \item Create a function \texttt{update\_city/2} to change the city in the Map.
+            \item Create a function \texttt{delete\_age/1} to remove the \texttt{:age} key.
+            \item Print the final result after calling the functions in sequence.
+        \end{enumerate}
+
+    \end{column}
+
+    \begin{column}[T]{0.55\textwidth}
+        \begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\footnotesize]
+defmodule Person do
+  # Creates a Map with atom keys
+  def create_person(name, age, city) do
+    %{name: name, age: age, city: city}
+  end
+
+  # Updates the city value
+  def update_city(person, new_city) do
+    Map.put(person, :city, new_city)
+  end
+
+  # Deletes the age key
+  def delete_age(person) do
+    Map.delete(person, :age)
+  end
+end
+        \end{lstlisting}
+    \end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Exercise 6: Script Execution}
+\vspace{15pt}
+\begin{columns}
+    \begin{column}[T]{0.45\textwidth}
+        \textbf{Goal}: Apply all the concepts learned in a single program.
+        \begin{enumerate}
+            \item Create a function \texttt{create\_person/3} that accepts a Name, Age, and City.
+            \item The function should return a Map using atom keys.
+            \item Create a function \texttt{update\_city/2} to change the city in the Map.
+            \item Create a function \texttt{delete\_age/1} to remove the \texttt{:age} key.
+            \item Print the final result after calling the functions in sequence.
+        \end{enumerate}
+
+    \end{column}
+
+    \begin{column}[T]{0.55\textwidth}
+        \begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\footnotesize]
+# --- Script Execution ---
+# 1. Create the person
+person = Person.create_person("Budi", 25, "Jakarta")
+#=> %{age: 25, city: "Jakarta", name: "Budi"}
+# 2. Update the city
+person = Person.update_city(person, "Bandung")
+#=> %{age: 25, city: "Bandung", name: "Budi"}
+# 3. Delete the age
+person = Person.delete_age(person)
+# 4. Print the final result
+IO.inspect(person)
+#=> %{city: "Bandung", name: "Budi"}
+        \end{lstlisting}
+    \end{column}
+\end{columns}
+\end{frame}
+
+\section{Summary}
+\begin{frame}{Summary}
+\vspace{20pt}
+\begin{itemize}
+\item This session covered Elixir's core data structures, each with a specific purpose. Understanding when to use each one is key to writing effective Elixir code.
+    \item \textbf{Atoms} are lightweight constants, perfect for keys and status tags like \texttt{:ok}.
+    \item \textbf{Tuples} are for fixed-size, ordered data, offering fast element access.
+    \item \textbf{Lists} are dynamic, ordered collections, best for sequential processing.
+    \item \textbf{Maps} are the primary key-value store for flexible data association.
+    \item \textbf{Keyword Lists} are ordered lists of \textbf{key--value} pairs (with atom keys) mainly used for passing options to functions.  
+\item Remember, all these data structures are \textbf{immutable}; operations always return new data rather than changing the original.
+\end{itemize}
+\end{frame}
+
 \end{document}
