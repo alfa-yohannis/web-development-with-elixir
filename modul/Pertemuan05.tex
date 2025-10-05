@@ -214,9 +214,6 @@ Warna direpresentasikan sebagai tuple \texttt{\{r, g, b\}}, di mana \texttt{r}, 
 Fungsi \texttt{create\_grid/1} mengubah hash menjadi pola grid dengan memecah daftar hash menjadi baris-baris yang masing-masing terdiri dari tiga elemen, kemudian mencerminkan setiap baris untuk menciptakan simetri. Baris-baris ini kemudian dipipihkan dan diberi indeks.
 
 \begin{lstlisting}[language=Elixir, caption={Membuat grid avatar}]
-	@spec create_grid(%Avatar.Image{:hash => any(), optional(any()) => any()}) :: [
-	{any(), integer()}
-	]
 	def create_grid(%Avatar.Image{hash: hash} = image) do
 	hash
 	|> Enum.chunk_every(3)
