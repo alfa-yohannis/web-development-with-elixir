@@ -1,4 +1,22 @@
 defmodule AvatarGenerator do
+  use Application
+
+  def start(_type, _args) do
+    input =
+      System.argv()
+      |> List.first()
+      |> to_string()
+      |> String.trim()
+      |> case do
+        "" -> "wolverine"
+        name -> name
+      end
+
+    result = AvatarGenerator.generate(input)
+    IO.inspect(result)
+    {:ok, self()}
+  end
+
   def generate(input) do
     input
     |> compute_hash
@@ -18,31 +36,33 @@ defmodule AvatarGenerator do
     image = :egd.create(250, 250)
     fill = :egd.color(color)
 
-    Enum.each pixel_map, fn({start, stop}) ->
+    Enum.each(pixel_map, fn {start, stop} ->
       :egd.filledRectangle(image, start, stop, fill)
-    end
+    end)
 
     :egd.render(image)
   end
 
   def generate_pixel_map(%Avatar.Image{grid: grid} = image) do
-    pixel_map = Enum.map grid, fn({_code, index}) ->
-      x = rem(index, 5) * 50
-      y = div(index, 5) * 50
+    pixel_map =
+      Enum.map(grid, fn {_code, index} ->
+        x = rem(index, 5) * 50
+        y = div(index, 5) * 50
 
-      top_left = {x, y}
-      bottom_right = {x + 50, y + 50}
+        top_left = {x, y}
+        bottom_right = {x + 50, y + 50}
 
-      {top_left, bottom_right}
-    end
+        {top_left, bottom_right}
+      end)
 
     %Avatar.Image{image | pixel_map: pixel_map}
   end
 
   def remove_odd_cells(%Avatar.Image{grid: grid} = image) do
-    grid = Enum.filter grid, fn({code, _index}) ->
-      rem(code, 2) == 0
-    end
+    grid =
+      Enum.filter(grid, fn {code, _index} ->
+        rem(code, 2) == 0
+      end)
 
     %Avatar.Image{image | grid: grid}
   end
@@ -52,8 +72,8 @@ defmodule AvatarGenerator do
       hash
       |> Enum.chunk_every(3)
       |> Enum.map(&reflect_row/1)
-      |> List.flatten
-      |> Enum.with_index
+      |> List.flatten()
+      |> Enum.with_index()
 
     %Avatar.Image{image | grid: grid}
   end
@@ -69,8 +89,9 @@ defmodule AvatarGenerator do
   end
 
   def compute_hash(input) do
-    hash = :crypto.hash(:sha256, input)
-    |> :binary.bin_to_list
+    hash =
+      :crypto.hash(:sha256, input)
+      |> :binary.bin_to_list()
 
     %Avatar.Image{hash: hash}
   end

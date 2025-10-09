@@ -1,8 +1,8 @@
 hash = :crypto.hash(:md5, "wolverine")
 IO.puts("hash = " <> Kernel.inspect(hash))
 
-hash16 = Base.encode16(hash)
-IO.puts("hash16 = " <> hash16)
+# hash16 = Base.encode16(hash)
+# IO.puts("hash16 = " <> hash16)
 
 list = :binary.bin_to_list(hash)
 IO.puts("list = " <> Kernel.inspect(list))
