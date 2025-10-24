@@ -37,6 +37,29 @@ Saat seorang pengguna melakukan permintaan ke aplikasi Phoenix, framework ini me
 	\item \texttt{Response} kemudian dikirim kembali ke klien, biasanya dalam bentuk halaman HTML atau tanggapan JSON.
 \end{enumerate}
 
+
+\subsection{Request}
+
+A request in Phoenix begins when a client, such as a web browser,  
+sends an HTTP request to the server. The router identifies the correct  
+controller and action to handle it. The request typically contains  
+information such as the path, method, headers, and parameters.  
+
+The controller receives this data through the \texttt{conn} struct,  
+processes it, and passes the result to the view for rendering the  
+final response.
+
+\begin{lstlisting}[language=bash]
+GET /about HTTP/1.1
+Host: localhost:4000
+User-Agent: Mozilla/5.0
+Accept: text/html
+\end{lstlisting}
+
+This request is routed to \texttt{PageController.about/2},  
+which prepares data for the view.
+
+
 \subsection{Router}
 Router bertanggung jawab untuk memetakan permintaan HTTP ke controller dan aksi yang sesuai. Pada Phoenix, rute didefinisikan dalam file \texttt{router.ex}. Router memeriksa jalur dan metode (GET, POST, dll.) dari permintaan yang masuk dan memutuskan controller mana yang harus menangani permintaan tersebut serta aksi (fungsi) mana di dalam controller yang harus dijalankan. Sebagai contoh:
 
