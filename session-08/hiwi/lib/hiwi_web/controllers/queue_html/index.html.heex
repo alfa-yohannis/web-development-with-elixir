@@ -1,0 +1,67 @@
+<!-- lib/hiwi_web/controllers/queue_html/index.html.heex -->
+<Layouts.app flash={@flash}>
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">Queues</h1>
+    <.link navigate={~p"/queues/new"} class="btn btn-primary btn-sm">
+      + New
+    </.link>
+  </div>
+
+  <div :if={Enum.empty?(@queues)} class="text-center text-base-content/70">
+    <p>No queues yet.</p>
+    <.link navigate={~p"/queues/new"} class="btn btn-primary btn-sm mt-3">
+      Create Queue
+    </.link>
+  </div>
+
+  <div :if={!Enum.empty?(@queues)} class="overflow-x-auto">
+    <table class="table table-zebra w-full">
+      <thead>
+        <tr>
+          <th class="w-1/12 text-center">#</th>
+          <th>Name</th>
+          <th class="w-2/12 text-center">Prefix</th>
+          <th class="w-2/12 text-center">Current / Max</th>
+          <th class="w-2/12 text-center">Status</th>
+          <th class="w-2/12 text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for {q, i} <- Enum.with_index(@queues, 1) do %>
+          <tr>
+            <td class="text-center"><%= i %></td>
+            <td><%= q.name %></td>
+            <td class="text-center font-mono"><%= q.prefix %></td>
+            <td class="text-center font-mono">
+              <%= q.current_number %> / <%= q.max_number %>
+            </td>
+            <td class="text-center">
+              <span class={"badge " <>
+                case String.downcase(q.status || "") do
+                  "ready" -> "badge-success"
+                  "running" -> "badge-warning"
+                  "inactive" -> "badge-ghost"
+                  _ -> "badge-ghost"
+                end
+              }>
+                <%= String.capitalize(q.status || "Unknown") %>
+              </span>
+            </td>
+            <td class="text-center">
+              <div class="join">
+                <.link navigate={~p"/queues/edit/#{q.id}"} class="btn btn-ghost btn-xs join-item">
+                  Edit
+                </.link>
+                <.link href={~p"/queues/delete/#{q.id}"} method="delete"
+                       data-confirm="Delete this queue?"
+                       class="btn btn-ghost btn-xs text-error join-item">
+                  Delete
+                </.link>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</Layouts.app>

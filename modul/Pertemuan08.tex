@@ -1,93 +1,494 @@
 \chapter{Add dan List Data pada Phoenix Framework}
 
 \section{Pendahuluan}
-Elixir menyediakan fitur-fitur yang kuat untuk mengelola organisasi kode dan ketergantungan antar modul. Tiga direktif yang sering digunakan adalah \texttt{import}, \texttt{alias}, dan \texttt{use}. Masing-masing memiliki tujuan spesifik untuk membantu menyusun kode secara efektif dan menulis program yang lebih ringkas.
 
-\section{Import}
-Direktif \texttt{import} memungkinkan fungsi dan makro yang didefinisikan di suatu modul dapat diakses langsung di modul lain tanpa perlu mereferensikan nama modul.
+Hiwi adalah nama dari aplikasi \textbf{Queue Management System} (sistem manajemen antrian) yang akan dikembangkan menggunakan \textbf{Phoenix Framework} berbasis bahasa pemrograman \textbf{Elixir}. Aplikasi ini dirancang sebagai studi kasus untuk memahami cara menambahkan dan menampilkan data dalam sebuah aplikasi web yang mengikuti pola arsitektur \textbf{MVC} (Model–View–Controller).  
 
-\subsection{Penggunaan}
-\texttt{import} dapat digunakan untuk mengimpor semua atau hanya beberapa fungsi dari suatu modul. Berikut adalah contoh impor fungsi:
+Sistem antrian merupakan konsep yang sering dijumpai dalam berbagai bidang, seperti rumah sakit, bank, kantor layanan publik, hingga sistem komputasi yang mengatur proses tugas atau \textit{jobs}. Dalam konteks ini, Hiwi bertujuan untuk menyimpan dan menampilkan data antrian secara dinamis. Fokus utamanya adalah membangun dua fungsi dasar: menambahkan data antrian baru ke dalam basis data (\textit{Add}) dan menampilkan seluruh daftar antrian yang tersimpan (\textit{List}).  
 
-\begin{lstlisting}[language=Elixir]
-	defmodule MyModule do
-	import Enum, only: [map: 2, filter: 2]
-	
-	def process_list(list) do
-	list
-	|> map(&(&1 * 2))
-	|> filter(&(&1 > 10))
-	end
-	end
+Phoenix Framework dipilih karena keunggulannya dalam membangun aplikasi web yang cepat, efisien, dan skalabel. Framework ini juga memiliki dukungan bawaan untuk fitur \textit{real-time} melalui komponen seperti \texttt{Phoenix Channel} dan \texttt{PubSub}. Selain itu, Phoenix bekerja erat dengan \textbf{Ecto}, pustaka ORM (Object Relational Mapper) yang digunakan untuk mengelola koneksi ke basis data, mendefinisikan struktur tabel, serta melakukan validasi dan transformasi data secara deklaratif.  
+
+Pada bab ini, pembaca akan mempelajari langkah demi langkah pembangunan modul \texttt{Queue} di dalam aplikasi Hiwi. Proses ini dimulai dengan membuat proyek baru Phoenix dan mengonfigurasi koneksi ke database PostgreSQL. Setelah itu, dilakukan pembuatan \textit{migration} untuk mendefinisikan tabel \texttt{queues}, diikuti oleh penulisan \textit{schema model} yang merepresentasikan tabel tersebut dalam kode Elixir. Selanjutnya, dibahas pembuatan \textit{controller} yang mengatur alur logika antara pengguna dan database, serta \textit{view} dan \textit{template} HEEx untuk menampilkan data antrian di halaman web.  
+
+Setelah semua komponen tersebut selesai, bab ini juga menunjukkan bagaimana mengatur \textit{router} agar setiap permintaan pengguna dapat diarahkan ke fungsi yang sesuai. Melalui proses ini, pembaca akan memahami alur dasar pengelolaan data mulai dari pengisian form hingga penampilan daftar data di antarmuka web.  
+
+Bab ini berfokus pada dua operasi utama, yaitu \textbf{penambahan data} (Add) dan \textbf{penampilan data} (List). Sementara itu, operasi lain seperti \textbf{pengambilan data tunggal} (\texttt{get}), \textbf{pembaruan data} (\texttt{update}), dan \textbf{penghapusan data} (\texttt{delete}) akan dijelaskan secara lebih mendalam pada bab berikutnya. Dengan demikian, pembaca diharapkan memperoleh pemahaman menyeluruh mengenai proses \textbf{Create} dan \textbf{Read} sebagai dasar sebelum melangkah ke pengelolaan data yang lebih kompleks dalam sistem Phoenix Framework.
+
+
+
+\section{Membuat Proyek Baru}
+
+Pembuatan proyek dimulai dengan memastikan manajer paket Elixir telah siap. Perintah \texttt{mix local.hex} digunakan untuk memasang atau memperbarui \textit{package manager} Hex pada mesin lokal, sehingga \texttt{mix} dapat mengunduh dependensi yang dibutuhkan proyek. Jika perintah ini menampilkan konfirmasi, pilih \texttt{Y} untuk melanjutkan.
+
+\begin{lstlisting}[language=bash]
+mix local.hex
 \end{lstlisting}
 
-Pada kode di atas, hanya fungsi \texttt{map/2} dan \texttt{filter/2} dari modul \texttt{Enum} yang diimpor, sehingga keduanya dapat diakses langsung di dalam \texttt{MyModule}.
+Setelah Hex tersedia, pasang kerangka proyek Phoenix melalui \textit{archive}. Perintah berikut akan menambahkan generator Phoenix (\texttt{phx.new}) ke instalasi lokal. Generator ini hanya diperlukan pada tahap awal pembuatan proyek.
 
-\section{Alias}
-Direktif \texttt{alias} menyediakan cara untuk membuat nama modul yang lebih pendek atau lebih mudah dibaca, mengurangi kebutuhan untuk menggunakan nama modul yang lengkap secara berulang-ulang.
-
-\subsection{Penggunaan}
-\texttt{alias} biasanya digunakan untuk menyederhanakan kode saat mengacu ke modul dari namespace yang berbeda:
-
-\begin{lstlisting}[language=Elixir]
-	defmodule MyApp do
-	alias MyApp.Utilities.Math
-	
-	def calculate_sum(a, b) do
-	Math.add(a, b)
-	end
-	end
+\begin{lstlisting}[language=bash]
+mix archive.install hex phx_new
 \end{lstlisting}
 
-Pada contoh ini, \texttt{MyApp.Utilities.Math} dialiaskan menjadi \texttt{Math}. Ini memungkinkan fungsi \texttt{Math.add/2} dipanggil tanpa menyebutkan nama modul secara lengkap.
+Selanjutnya, buat proyek baru bernama \texttt{hiwi}. Perintah berikut akan membuat struktur proyek lengkap dengan folder aplikasi, konfigurasi, dan berkas \texttt{mix.exs}. Saat eksekusi, Phoenix mungkin menanyakan apakah Anda ingin langsung mengunduh dependensi—jawab \texttt{Y} untuk mempercepat proses.
 
-\section{Use}
-Direktif \texttt{use} digunakan untuk menjalankan kode khusus atau memasukkan perilaku yang telah ditentukan ke dalam modul. Direktif ini sering digunakan untuk memperluas kemampuan modul melalui makro.
-
-\subsection{Penggunaan}
-\texttt{use} biasanya memanggil makro dari modul yang ditentukan, sehingga fitur atau perilaku dapat diaktifkan. Berikut adalah contoh penggunaan direktif \texttt{use}:
-
-\begin{lstlisting}[language=Elixir]
-	defmodule MyGenServer do
-	use GenServer
-	
-	# Callback
-	def handle_call(:ping, _from, state) do
-	{:reply, :pong, state}
-	end
-	end
+\begin{lstlisting}[language=bash]
+mix phx.new hiwi
 \end{lstlisting}
 
-Pada contoh di atas, direktif \texttt{use} mengimpor perilaku dan fungsionalitas default dari modul \texttt{GenServer}, sehingga memungkinkan \texttt{MyGenServer} untuk mengimplementasikan fungsi callback-nya.
+Setelah proyek berhasil dibuat, masuk ke direktori aplikasi agar semua perintah selanjutnya dijalankan dalam konteks proyek \texttt{hiwi}.
 
-\section{Perbedaan antara \texttt{Import}, \texttt{Alias}, dan \texttt{Use}}
-Berikut adalah perbedaan utama antara \texttt{import}, \texttt{alias}, dan \texttt{use} dalam Elixir:
+\begin{lstlisting}[language=bash]
+cd hiwi
+\end{lstlisting}
 
-\begin{table}[h!]
-	\centering
-	\begin{tabular}{|p{.1\linewidth}|p{.4\linewidth}|p{.4\linewidth}|}
-		\hline
-		\textbf{Direktif} & \textbf{Tujuan} & \textbf{Kapan Digunakan} \\ \hline
-		\texttt{import} & Membuat fungsi atau makro dapat diakses tanpa menyebutkan nama modulnya. & Digunakan saat ingin menggunakan beberapa fungsi/makro dari modul lain tanpa menyebutkan modulnya. \\ \hline
-		\texttt{alias} & Memberikan nama pendek untuk modul. & Digunakan untuk mengurangi penulisan nama modul yang panjang atau untuk referensi modul secara lebih singkat. \\ \hline
-		\texttt{use} & Menjalankan kode makro yang mendefinisikan perilaku atau menambahkan fungsionalitas ke dalam modul. & Digunakan saat modul ingin mewarisi atau mengimplementasikan perilaku dari modul lain (seperti \texttt{GenServer}). \\ \hline
-	\end{tabular}
-	\caption{Perbedaan antara \texttt{import}, \texttt{alias}, dan \texttt{use} di Elixir}
-\end{table}
+Kemudian unduh semua dependensi yang dideklarasikan di dalam berkas \texttt{mix.exs}. Perintah ini memanggil Hex untuk mengambil paket, memverifikasi versi, dan menyimpannya pada cache lokal. Jika berkas \texttt{mix.lock} diperbarui, perubahannya akan disimpan agar versi dependensi tetap konsisten.
 
-\section{Ringkasan}
-Direktif \texttt{import}, \texttt{alias}, dan \texttt{use} masing-masing memiliki tujuan yang berbeda dalam Elixir:
+\begin{lstlisting}[language=bash]
+mix deps.get
+\end{lstlisting}
 
+Setelah semua langkah di atas selesai, proyek \texttt{hiwi} sudah siap untuk dikonfigurasi dan dijalankan. Struktur yang terbentuk secara otomatis mencakup:
+
+\begin{lstlisting}[language=bash]
+lib/hiwi/         # Modul inti dan logika aplikasi
+lib/hiwi_web/     # Controller, View, Template (.heex)
+config/           # Pengaturan lingkungan (dev, test, prod)
+assets/           # File frontend (JavaScript, CSS)
+\end{lstlisting}
+
+Dengan struktur ini, Phoenix memisahkan logika bisnis dari antarmuka pengguna secara jelas. Langkah berikutnya adalah mengonfigurasi koneksi ke database, membuat tabel \texttt{queues} melalui migrasi, serta menyiapkan controller dan view untuk menambah serta menampilkan data antrian.
+
+\section{Konfigurasi Basisdata}
+
+Konfigurasi koneksi basis data untuk lingkungan pengembangan (\texttt{dev}) dilakukan melalui berkas \texttt{config/dev.exs}. Phoenix menggunakan Ecto sebagai lapisan akses data, dan setiap aplikasi yang memakai Ecto memiliki modul \texttt{Repo}—dalam proyek ini bernama \texttt{Hiwi.Repo}. Pastikan modul repo telah terdaftar di \texttt{config/config.exs} melalui \texttt{:ecto\_repos}, agar tugas-tugas seperti migrasi dan \texttt{mix ecto.create} mengetahui target repositori.
+
+\begin{lstlisting}[language=Elixir]
+# config/config.exs
+import Config
+
+config :hiwi,
+  ecto_repos: [Hiwi.Repo]
+\end{lstlisting}
+
+Pengaturan kredensial dan detail koneksi untuk lingkungan pengembangan ditempatkan di \texttt{config/dev.exs}. Opsi \texttt{stacktrace: true} dan \texttt{show\_sensitive\_data\_on\_connection\_error: true} membantu proses debugging pada mode pengembangan, sedangkan \texttt{pool\_size} menentukan jumlah koneksi yang dipertahankan oleh \textit{connection pool}.
+
+\begin{lstlisting}[language=Elixir]
+# config/dev.exs
+import Config
+
+config :hiwi, Hiwi.Repo,
+  username: "postgres",
+  password: "1234",
+  hostname: "localhost",
+  database: "hiwi_dev",
+  stacktrace: true,
+  show_sensitive_data_on_connection_error: true,
+  pool_size: 10
+\end{lstlisting}
+
+Secara default, Phoenix juga menghasilkan berkas \texttt{lib/hiwi/repo.ex} yang mendefinisikan modul repositori. Modul ini menghubungkan konfigurasi aplikasi ke adapter database yang digunakan (PostgreSQL).
+
+\begin{lstlisting}[language=Elixir]
+# lib/hiwi/repo.ex
+defmodule Hiwi.Repo do
+  use Ecto.Repo,
+    otp_app: :hiwi,
+    adapter: Ecto.Adapters.Postgres
+end
+\end{lstlisting}
+
+Bila Anda lebih menyukai konfigurasi melalui variabel lingkungan (terutama untuk produksi), pindahkan kredensial ke \texttt{config/runtime.exs}. Untuk bab ini, konfigurasi di \texttt{dev.exs} sudah memadai agar Anda dapat langsung memulai.
+
+Setelah konfigurasi selesai, buat basis data \texttt{hiwi\_dev} melalui tugas Ecto. Perintah berikut akan membaca pengaturan dari \texttt{Hiwi.Repo} dan menyiapkan basis data sesuai kredensial yang didefinisikan.
+
+\begin{lstlisting}[language=bash]
+mix ecto.create
+\end{lstlisting}
+
+Apabila database belum tersedia atau kredensial salah, Ecto akan menampilkan pesan galat yang umumnya mudah dilacak. Pastikan layanan PostgreSQL sedang berjalan dan pengguna \texttt{postgres} memiliki kata sandi yang sesuai.
+
+Dengan database aktif, Anda dapat menjalankan server Phoenix. Perintah pertama menyalakan server biasa, sedangkan perintah kedua menjalankan server disertai sesi \texttt{IEx} untuk keperluan inspeksi dan \textit{live debugging}.
+
+\begin{lstlisting}[language=bash]
+mix phx.server
+\end{lstlisting}
+
+\begin{lstlisting}[language=bash]
+iex -S mix phx.server
+\end{lstlisting}
+
+Secara baku, \texttt{Endpoint} Phoenix pada mode pengembangan melayani di port \texttt{4000}. Buka peramban dan kunjungi alamat berikut untuk memastikan aplikasi berjalan:
+
+\begin{lstlisting}[language=bash]
+http://localhost:4000
+\end{lstlisting}
+
+Jika halaman awal Phoenix tampil, berarti koneksi database dan server web telah tersambung dengan benar. Pada tahap berikutnya, Anda
+
+
+
+
+
+\section{Migrations}
+
+Setelah konfigurasi database selesai, langkah berikutnya adalah membuat tabel yang akan digunakan oleh aplikasi. Dalam proyek Hiwi, tabel utama yang diperlukan adalah \texttt{queues}, yaitu tabel untuk menyimpan data antrian. Pembuatan tabel diatur melalui mekanisme \textbf{migrasi} yang disediakan oleh Ecto.  
+
+Migrasi berfungsi seperti \textit{version control} untuk basis data: setiap perubahan struktur tabel (menambah kolom, mengubah tipe data, atau menghapus tabel) dicatat dalam satu berkas dengan stempel waktu. Dengan cara ini, pengembang dapat dengan mudah melacak evolusi struktur database dari waktu ke waktu, serta membatalkan perubahan jika diperlukan.
+
+Untuk membuat berkas migrasi baru, gunakan perintah berikut di terminal:
+
+\begin{lstlisting}[language=bash]
+mix ecto.gen.migration create_queues
+\end{lstlisting}
+
+Perintah tersebut akan menghasilkan satu berkas baru di dalam direktori \texttt{priv/repo/migrations/} dengan format nama \texttt{<timestamp>\_create\_queues.exs}.  
+Contohnya:
+
+\begin{lstlisting}[language=bash]
+priv/repo/migrations/20251102090627_create_queues.exs
+\end{lstlisting}
+
+Buka berkas tersebut, lalu definisikan struktur tabel \texttt{queues} seperti berikut.
+
+\begin{lstlisting}[language=Elixir]
+defmodule Hiwi.Repo.Migrations.CreateQueues do
+  use Ecto.Migration
+
+  def down do
+    drop_if_exists table(:queues)
+  end
+
+  def change do
+    # Drop the table if it already exists
+    drop_if_exists table(:queues)
+
+    create table(:queues) do
+      add :name, :string, null: false
+      add :description, :text, null: true
+      add :status, :string, null: false
+      add :prefix, :string, null: false, default: "A"
+      add :max_number, :integer, null: false, default: 100
+      add :current_number, :integer, null: false, default: 1
+      add :create_user, :string, null: true
+      add :update_user, :string, null: true
+
+      timestamps(type: :utc_datetime)
+    end
+  end
+end
+\end{lstlisting}
+
+Blok fungsi \texttt{change/0} berisi perintah untuk membuat tabel baru dengan kolom yang diperlukan.  
+Beberapa poin penting dari definisi di atas:
+
+- Kolom \texttt{name} dan \texttt{status} wajib diisi (\texttt{null: false}) karena merepresentasikan identitas dan kondisi antrian.  
+- Kolom \texttt{prefix} menyimpan huruf atau simbol awal yang digunakan untuk penomoran antrian, misalnya “A001” atau “B045”. Nilai awalnya ditetapkan “A” secara default.  
+- Kolom \texttt{max\_number} menyimpan batas maksimum nomor antrian, sedangkan \texttt{current\_number} mencatat posisi terakhir yang telah dipanggil.  
+- Kolom \texttt{create\_user} dan \texttt{update\_user} disediakan untuk mencatat siapa yang menambahkan atau memperbarui data.  
+- Baris \texttt{timestamps(type: :utc\_datetime)} secara otomatis menambahkan kolom \texttt{inserted\_at} dan \texttt{updated\_at} dalam format waktu UTC.  
+
+Selain fungsi \texttt{change/0}, migrasi ini juga menyertakan fungsi \texttt{down/0} untuk menjatuhkan tabel jika diperlukan, misalnya ketika melakukan rollback. Penggunaan \texttt{drop\_if\_exists} memastikan bahwa perintah tidak akan gagal jika tabel sudah terhapus sebelumnya.
+
+Setelah isi berkas migrasi selesai, jalankan perintah berikut untuk menerapkan perubahan ke dalam basis data:
+
+\begin{lstlisting}[language=bash]
+mix ecto.migrate
+\end{lstlisting}
+
+Ecto akan membaca seluruh migrasi yang belum dijalankan dan mengeksekusinya secara berurutan berdasarkan stempel waktu. Jika berhasil, tabel \texttt{queues} akan muncul di dalam basis data \texttt{hiwi\_dev} dengan seluruh kolom yang telah didefinisikan.  
+
+Anda dapat memverifikasi hasilnya dengan membuka klien PostgreSQL atau menggunakan alat seperti \texttt{pgAdmin}, lalu menjalankan perintah berikut:
+
+\begin{lstlisting}[language=bash]
+\d queues
+\end{lstlisting}
+
+Jika daftar kolom dan tipe data sesuai, berarti migrasi telah berhasil. Langkah berikutnya adalah mendefinisikan \textit{schema model} \texttt{Queue} di sisi aplikasi Elixir agar Phoenix dapat berinteraksi langsung dengan tabel ini menggunakan sintaks Ecto.
+
+
+\section{Model}
+
+Setelah tabel \texttt{queues} dibuat melalui migrasi, langkah berikutnya adalah mendefinisikan \textbf{model} atau dalam konteks Phoenix disebut \textbf{schema}. Model berfungsi sebagai representasi langsung dari tabel pada basis data, memungkinkan aplikasi untuk berinteraksi dengan data menggunakan sintaks Elixir yang deklaratif, bukan dengan perintah SQL secara manual.  
+
+Phoenix menyediakan generator untuk membuat skema secara otomatis. Jalankan perintah berikut pada terminal untuk membuat modul \texttt{Queue} beserta berkas \texttt{lib/hiwi/queue.ex}:
+
+\begin{lstlisting}[language=bash]
+mix phx.gen.schema Queue queues
+\end{lstlisting}
+
+Perintah di atas membuat struktur dasar skema Ecto tanpa field tambahan. Karena kita telah menentukan kolom pada tahap migrasi, field tersebut dapat didefinisikan secara manual di dalam blok \texttt{schema}. Buka berkas \texttt{lib/hiwi/queue.ex} dan ubah isinya seperti berikut:
+
+\begin{lstlisting}[language=Elixir]
+defmodule Hiwi.Queue do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  schema "queues" do
+    field :name, :string
+    field :status, :string
+    field :description, :string
+    field :prefix, :string
+    field :max_number, :integer
+    field :current_number, :integer
+    field :create_user, :string
+    field :update_user, :string
+
+    timestamps(type: :utc_datetime)
+  end
+
+  @doc false
+  def changeset(queue, attrs) do
+    queue
+    |> cast(attrs, [:name, :description, :status, :prefix, :max_number, :current_number, :create_user, :update_user])
+    |> validate_required([:name, :prefix, :max_number])
+  end
+end
+\end{lstlisting}
+
+Bagian pertama dari modul ini, yaitu deklarasi \texttt{use Ecto.Schema}, memberi tahu kompiler bahwa modul ini akan berfungsi sebagai representasi dari tabel database. Setiap baris \texttt{field} mendefinisikan kolom yang ada di tabel \texttt{queues}, lengkap dengan tipe datanya.  
+
+\textbf{Fungsi changeset} merupakan bagian penting dalam setiap model Ecto. Fungsi ini bertanggung jawab untuk:
+- \textbf{Casting data}: mengubah nilai masukan dari formulir HTML atau API menjadi tipe data yang sesuai dengan skema;
+- \textbf{Validasi}: memastikan data yang masuk memenuhi syarat tertentu sebelum disimpan ke database.  
+
+Pada contoh di atas, \texttt{cast/3} mengambil struktur awal \texttt{queue} dan daftar atribut dari parameter \texttt{attrs}, kemudian hanya memproses field yang diperbolehkan. Fungsi \texttt{validate\_required/2} memastikan bahwa kolom \texttt{name}, \texttt{prefix}, dan \texttt{max\_number} tidak boleh kosong.  
+
+Fungsi \texttt{timestamps/1} secara otomatis menambahkan kolom \texttt{inserted\_at} dan \texttt{updated\_at} dalam format waktu UTC, yang berguna untuk pelacakan aktivitas data.  
+
+Dengan adanya model ini, Phoenix dapat melakukan operasi CRUD (\textit{Create, Read, Update, Delete}) terhadap tabel \texttt{queues} menggunakan sintaks Elixir yang aman dan mudah dibaca. Misalnya, untuk menambahkan data baru dapat dilakukan melalui terminal \texttt{IEx} atau di dalam controller seperti berikut:
+
+\begin{lstlisting}[language=Elixir]
+alias Hiwi.{Repo, Queue}
+
+Repo.insert(%Queue{
+  name: "Loket A",
+  status: "ready",
+  prefix: "A",
+  max_number: 100,
+  current_number: 1,
+  create_user: "admin"
+})
+\end{lstlisting}
+
+Setelah perintah dijalankan, Ecto akan secara otomatis menghasilkan pernyataan SQL untuk menyimpan data tersebut ke dalam tabel \texttt{queues}. Dengan demikian, model ini menjadi penghubung utama antara lapisan logika aplikasi (controller dan context) dengan lapisan penyimpanan data (database).  
+
+Model \texttt{Queue} yang sudah didefinisikan ini akan digunakan dalam berbagai bagian aplikasi Hiwi, termasuk pada controller untuk menambah data, menampilkan daftar antrian, dan di bab selanjutnya—melakukan pembaruan, pengambilan, serta penghapusan data.
+
+
+\section{Controller}
+
+Controller berperan sebagai penghubung antara lapisan logika aplikasi dan antarmuka pengguna. Pada Phoenix Framework, controller menerima permintaan dari pengguna melalui router, memproses logika bisnis (termasuk interaksi dengan database melalui model), kemudian mengirimkan hasilnya ke \textit{view} untuk ditampilkan di halaman web.  
+
+Untuk aplikasi Hiwi, modul controller yang bertanggung jawab terhadap data antrian adalah \texttt{HiwiWeb.QueueController}. Modul ini didefinisikan di dalam direktori \texttt{lib/hiwi\_web/controllers/}.  
+
+\begin{lstlisting}[language=Elixir]
+# lib/hiwi_web/controllers/queue_controller.ex
+defmodule HiwiWeb.QueueController do
+  use HiwiWeb, :controller
+  alias Hiwi.Queue
+  alias Hiwi.Repo
+
+  def index(conn, _params) do
+    queues = Repo.all(Queue)
+    render(conn, :index, queues: queues)
+  end
+
+  def new(conn, _params) do
+    sum = 1 + 1 + 9
+    changeset = Queue.changeset(%Queue{}, %{})
+    render(conn, :new, changeset: changeset, sum: sum)
+  end
+
+  def create(conn, params) do
+    %{"queue" => queue_params} = params
+    changeset = Queue.changeset(%Queue{}, queue_params)
+
+    case Repo.insert(changeset) do
+      {:ok, _queue} ->
+        conn
+        |> put_flash(:info, "Queue created successfully.")
+        |> redirect(to: "/")
+
+      {:error, changeset} ->
+        IO.inspect(changeset)
+        render(conn, :new, changeset: changeset)
+    end
+  end
+end
+\end{lstlisting}
+
+Bagian \texttt{use HiwiWeb, :controller} mengaktifkan makro khusus Phoenix yang menyediakan fungsi dan pipeline umum untuk menangani request HTTP, seperti \texttt{render/3}, \texttt{redirect/2}, dan \texttt{put\_flash/3}.  
+
+Dua baris berikutnya, yaitu \texttt{alias Hiwi.Queue} dan \texttt{alias Hiwi.Repo}, mempermudah pemanggilan modul model dan repositori tanpa harus menuliskan nama lengkapnya setiap kali digunakan.
+
+Fungsi \texttt{index/2} bertugas menampilkan daftar seluruh data antrian. Ia menggunakan fungsi \texttt{Repo.all/1} untuk mengambil seluruh baris dari tabel \texttt{queues}, kemudian meneruskannya ke template \texttt{index.html.heex} melalui pemanggilan \texttt{render/3}. Objek \texttt{conn} (singkatan dari connection) menyimpan seluruh konteks permintaan HTTP, seperti parameter, status, dan data yang akan dikirim ke view.
+
+Fungsi \texttt{new/2} menyiapkan halaman formulir penambahan data baru. Di dalamnya dibuat \texttt{changeset} kosong dengan memanggil \texttt{Queue.changeset/2} tanpa atribut, agar form dapat diisi oleh pengguna di antarmuka web. Variabel \texttt{sum} hanya digunakan sebagai contoh tambahan untuk menunjukkan bahwa controller dapat memproses nilai logika sederhana sebelum dikirim ke view.
+
+Fungsi \texttt{create/2} adalah inti dari proses penambahan data. Fungsi ini menerima parameter yang dikirim dari form HTML, kemudian memanggil \texttt{Queue.changeset/2} untuk memvalidasi dan mengubah data tersebut menjadi bentuk yang sesuai dengan skema Ecto.  
+
+Setelah perubahan dan validasi dilakukan, data disimpan ke dalam database menggunakan \texttt{Repo.insert/1}. Nilai kembalian fungsi ini berupa tuple \texttt{\{:ok, result\}} jika operasi berhasil atau \texttt{\{:error, changeset\}} jika gagal. Pada kasus sukses, pengguna diarahkan kembali ke halaman utama dengan pesan \texttt{"Queue created successfully."}. Namun jika validasi gagal, controller akan menampilkan kembali halaman form beserta pesan kesalahan agar pengguna dapat memperbaiki input.  
+
+Dalam praktik Phoenix, controller hanya menangani logika tingkat tinggi seperti pengambilan, penyimpanan, dan pengalihan halaman, sementara detail tampilan didelegasikan ke layer view. Dengan demikian, controller menjadi jembatan utama antara data yang disimpan di database dan elemen antarmuka yang ditampilkan di browser.  
+
+Pada tahap berikutnya, modul \texttt{QueueController} ini akan terhubung dengan file view \texttt{index.html.heex} dan \texttt{new.html.heex} untuk menampilkan daftar antrian serta form input. Fitur tambahan seperti \texttt{get}, \texttt{edit}, dan \texttt{delete} akan dikembangkan di bab selanjutnya, melengkapi siklus penuh operasi CRUD.
+
+
+\section{View}
+
+Lapisan \textbf{View} dalam Phoenix Framework berfungsi untuk mengubah data yang dikirimkan dari controller menjadi tampilan yang dapat dibaca oleh pengguna melalui halaman web. Secara umum, view di Phoenix terdiri atas modul Elixir yang mengatur pemetaan template serta file template itu sendiri yang menggunakan format HEEx (\textit{HTML + Embedded Elixir}).  
+
+Untuk modul antrian (\texttt{Queue}), view didefinisikan di dalam berkas \texttt{lib/hiwi\_web/controllers/queue\_html.ex}. Modul ini memuat konfigurasi dasar dan menghubungkan semua template yang berada di dalam direktori \texttt{queue\_html/} agar dapat dipanggil secara langsung oleh controller.
+
+\begin{lstlisting}[language=Elixir]
+# lib/hiwi_web/controllers/queue_html.ex
+defmodule HiwiWeb.QueueHTML do
+  @moduledoc """
+  Modul ini berisi template HTML yang digunakan oleh QueueController.
+  Semua template tersedia di direktori `queue_html/`.
+  """
+  use HiwiWeb, :html
+
+  embed_templates "queue_html/*"
+end
+\end{lstlisting}
+
+Baris \texttt{use HiwiWeb, :html} memberikan fungsionalitas standar Phoenix untuk rendering dan pembuatan komponen HTML, sementara \texttt{embed\_templates "queue\_html/*"} secara otomatis memuat seluruh file \texttt{.heex} dalam direktori tersebut. Dengan demikian, ketika controller memanggil \texttt{render(conn, :index, ...)} atau \texttt{render(conn, :new, ...)}, Phoenix akan mencari dan memuat template yang sesuai dari folder tersebut.
+
+Template pertama, \texttt{index.html.heex}, digunakan untuk menampilkan daftar seluruh antrian yang tersimpan di database. Template ini menerima variabel \texttt{@queues} dari controller dan melakukan iterasi menggunakan ekspresi Elixir untuk merender setiap entri antrian ke dalam daftar HTML.  
+
+\begin{lstlisting}[language=Elixir]
+<h1>Queuex</h1>
+<ul>
+  <%= for queue <- @queues do %>
+    <li class="action-links"> 
+      <div>
+        <%= queue.name %> 
+      </div>
+      <div>
+        |
+        <.link href={~p"/queues/edit/#{queue.id}"}>Edit</.link> 
+        |
+        <.link href={~p"/queues/delete/#{queue.id}"} method="delete">Delete</.link> 
+        |
+      </div>
+    </li>
+  <% end %>
+</ul>
+
+<div class="button">
+  <.link href={~p"/queues/new"}>New Queue</.link>
+</div>
+\end{lstlisting}
+
+Setiap item ditampilkan di dalam elemen \texttt{<li>} dengan nama antrian dan tautan untuk melakukan tindakan \textit{Edit} dan \textit{Delete}. Komponen \texttt{<.link>} merupakan bagian dari sistem komponen Phoenix yang secara otomatis menangani rute dan metode HTTP, sehingga dapat digunakan untuk navigasi ataupun pemanggilan aksi REST.  
+Bagian bawah halaman menyediakan tautan \texttt{New Queue} yang mengarahkan pengguna ke halaman formulir pembuatan antrian baru. Tampilan ini dihasilkan oleh fungsi \texttt{index/2} di controller.
+
+Template berikutnya, \texttt{new.html.heex}, digunakan untuk menampilkan formulir penambahan data baru. Formulir ini dikaitkan dengan objek \texttt{@changeset} yang dikirim dari controller, sehingga setiap validasi error yang dihasilkan oleh Ecto dapat ditampilkan secara otomatis di bawah input yang relevan.  
+
+\begin{lstlisting}[language=Elixir]
+<h1>New Queue</h1>
+<.form :let={f} for={@changeset} action={~p"/queues"}>
+  <div>
+    <div>
+      <label for="name">Name</label>
+      <.input field={f[:name]} />
+    </div>
+    <div>
+      <label for="status">Status</label>
+      <.input field={f[:status]} type="select"
+        options={["Ready": "ready", "Running": "running", "Inactive": "inactive"]} />
+    </div>
+    <div>
+      <label for="description">Description</label>
+      <.input field={f[:description]} type="textarea" />
+    </div>
+    <div>
+      <label for="prefix">Prefix</label>
+      <.input field={f[:prefix]} />
+    </div>
+    <div>
+      <label for="max_number">Max Number</label>
+      <.input field={f[:max_number]} type="number" />
+    </div>
+    <div class="vertical-space"></div>
+    <div>
+      <.button class="button">Submit</.button>
+    </div>
+  </div>
+</.form>
+\end{lstlisting}
+
+Struktur form ini memanfaatkan komponen \texttt{<.input>} dan \texttt{<.button>} bawaan Phoenix yang secara otomatis terhubung dengan sistem \texttt{Ecto.Changeset}.  
+Penggunaan atribut \texttt{type="select"} untuk \texttt{status} memungkinkan pemilihan nilai dari daftar yang telah ditentukan, sementara input lainnya seperti \texttt{name}, \texttt{prefix}, dan \texttt{max\_number} menggunakan tipe standar teks dan angka.  
+
+Ketika pengguna menekan tombol \texttt{Submit}, data dikirim melalui metode POST ke rute \texttt{/queues}, yang kemudian diterima oleh fungsi \texttt{create/2} di controller. Jika validasi sukses, pengguna akan diarahkan kembali ke halaman utama (\texttt{index}); jika gagal, formulir yang sama akan ditampilkan kembali beserta pesan kesalahan yang relevan.  
+
+Dengan kombinasi antara controller dan view ini, Phoenix menyediakan alur kerja yang bersih dan terstruktur: data diambil dari database melalui model, diproses oleh controller, dan akhirnya ditampilkan secara interaktif di halaman web melalui template HEEx. Bab selanjutnya akan memperluas fungsionalitas ini untuk mencakup pengeditan, pembaruan, dan penghapusan data.
+
+
+
+\section{Import, Alias, Use}
+
+Selama proses pengembangan aplikasi Hiwi pada bab ini, beberapa kata kunci penting dalam ekosistem Elixir—yakni \texttt{import}, \texttt{alias}, dan \texttt{use}—telah digunakan berulang kali. Ketiganya merupakan mekanisme dasar dalam bahasa Elixir yang memungkinkan pengembang menulis kode yang lebih ringkas, modular, dan mudah dibaca. Meskipun sering muncul bersama, ketiganya memiliki fungsi yang berbeda dan saling melengkapi dalam membangun struktur aplikasi Phoenix.  
+
+Kata kunci \textbf{\texttt{use}} digunakan untuk menyertakan serangkaian fungsionalitas atau makro dari modul lain, biasanya dalam bentuk \textit{behaviour} atau \textit{boilerplate} yang umum digunakan. Misalnya, pada modul controller, kita menuliskan:
+
+\begin{lstlisting}[language=Elixir]
+defmodule HiwiWeb.QueueController do
+  use HiwiWeb, :controller
+  ...
+end
+\end{lstlisting}
+
+Baris \texttt{use HiwiWeb, :controller} memberi tahu Elixir untuk memanggil makro yang disediakan oleh \texttt{HiwiWeb}. Makro ini secara otomatis menambahkan berbagai fungsi dan alias yang diperlukan oleh semua controller Phoenix, seperti \texttt{render/3}, \texttt{redirect/2}, dan \texttt{put\_flash/3}. Dengan demikian, kita tidak perlu menuliskan semua fungsionalitas tersebut secara manual. Prinsip yang sama juga digunakan pada bagian View, ketika modul \texttt{HiwiWeb.QueueHTML} mendeklarasikan:
+
+\begin{lstlisting}[language=Elixir]
+use HiwiWeb, :html
+\end{lstlisting}
+
+Baris ini memberikan kemampuan untuk merender template HEEx dan menggunakan komponen HTML seperti \texttt{<.form>} dan \texttt{<.link>} di dalam template.
+
+Selanjutnya, kata kunci \textbf{\texttt{alias}} berfungsi sebagai bentuk singkat dari nama modul yang panjang. Dalam Elixir, nama modul selalu menggunakan namespace yang lengkap, sehingga tanpa \texttt{alias} kita harus menulis kode dengan referensi penuh seperti:
+
+\begin{lstlisting}[language=Elixir]
+Hiwi.Repo.all(Hiwi.Queue)
+\end{lstlisting}
+
+Agar lebih ringkas, controller mendeklarasikan dua alias di bagian atas:
+
+\begin{lstlisting}[language=Elixir]
+alias Hiwi.Queue
+alias Hiwi.Repo
+\end{lstlisting}
+
+Setelah alias ini didefinisikan, kita dapat memanggil modul \texttt{Queue} dan \texttt{Repo} secara langsung tanpa menuliskan prefiks \texttt{Hiwi.}. Hal ini tidak hanya memperpendek kode, tetapi juga meningkatkan keterbacaan serta memperjelas konteks penggunaan modul.
+
+Terakhir, kata kunci \textbf{\texttt{import}} digunakan untuk mengambil fungsi dari modul lain tanpa perlu menyertakan nama modul saat pemanggilan. Contohnya dapat dilihat pada model \texttt{Hiwi.Queue}:
+
+\begin{lstlisting}[language=Elixir]
+defmodule Hiwi.Queue do
+  use Ecto.Schema
+  import Ecto.Changeset
+  ...
+end
+\end{lstlisting}
+
+Baris \texttt{import Ecto.Changeset} memungkinkan fungsi-fungsi seperti \texttt{cast/3} dan \texttt{validate\_required/2} dipanggil langsung, tanpa harus diawali dengan nama modulnya, misalnya cukup menulis \texttt{cast(...)} alih-alih \texttt{Ecto.Changeset.cast(...)}. Penggunaan \texttt{import} ini sesuai ketika hanya beberapa fungsi tertentu dari suatu modul yang sering digunakan di dalam konteks yang sama.
+
+Dengan memahami perbedaan ketiga mekanisme tersebut, struktur proyek Phoenix menjadi lebih jelas:
 \begin{itemize}
-	\item \textbf{import} digunakan untuk membuat fungsi atau makro tertentu dapat diakses tanpa mereferensikan nama modul.
-	\item \textbf{alias} memungkinkan nama modul yang lebih pendek dan lebih mudah dibaca.
-	\item \textbf{use} menyuntikkan kode atau perilaku ke dalam modul, biasanya melalui makro.
+  \item \texttt{use} → menyertakan perilaku umum atau makro dari modul lain (misalnya \texttt{use HiwiWeb, :controller});
+  \item \texttt{alias} → memberi nama pendek untuk modul yang sering dipanggil (misalnya \texttt{alias Hiwi.Repo});
+  \item \texttt{import} → mengambil fungsi-fungsi tertentu agar bisa digunakan langsung (misalnya \texttt{import Ecto.Changeset}).
 \end{itemize}
 
-Ketiga konstruksi ini memberikan fleksibilitas dan meningkatkan keterbacaan serta pemeliharaan kode di Elixir.
+Ketiganya bekerja bersama untuk menjaga agar kode tetap bersih, modular, dan mudah dipelihara. Dalam konteks aplikasi Hiwi, \texttt{use} digunakan untuk mengaktifkan kemampuan khusus Phoenix, \texttt{alias} memudahkan pemanggilan modul seperti \texttt{Queue} dan \texttt{Repo}, sedangkan \texttt{import} mempercepat akses terhadap fungsi Ecto yang digunakan dalam validasi dan pemrosesan data. Prinsip ini akan terus digunakan di bab-bab berikutnya, terutama ketika aplikasi mulai diperluas untuk mendukung operasi \texttt{get}, \texttt{update}, dan \texttt{delete}.
 
 
+\section{Rangkuman}
 
-\section{Other}
+Bab ini telah membahas proses pembuatan modul antrian (\texttt{Queue}) pada aplikasi \texttt{Hiwi} menggunakan Phoenix Framework dan Ecto. Dimulai dari pembuatan proyek baru, konfigurasi koneksi ke database PostgreSQL, serta pembuatan migrasi untuk tabel \texttt{queues}, pembaca telah mempelajari bagaimana struktur data didefinisikan dan disimpan di dalam sistem. Selanjutnya, dibahas pembuatan model (schema) untuk merepresentasikan tabel dalam kode Elixir, serta pembuatan controller dan view yang mengatur aliran data dari database hingga ditampilkan dalam antarmuka web.
 
-%mix phx.gen.schema Queue queues status:string prefix:string max_number:integer current_number:integer location_code:string create_user:string update_user:string --timestamps
+Melalui implementasi fitur \textit{Add} dan \textit{List}, bab ini menunjukkan penerapan pola Model -- View -- Controller (MVC) dalam Phoenix secara praktis dan terpadu. Dengan pemahaman ini, pembaca kini memiliki dasar yang kuat untuk melanjutkan ke tahap berikutnya, yaitu menambahkan fungsionalitas \texttt{get}, \texttt{update}, dan \texttt{delete} agar sistem \texttt{Hiwi} dapat mendukung operasi CRUD secara lengkap dan berfungsi sebagai sistem manajemen antrian yang utuh.
