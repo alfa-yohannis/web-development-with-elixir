@@ -1,4 +1,644 @@
-\chapter{Get, Update, dan Delete pada Phoenix Framework}
+\chapter{Show, Update, dan Delete pada Phoenix Framework}
 
 \section{Pendahuluan}
-Test
+
+Pada bab ini akan dibahas bagaimana mengimplementasikan tiga operasi penting dalam
+pengelolaan data pada \textit{Phoenix Framework}, yaitu \textbf{Show}, \textbf{Update}, dan
+\textbf{Delete}. Ketiga operasi ini merupakan bagian dari pola arsitektur \textbf{CRUD}
+(\textit{Create, Read, Update, Delete}) yang umum digunakan dalam aplikasi web berbasis
+database.
+
+Fokus utama pembahasan adalah pada modul \texttt{QueueController} yang terdapat di dalam
+aplikasi \texttt{HiwiWeb}. Modul ini bertanggung jawab untuk menampilkan data antrean
+(\textit{queue}), mengubah informasi yang sudah ada, serta menghapus data jika diperlukan.
+Setiap operasi akan dijelaskan mulai dari konfigurasi \texttt{Router}, implementasi pada
+\texttt{Controller}, hingga tampilan \texttt{View} yang digunakan untuk berinteraksi dengan
+pengguna.
+
+Bagian \textbf{Show} membahas cara menampilkan data antrean secara individu berdasarkan
+\texttt{id} yang diberikan. Dengan fitur ini, pengguna dapat melihat detail dari suatu antrean
+seperti nama, status, prefiks, dan deskripsi.
+
+Bagian \textbf{Update} menjelaskan proses pengubahan data melalui form yang telah disediakan.
+Formulir ini ditampilkan dengan gaya yang konsisten menggunakan komponen-komponen
+\texttt{Phoenix LiveView} dan \texttt{HEEx} untuk memberikan pengalaman pengguna yang lebih baik.
+
+Terakhir, bagian \textbf{Delete} membahas bagaimana suatu data antrean dapat dihapus dari
+database menggunakan fungsi \texttt{Repo.delete!/1}. Proses penghapusan juga dilengkapi dengan
+konfirmasi pengguna agar tidak terjadi penghapusan data secara tidak sengaja.
+
+Dengan memahami ketiga bagian ini, pembaca diharapkan mampu mengelola data secara lengkap
+pada aplikasi Phoenix, mulai dari menampilkan detail entitas hingga memperbarui dan menghapus
+data dengan aman dan efisien.
+
+
+\section{Router}
+
+Bagian ini menjelaskan bagaimana konfigurasi \texttt{Router} digunakan untuk mengatur
+alur komunikasi antara permintaan HTTP dan fungsi yang sesuai di dalam \texttt{Controller}.
+Pada \textit{Phoenix Framework}, \texttt{Router} bertanggung jawab untuk menentukan rute
+atau jalur akses yang dapat digunakan pengguna untuk berinteraksi dengan aplikasi.
+
+Seluruh pengaturan rute didefinisikan di dalam file:
+\begin{center}
+\texttt{lib/hiwi\_web/router.ex}
+\end{center}
+File ini merupakan komponen utama dari lapisan \texttt{web interface} yang digunakan
+untuk menghubungkan URL dengan fungsi yang akan dijalankan di \texttt{Controller}.
+Selain itu, router juga dapat mengatur \textit{pipeline}, yaitu sekumpulan
+\textit{plug} yang dijalankan sebelum suatu permintaan diproses, seperti validasi sesi,
+otentikasi, dan perlindungan terhadap serangan \textit{Cross-Site Request Forgery (CSRF)}.
+
+Pada proyek ini, rute utama didefinisikan di bawah \texttt{scope "/"} yang menggunakan
+modul \texttt{HiwiWeb}. Semua rute menggunakan pipeline \texttt{:browser} karena
+ditujukan untuk aplikasi web berbasis HTML dan form interaktif.
+
+\begin{lstlisting}[language=Elixir]
+  scope "/", HiwiWeb do
+    pipe_through :browser
+
+    get "/", QueueController, :index
+    get "/about", PageController, :about
+    get "/queues/new", QueueController, :new
+    post "/queues", QueueController, :create
+
+    get "/queues/:id", QueueController, :show
+    get "/queues/edit/:id", QueueController, :edit
+    put "/queues/:id", QueueController, :update
+    delete "/queues/delete/:id", QueueController, :delete
+  end
+\end{lstlisting}
+
+Setiap rute di atas memiliki peran spesifik dalam mengarahkan permintaan pengguna:
+
+\begin{itemize}
+  \item \texttt{get "/"} — Menampilkan halaman utama yang berisi daftar antrean.
+  \item \texttt{get "/about"} — Menampilkan halaman statis berisi informasi tentang aplikasi.
+  \item \texttt{get "/queues/new"} dan \texttt{post "/queues"} — Menangani proses
+  pembuatan antrean baru (\textbf{Create}).
+  \item \texttt{get "/queues/:id"} — Menampilkan detail satu antrean berdasarkan
+  \texttt{id} yang dikirim melalui URL (\textbf{Show}).
+  \item \texttt{get "/queues/edit/:id"} dan \texttt{put "/queues/:id"} — Menangani
+  pembaruan data antrean (\textbf{Update}).
+  \item \texttt{delete "/queues/delete/:id"} — Menghapus antrean dari database
+  (\textbf{Delete}).
+\end{itemize}
+
+Pendefinisian rute dilakukan secara eksplisit agar pola URL dapat disesuaikan dengan kebutuhan aplikasi.
+Cara ini juga mempermudah proses pembelajaran dan debugging karena setiap hubungan antara URL dan
+aksi di \texttt{Controller} terlihat jelas. Meskipun Phoenix menyediakan cara yang lebih ringkas
+melalui fungsi \texttt{resources "/queues", QueueController}, pendekatan manual seperti ini
+memberikan fleksibilitas lebih tinggi dalam menentukan struktur rute yang spesifik dan konsisten
+dengan kebutuhan proyek.
+
+\section{Show}
+
+Bagian ini membahas implementasi fitur \textbf{Show} pada \textit{Phoenix Framework}, yang berfungsi
+untuk menampilkan detail dari satu data tertentu berdasarkan \texttt{id} yang dikirim melalui URL.
+Fitur ini termasuk dalam kategori operasi \textbf{Read} dalam pola arsitektur CRUD
+(\textit{Create, Read, Update, Delete}).
+
+Pada studi kasus ini, fitur Show digunakan untuk menampilkan informasi lengkap dari satu antrean
+(\textit{queue}) yang tersimpan di dalam basis data. Pengguna dapat melihat atribut seperti
+\texttt{name}, \texttt{status}, \texttt{prefix}, \texttt{max\_number}, serta deskripsi dan waktu
+pembuatan data tersebut. Fitur ini sangat penting untuk memastikan bahwa data yang tersimpan dapat
+dilihat dengan jelas sebelum dilakukan proses pembaruan (\textit{update}) atau penghapusan
+(\textit{delete}).
+
+\subsection{Controller \texttt{show}}
+%
+Implementasi fitur ini dilakukan melalui fungsi \texttt{show/2} pada modul
+\texttt{QueueController}, yang berada di dalam file \texttt{lib/hiwi\_web/controllers/queue\_controller.ex}.
+Fungsi ini menerima dua parameter, yaitu:
+\begin{enumerate}
+  \item \texttt{conn} — struktur koneksi HTTP yang berisi informasi permintaan pengguna, seperti
+  metode, parameter, dan sesi.
+  \item \texttt{\%\{"id" => id\}} — parameter yang diambil dari URL, yang menunjukkan identitas
+  unik data antrean yang akan ditampilkan.
+\end{enumerate}
+
+Kode implementasi \texttt{Controller} untuk fitur Show adalah sebagai berikut:
+
+\begin{lstlisting}[language=Elixir]
+defmodule HiwiWeb.QueueController do
+  use HiwiWeb, :controller
+  alias Hiwi.Queue
+  alias Hiwi.Repo
+
+...
+
+  def show(conn, %{"id" => id}) do
+    queue = Repo.get!(Queue, id)
+    render(conn, :show, queue: queue)
+  end
+
+...
+end
+\end{lstlisting}
+
+Penjelasan kode:
+\begin{itemize}
+  \item \texttt{Repo.get!(Queue, id)} digunakan untuk mengambil satu entri data dari tabel
+  antrean (\texttt{queues}) berdasarkan \texttt{id}. Tanda seru pada fungsi \texttt{get!}
+  menunjukkan bahwa jika data dengan \texttt{id} tersebut tidak ditemukan, sistem akan
+  mengembalikan kesalahan (\textit{raise error}) secara otomatis.
+  \item Hasil query disimpan dalam variabel \texttt{queue}, yang kemudian diteruskan ke
+  \texttt{render/3} untuk ditampilkan pada halaman HTML.
+  \item Fungsi \texttt{render(conn, :show, queue: queue)} akan merender tampilan
+  \texttt{show.html.heex} dan mengirimkan data \texttt{queue} sebagai parameter ke \texttt{View}.
+\end{itemize}
+
+Dengan demikian, ketika pengguna mengakses URL seperti:
+\begin{lstlisting}[language=bash]
+http://localhost:4000/queues/1
+\end{lstlisting}
+maka aplikasi akan menjalankan fungsi \texttt{show/2}, mengambil data antrean dengan
+\texttt{id = 1} dari basis data, dan menampilkannya dalam bentuk halaman detail.
+Proses ini memperlihatkan bagaimana \textit{Phoenix Framework} secara efisien
+menghubungkan antara permintaan pengguna, query basis data, dan tampilan hasil yang terstruktur.
+
+
+\subsection{View \texttt{show.html.heex}}
+
+
+Setelah fungsi \texttt{show/2} pada \texttt{Controller} dijalankan, langkah berikutnya adalah
+menampilkan data hasil query dalam bentuk antarmuka pengguna. Pada \textit{Phoenix Framework},
+tampilan didefinisikan menggunakan berkas berformat \texttt{.heex} (HTML + Elixir Expression),
+yang memungkinkan penggabungan elemen HTML dengan ekspresi dinamis dari Elixir.
+
+Tampilan untuk fitur \textbf{Show} ini disimpan di dalam file:
+\begin{center}
+\texttt{lib/hiwi\_web/controllers/queue\_html/show.html.heex}
+\end{center}
+Berkas ini dirender secara otomatis oleh fungsi \texttt{render(conn, :show, queue: queue)} yang
+terdapat pada \texttt{QueueController}. Variabel \texttt{@queue} yang dikirim dari controller
+kemudian digunakan dalam template untuk menampilkan data detail dari satu antrean.
+
+Kode lengkap tampilan (view) ditunjukkan pada potongan berikut:
+
+\begin{lstlisting}[language=HTML]
+<HiwiWeb.Layouts.app flash={@flash}>
+  <div class="max-w-2xl mx-auto">
+    <div class="card bg-base-100 shadow-sm border border-base-200">
+      <div class="card-body">
+        <h1 class="card-title mb-4">Queue Details</h1>
+
+        <dl class="divide-y divide-base-200">
+          <div class="py-2 grid grid-cols-3">
+            <dt class="font-medium text-base-content/70">Name</dt>
+            <dd class="col-span-2"><%= @queue.name %></dd>
+          </div>
+
+          <div class="py-2 grid grid-cols-3">
+            <dt class="font-medium text-base-content/70">Status</dt>
+            <dd class="col-span-2 capitalize"><%= @queue.status %></dd>
+          </div>
+
+          <div class="py-2 grid grid-cols-3">
+            <dt class="font-medium text-base-content/70">Prefix</dt>
+            <dd class="col-span-2"><%= @queue.prefix %></dd>
+          </div>
+
+          <div class="py-2 grid grid-cols-3">
+            <dt class="font-medium text-base-content/70">Max Number</dt>
+            <dd class="col-span-2"><%= @queue.max_number %></dd>
+          </div>
+
+          <div class="py-2 grid grid-cols-3">
+            <dt class="font-medium text-base-content/70">Description</dt>
+            <dd class="col-span-2"><%= @queue.description || "-" %></dd>
+          </div>
+
+          <div class="py-2 grid grid-cols-3">
+            <dt class="font-medium text-base-content/70">Inserted At</dt>
+            <dd class="col-span-2">
+              <%= @queue.inserted_at && Calendar.strftime(@queue.inserted_at, "%Y-%m-%d %H:%M:%S") %>
+            </dd>
+          </div>
+
+          <div class="py-2 grid grid-cols-3">
+            <dt class="font-medium text-base-content/70">Updated At</dt>
+            <dd class="col-span-2">
+              <%= @queue.updated_at && Calendar.strftime(@queue.updated_at, "%Y-%m-%d %H:%M:%S") %>
+            </dd>
+          </div>
+        </dl>
+
+        <div class="mt-6 flex justify-end gap-2">
+          <.link navigate={~p"/queues/edit/#{@queue.id}"} class="btn btn-sm btn-primary">
+            Edit
+          </.link>
+          <.link href={~p"/queues/delete/#{@queue.id}"} method="delete" data-confirm="Are you sure?" class="btn btn-sm btn-error">
+            Delete
+          </.link>
+          <.link navigate={~p"/"} class="btn btn-sm btn-ghost">
+            Back
+          </.link>
+        </div>
+      </div>
+    </div>
+  </div>
+</HiwiWeb.Layouts.app>
+\end{lstlisting}
+
+Penjelasan struktur tampilan di atas adalah sebagai berikut:
+
+\begin{itemize}
+  \item Baris pertama menggunakan komponen \texttt{<HiwiWeb.Layouts.app>} untuk membungkus seluruh konten
+  dalam tata letak utama aplikasi. Atribut \texttt{flash=\{@flash\}} digunakan untuk menampilkan
+  pesan notifikasi seperti hasil sukses atau kesalahan dari operasi sebelumnya.
+  \item Struktur HTML menggunakan komponen \texttt{card} dari \textit{DaisyUI} dengan gaya
+  \texttt{bg-base-100} dan \texttt{border-base-200} agar tampilan konsisten dengan halaman lain.
+  \item Tag \texttt{<dl>} digunakan untuk menampilkan data dalam format deskriptif (label dan nilai),
+  di mana setiap elemen antrean seperti \texttt{Name}, \texttt{Status}, \texttt{Prefix},
+  dan \texttt{Max Number} ditampilkan dalam bentuk dua kolom.
+  \item Ekspresi Elixir seperti \texttt{<\%= @queue.name \%>} digunakan untuk mengambil dan menampilkan
+  nilai atribut secara dinamis dari variabel \texttt{@queue}.
+  \item Fungsi \texttt{Calendar.strftime/2} digunakan untuk memformat tanggal \texttt{inserted\_at}
+  dan \texttt{updated\_at} ke dalam format waktu yang lebih mudah dibaca
+  (\texttt{YYYY-MM-DD HH:MM:SS}).
+  \item Bagian bawah tampilan menampilkan tiga tombol aksi:
+  \begin{enumerate}
+    \item \textbf{Edit} — mengarahkan ke halaman \texttt{/queues/edit/:id} untuk memperbarui data.
+    \item \textbf{Delete} — memanggil rute \texttt{/queues/delete/:id} dengan metode \texttt{DELETE}
+    untuk menghapus antrean setelah konfirmasi pengguna.
+    \item \textbf{Back} — mengembalikan pengguna ke halaman utama antrean.
+  \end{enumerate}
+\end{itemize}
+
+Secara keseluruhan, template \texttt{show.html.heex} ini menunjukkan bagaimana
+\textit{Phoenix Framework} memungkinkan integrasi yang mulus antara data dinamis,
+komponen antarmuka modern, dan logika interaktif berbasis Elixir, sekaligus menjaga
+konsistensi tampilan antarhalaman di seluruh aplikasi.
+
+
+
+\section{Update}
+
+Operasi \textbf{Update} merupakan bagian penting dalam siklus \textit{CRUD}
+(\textit{Create, Read, Update, Delete}) yang memungkinkan pengguna untuk memperbarui
+data yang sudah tersimpan di dalam basis data. Dalam konteks aplikasi Phoenix,
+proses pembaruan data ini dilakukan melalui dua tahapan utama:
+\begin{enumerate}
+  \item Menampilkan formulir edit untuk data tertentu (\texttt{edit/2});
+  \item Memproses hasil perubahan yang dikirimkan pengguna melalui form (\texttt{update/2}).
+\end{enumerate}
+
+Kedua tahapan ini diatur di dalam modul \texttt{QueueController}, yang berfungsi
+menghubungkan antara permintaan HTTP, data yang disimpan di \texttt{Repo}, serta
+tampilan yang akan dirender untuk pengguna. Implementasi fungsi ini terletak
+di dalam file:
+\begin{center}
+\texttt{lib/hiwi\_web/controllers/queue\_controller.ex}
+\end{center}
+
+\subsection{Controller edit and update}
+
+Berikut adalah implementasi kode lengkap untuk fungsi \texttt{edit/2} dan \texttt{update/2}
+yang digunakan dalam proses pembaruan data antrean. Kode berikut juga menunjukkan
+fungsi \texttt{show/2} sebagai konteks untuk menampilkan data sebelum dilakukan perubahan.
+
+\begin{lstlisting}[language=Elixir]
+defmodule HiwiWeb.QueueController do
+  use HiwiWeb, :controller
+  alias Hiwi.Queue
+  alias Hiwi.Repo
+...
+  def edit(conn, params) do
+    %{"id" => queue_id} = params
+    queue = Repo.get(Queue, queue_id)
+    changeset = Queue.changeset(queue, %{})
+    render(conn, :edit, changeset: changeset, queue: queue)
+  end
+
+  def update(conn, params) do
+    %{"id" => queue_id, "queue" => queue} = params
+    old_queue = Repo.get(Queue, queue_id)
+    changeset = Queue.changeset(old_queue, queue)
+
+    case Repo.update(changeset) do
+      {:ok, _queue} ->
+        conn
+        |> put_flash(:info, "Queue updated successfully.")
+        |> redirect(to: "/")
+      {:error, changeset} ->
+        render(conn, :edit, changeset: changeset, queue: queue)
+    end
+  end
+...
+end
+\end{lstlisting}
+
+Penjelasan dari masing-masing fungsi di atas adalah sebagai berikut:
+
+\subsubsection*{Fungsi \texttt{edit/2}}
+\begin{itemize}
+  \item Fungsi ini bertugas menampilkan formulir edit yang berisi data lama dari antrean.
+  Pengguna dapat mengubah nilai-nilai tertentu sebelum menyimpan ulang ke basis data.
+  \item Parameter \texttt{\%\{"id" => queue\_id\}} diambil dari URL untuk menentukan antrean
+  mana yang akan diperbarui.
+  \item Baris \texttt{queue = Repo.get(Queue, queue\_id)} mengambil data antrean dari
+  tabel \texttt{queues} menggunakan modul \texttt{Ecto.Repo}.
+  \item Fungsi \texttt{Queue.changeset(queue, \%{}\%)} membuat struktur perubahan awal
+  yang memuat validasi dan nilai default yang akan muncul di form.
+  \item Selanjutnya, fungsi \texttt{render(conn, :edit, changeset: changeset, queue: queue)}
+  digunakan untuk menampilkan halaman \texttt{edit.html.heex}.
+\end{itemize}
+
+\subsubsection*{Fungsi \texttt{update/2}}
+\begin{itemize}
+  \item Fungsi ini menangani data hasil pengiriman formulir dari halaman edit.
+  Parameter \texttt{\%\{"queue" => queue\}} berisi data baru yang dimasukkan oleh pengguna.
+  \item Baris \texttt{old\_queue = Repo.get(Queue, queue\_id)} mengambil data lama dari basis data
+  untuk dibandingkan dan diperbarui.
+  \item Kemudian, \texttt{Queue.changeset(old\_queue, queue)} menghasilkan struktur perubahan baru
+  yang siap divalidasi sebelum disimpan.
+  \item Proses \texttt{Repo.update(changeset)} akan mencoba memperbarui data di basis data.
+  Jika pembaruan berhasil, pengguna akan mendapatkan notifikasi menggunakan
+  \texttt{put\_flash(:info, ...)} dan diarahkan kembali ke halaman utama menggunakan
+  \texttt{redirect(to: "/")}.
+  \item Jika terjadi kesalahan validasi, maka fungsi \texttt{render/3} akan dijalankan kembali
+  untuk menampilkan form edit beserta pesan kesalahan, tanpa kehilangan data yang telah dimasukkan.
+\end{itemize}
+
+Dengan alur ini, fitur \textbf{Update} pada Phoenix dapat dijalankan secara efisien dan aman.
+Setiap perubahan data melewati proses validasi pada \textit{changeset}, dan pengguna
+mendapatkan umpan balik langsung dari aplikasi melalui notifikasi flash.
+Arsitektur ini memperlihatkan kekuatan paradigma fungsional Elixir dalam
+menangani data secara deklaratif dan terkontrol.
+
+
+\subsection{View}
+
+Setelah pengguna memilih untuk mengedit data antrean tertentu, sistem akan menampilkan
+sebuah halaman berisi formulir pembaruan data. Tampilan ini dirancang agar konsisten dengan
+tema visual aplikasi menggunakan komponen antarmuka dari \texttt{DaisyUI} dan elemen
+\texttt{HEEx} (\textit{HTML + Embedded Elixir}) yang disediakan oleh \textit{Phoenix Framework}.
+
+File tampilan ini disimpan pada direktori:
+\begin{center}
+\texttt{lib/hiwi\_web/controllers/queue\_html/edit.html.heex}
+\end{center}
+File tersebut dirender oleh fungsi \texttt{edit/2} dan \texttt{update/2} dalam
+\texttt{QueueController}. Data yang dikirim dari \texttt{Controller} berupa dua
+assign utama, yaitu \texttt{@changeset} yang berisi struktur validasi form, dan
+\texttt{@queue} yang merepresentasikan data antrean yang sedang diperbarui.
+
+Berikut adalah kode lengkap tampilan untuk fitur \textbf{Update}:
+
+\begin{lstlisting}[language=HTML]
+<HiwiWeb.Layouts.app flash={@flash}>
+  <div class="max-w-2xl mx-auto">
+    <div class="card bg-base-100 shadow-sm border border-base-200">
+      <div class="card-body">
+        <h1 class="card-title">Edit Queue</h1>
+        <p class="text-sm text-base-content/70 mb-2">
+          Update the queue details below.
+        </p>
+
+        <.form :let={f} for={@changeset} action={~p"/queues/#{@queue.id}"} method="put" class="space-y-4">
+          <!-- Name -->
+          <.input
+            field={f[:name]}
+            label="Name"
+            required
+            autofocus
+            class="input input-bordered w-full"
+          />
+
+          <!-- Status -->
+          <.input
+            field={f[:status]}
+            type="select"
+            label="Status"
+            prompt="Choose status"
+            options={[Ready: "ready", Running: "running", Inactive: "inactive"]}
+            class="select select-bordered w-full"
+          />
+
+          <!-- Description -->
+          <.input
+            field={f[:description]}
+            type="textarea"
+            label="Description"
+            class="textarea textarea-bordered w-full"
+          />
+          <label class="label -mt-2">
+            <span class="label-text-alt text-base-content/60">
+              Optional. Brief note about this queue or counter.
+            </span>
+          </label>
+
+          <!-- Prefix & Max Number -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <.input
+                field={f[:prefix]}
+                label="Prefix"
+                required
+                class="input input-bordered w-full"
+              />
+              <label class="label -mt-2">
+                <span class="label-text-alt text-base-content/60">
+                  Example: A, B, C
+                </span>
+              </label>
+            </div>
+
+            <div>
+              <.input
+                field={f[:max_number]}
+                type="number"
+                label="Max Number"
+                min="1"
+                required
+                class="input input-bordered w-full"
+              />
+              <label class="label -mt-2">
+                <span class="label-text-alt text-base-content/60">
+                  Upper bound for ticket numbers
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Buttons -->
+          <div class="flex items-center justify-end gap-2 pt-2">
+            <.link navigate={~p"/queues"} class="btn btn-ghost btn-sm">
+              Cancel
+            </.link>
+            <.button class="btn btn-primary btn-sm">
+              Save Changes
+            </.button>
+          </div>
+        </.form>
+      </div>
+    </div>
+  </div>
+</HiwiWeb.Layouts.app>
+\end{lstlisting}
+
+Tampilan ini menggunakan pola desain berbasis \textbf{kartu} (\textit{card layout})
+untuk menjaga konsistensi antarmuka dengan halaman lain pada aplikasi. Komponen utama dan
+fungsi dari setiap bagian tampilan dijelaskan sebagai berikut:
+
+\begin{itemize}
+  \item \textbf{Layout Wrapper:}  
+  Seluruh isi halaman dibungkus dengan komponen \texttt{<HiwiWeb.Layouts.app>} untuk menjaga
+  konsistensi tampilan antarsesi halaman. Atribut \texttt{flash=\{@flash\}} digunakan untuk
+  menampilkan pesan sukses atau kesalahan hasil proses pembaruan data.
+  
+  \item \textbf{Judul dan Deskripsi:}  
+  Elemen \texttt{<h1>} dan paragraf pembuka memberikan konteks kepada pengguna bahwa halaman ini
+  digunakan untuk memperbarui informasi antrean.
+
+  \item \textbf{Formulir Edit:}  
+  Komponen \texttt{<.form>} digunakan untuk membangun form dinamis berdasarkan struktur
+  \texttt{@changeset}. Atribut \texttt{method="put"} menunjukkan bahwa form ini akan
+  mengirimkan permintaan HTTP PUT ke rute \texttt{/queues/\#\{@queue.id\}} untuk memperbarui data.
+
+  \item \textbf{Input Field:}  
+  Setiap \texttt{<.input>} didefinisikan menggunakan \textit{function component} milik Phoenix,
+  yang memungkinkan validasi otomatis berdasarkan \texttt{changeset}.  
+  Bidang yang ditampilkan meliputi:
+  \begin{enumerate}
+    \item \texttt{Name} — nama antrean yang bersifat wajib.
+    \item \texttt{Status} — pilihan status dengan opsi \texttt{ready}, \texttt{running},
+    dan \texttt{inactive}.
+    \item \texttt{Description} — teks tambahan opsional.
+    \item \texttt{Prefix} — huruf atau tanda unik yang digunakan pada nomor antrean.
+    \item \texttt{Max Number} — batas maksimum penomoran antrean.
+  \end{enumerate}
+
+  \item \textbf{Grid Layout:}  
+  Elemen input \texttt{Prefix} dan \texttt{Max Number} disusun berdampingan dalam
+  struktur \texttt{grid} dua kolom menggunakan kelas
+  \texttt{grid grid-cols-1 sm:grid-cols-2 gap-4}, yang secara otomatis menyesuaikan
+  dengan ukuran layar.
+
+  \item \textbf{Tombol Aksi:}  
+  Bagian bawah form menampilkan tiga tombol utama:
+  \begin{enumerate}
+    \item \texttt{Cancel} — mengarahkan pengguna kembali ke daftar antrean tanpa menyimpan perubahan.
+    \item \texttt{Save Changes} — mengirimkan form untuk memperbarui data antrean.
+  \end{enumerate}
+  Tombol-tombol ini menggunakan kelas \texttt{btn btn-sm} dari \textit{DaisyUI}
+  untuk tampilan yang seragam dan ringkas.
+\end{itemize}
+
+Dari segi arsitektur, tampilan ini mengilustrasikan bagaimana Phoenix mengintegrasikan
+komponen \textit{server-side rendering} dengan antarmuka modern yang tetap efisien dan reaktif.
+Formulir ditautkan langsung dengan mekanisme validasi \texttt{Ecto.Changeset}, sehingga
+pengguna dapat memperbarui data dengan aman sambil tetap mendapatkan umpan balik visual
+yang intuitif.
+
+
+\section{Delete}
+
+Operasi \textbf{Delete} merupakan tahap akhir dari siklus \textit{CRUD}
+(\textit{Create, Read, Update, Delete}), yaitu proses menghapus data yang tidak lagi
+diperlukan dari basis data. Pada aplikasi Phoenix, operasi ini dilakukan dengan
+memanfaatkan modul \texttt{Ecto.Repo} yang menyediakan fungsi \texttt{delete!/1}
+untuk menghapus suatu entitas secara permanen.
+
+Fitur \textbf{Delete} biasanya diakses dari halaman detail (\textit{Show}) atau halaman daftar
+(\textit{Index}) melalui tombol \texttt{Delete}. Sebelum penghapusan dilakukan, sistem
+biasanya akan menampilkan konfirmasi kepada pengguna guna menghindari
+penghapusan data secara tidak disengaja. Jika pengguna menyetujui, permintaan HTTP
+dengan metode \texttt{DELETE} akan dikirim ke rute yang telah ditentukan di dalam
+\texttt{Router}.
+
+Implementasi fungsi penghapusan untuk modul \texttt{QueueController} dapat dilihat
+pada kode berikut, yang disimpan dalam berkas:
+\begin{center}
+\texttt{lib/hiwi\_web/controllers/queue\_controller.ex}
+\end{center}
+
+\subsection{Controller delete}
+
+\begin{lstlisting}[language=Elixir]
+defmodule HiwiWeb.QueueController do
+  use HiwiWeb, :controller
+  alias Hiwi.Queue
+  alias Hiwi.Repo
+  ...
+  def delete(conn, params) do
+    %{"id" => queue_id} = params
+    queue = Repo.get!(Queue, queue_id)
+    result = Repo.delete!(queue)
+    IO.puts("result = " <> Kernel.inspect(result))
+    conn
+    |> put_flash(:info, "Queue deleted successfully.")
+    |> redirect(to: "/")
+  end
+  ...
+end
+\end{lstlisting}
+
+Penjelasan kode di atas adalah sebagai berikut:
+
+\begin{itemize}
+  \item Fungsi \texttt{delete/2} menerima dua parameter, yaitu:
+  \begin{enumerate}
+    \item \texttt{conn} — objek koneksi HTTP yang membawa informasi tentang permintaan pengguna;
+    \item \texttt{params} — berisi parameter dari URL yang mengandung \texttt{id} dari antrean
+    yang akan dihapus.
+  \end{enumerate}
+
+  \item Baris \texttt{\%\{"id" => queue\_id\}} digunakan untuk mengekstrak nilai \texttt{id} dari parameter.
+  Nilai ini kemudian digunakan untuk mengambil data antrean dari basis data.
+
+  \item \texttt{Repo.get!(Queue, queue\_id)} digunakan untuk mencari satu entitas antrean
+  berdasarkan \texttt{id}. Tanda seru pada fungsi \texttt{get!} menunjukkan bahwa sistem
+  akan menghasilkan kesalahan jika data tidak ditemukan, sehingga mempermudah deteksi
+  \textit{error} pada tahap pengembangan.
+
+  \item Setelah data ditemukan, perintah \texttt{Repo.delete!(queue)} akan menghapus entitas
+  tersebut secara permanen dari tabel yang bersangkutan di basis data. Hasil penghapusan disimpan
+  dalam variabel \texttt{result} untuk keperluan log, yang kemudian dicetak ke terminal menggunakan
+  \texttt{IO.puts/1} dan \texttt{Kernel.inspect/1}.
+
+  \item Setelah penghapusan berhasil, pengguna akan diarahkan kembali ke halaman utama (rute \texttt{"/"})
+  dengan pesan notifikasi \texttt{"Queue deleted successfully."} yang dikirim melalui fungsi
+  \texttt{put\_flash/3}. Fitur ini membantu memberikan umpan balik visual kepada pengguna bahwa
+  proses penghapusan telah berhasil dilakukan.
+\end{itemize}
+
+Dari sisi alur kerja, fungsi \texttt{delete/2} dapat dijelaskan sebagai berikut:
+\begin{enumerate}
+  \item Pengguna menekan tombol \textbf{Delete} pada tampilan \texttt{show.html.heex}.
+  \item Permintaan HTTP dengan metode \texttt{DELETE} dikirim ke rute
+  \texttt{/queues/delete/:id} sebagaimana didefinisikan di dalam \texttt{Router}.
+  \item Fungsi \texttt{delete/2} dieksekusi di \texttt{QueueController}.
+  \item Data dengan \texttt{id} yang sesuai dihapus dari basis data menggunakan \texttt{Repo.delete!/1}.
+  \item Aplikasi menampilkan notifikasi sukses dan mengarahkan pengguna kembali ke halaman utama.
+\end{enumerate}
+
+Pendekatan ini menekankan prinsip \textbf{keamanan dan transparansi} dalam penghapusan data.
+Dengan adanya konfirmasi pengguna serta penggunaan pesan umpan balik (\texttt{flash message}),
+aplikasi tetap informatif dan mencegah kehilangan data secara tidak sengaja. Selain itu,
+penggunaan \texttt{Repo.delete!/1} memanfaatkan kekuatan \textit{pattern matching} dan sistem error
+handling fungsional Elixir, yang menjadikan proses ini efisien, aman, dan mudah dipantau.
+
+
+
+\section{Summary}
+
+Pada bab ini telah dibahas tiga operasi penting dalam pengelolaan data menggunakan
+\textit{Phoenix Framework}, yaitu \textbf{Show}, \textbf{Update}, dan \textbf{Delete}.
+Ketiga fitur tersebut melengkapi siklus utama dari arsitektur \textbf{CRUD}
+(\textit{Create, Read, Update, Delete}), yang menjadi dasar dalam pembangunan aplikasi
+berbasis data. Melalui pembahasan ini, diperlihatkan bagaimana \texttt{Router},
+\texttt{Controller}, dan \texttt{View} bekerja secara terpadu untuk menangani permintaan
+pengguna, memproses data di sisi server, dan menampilkan hasilnya dalam antarmuka yang
+terstruktur dan konsisten.
+
+Fungsi \texttt{show/2} berperan dalam menampilkan detail data antrean, \texttt{edit/2} dan
+\texttt{update/2} menangani pembaruan informasi yang telah ada, sementara
+\texttt{delete/2} memungkinkan penghapusan data secara permanen dengan umpan balik
+notifikasi kepada pengguna. Implementasi ketiga operasi ini menunjukkan kekuatan paradigma
+fungsional Elixir dalam membangun aplikasi web yang efisien, terstruktur, dan mudah
+dipelihara. Dengan memahami alur kerja Show, Update, dan Delete, pengembang dapat
+mengelola siklus hidup data secara menyeluruh sekaligus menjaga konsistensi logika bisnis
+dan tampilan dalam aplikasi Phoenix.
+

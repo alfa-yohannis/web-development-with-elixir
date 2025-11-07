@@ -1,0 +1,591 @@
+\documentclass[aspectratio=169, table]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage{listings} 
+
+\usetheme{Pradita}
+
+\subtitle{IF140303-Web Application Development}
+
+\title{Session-09:\\
+\Huge{
+Phoenix Framework:\\Show, Update, Delete\\
+\vspace{-20pt}
+}
+}
+\date[Serial]{\scriptsize{PRU/SPMI/FR-BM-18/0222}}
+\author[Pradita]{\small{\textbf{Alfa Yohannis}}}
+
+\lstdefinelanguage{Elixir} {
+	keywords={def, defmodule, do, end, for, if, else, true, false, scope},
+	language=ruby,
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={@spec, @moduledoc, iex, Enum, @doc, add, alter, field, has_many, timestamps},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	showstringspaces=false
+}
+
+
+\lstdefinelanguage{bash} {
+	keywords={},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={iex},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	showstringspaces=false
+}
+
+\lstdefinelanguage{html} {
+	keywords={h1, b, a, href, class},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={p, else, if, do, end},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	morecomment=[s]{<!--}{-->},
+	string=[s]{'}{'},
+	morestring=[s]{"}{"},
+	tabsize=2
+}
+
+
+\begin{document}
+	
+	\frame{\titlepage}
+	
+		\begin{frame}[fragile]
+		\frametitle{Contents}
+		\vspace{20pt}
+		\begin{columns}[t]
+			\column{0.5\textwidth}
+			\tableofcontents[sections={1-6}]
+			
+			\column{0.5\textwidth}
+			\tableofcontents[sections={7-99}]
+		\end{columns}
+	\end{frame}
+
+\section{Introduction}
+
+\begin{frame}{Introduction: Show, Update, Delete in Phoenix}
+\vspace{20pt}
+  \begin{itemize}
+    \item This chapter introduces three essential operations in the \textit{Phoenix Framework}: \textbf{Show}, \textbf{Update}, and \textbf{Delete}, which together form the core of the \textbf{CRUD} (\textit{Create, Read, Update, Delete}) pattern commonly used in web applications.
+    \item The \texttt{QueueController} in \texttt{HiwiWeb} is responsible for managing queue data, including displaying detailed records, editing existing information, and removing unnecessary data.
+    \item \textbf{Show} presents specific queue information based on its \texttt{id}.  
+    \item \textbf{Update} allows users to modify queue details through styled \texttt{HEEx} forms for better user experience.  
+    \item \textbf{Delete} removes data securely from the database with confirmation prompts.
+    \item Together, these operations ensure efficient, consistent, and safe data management within Phoenix applications.
+  \end{itemize}
+\end{frame}
+
+\section{Router}
+\begin{frame}[fragile]{Router Configuration in Phoenix (1/2)}
+\vspace{20pt}
+  \begin{itemize}
+    \item The \textbf{Router} in the \textit{Phoenix Framework} defines how HTTP requests are directed to the appropriate functions within a \texttt{Controller}.
+    \item It acts as a central hub that maps URLs to the correct application logic, enabling users to interact with the web interface efficiently.
+    \item All route definitions are located in the following file:
+      \begin{lstlisting}[language=bash]
+lib/hiwi_web/router.ex
+      \end{lstlisting}
+    \item This file connects URLs to specific controller actions and manages the request flow through pipelines, which can include session handling, authentication, and CSRF protection.
+    \item In this project, routes are grouped under the \texttt{scope "/"} block and use the \texttt{:browser} pipeline for HTML-based user interactions.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Router Configuration in Phoenix (2/2)}
+\vspace{25pt}
+  \begin{itemize}
+    \item The following code defines the complete route setup for the \texttt{QueueController} in \texttt{HiwiWeb}.
+    \item Each route corresponds to a specific CRUD operation:  
+      \textbf{Show} (view), \textbf{Update} (edit), and \textbf{Delete} (remove).
+  \end{itemize}
+  \begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\footnotesize]
+  scope "/", HiwiWeb do
+    pipe_through :browser
+
+    get "/", QueueController, :index
+    get "/about", PageController, :about
+    get "/queues/new", QueueController, :new
+    post "/queues", QueueController, :create
+
+    get "/queues/:id", QueueController, :show
+    get "/queues/edit/:id", QueueController, :edit
+    put "/queues/:id", QueueController, :update
+    delete "/queues/delete/:id", QueueController, :delete
+  end
+  \end{lstlisting}
+\end{frame}
+
+\section{Show}
+
+\begin{frame}{Show Feature in Phoenix (1/3)}
+\vspace{20pt}
+  \begin{itemize}
+    \item The \textbf{Show} feature in the \textit{Phoenix Framework} displays the details of a single record based on its unique \texttt{id} from the URL.
+    \item It corresponds to the \textbf{Read} operation in the \textbf{CRUD} (\textit{Create, Read, Update, Delete}) pattern, allowing users to inspect stored data.
+    \item In this case study, the Show feature of the \texttt{QueueController} presents complete information about a queue, such as:
+      \begin{itemize}
+        \item \texttt{name}, \texttt{status}, \texttt{prefix}, \texttt{max\_number}, and description.
+        \item Creation and update timestamps that record when each entry was saved or modified.
+      \end{itemize}
+    \item Viewing data before editing or deleting it helps ensure accuracy and consistency across operations.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Controller Implementation (2/3)}
+\vspace{25pt}
+  \begin{itemize}
+    \item The \texttt{show/2} function is defined in the \texttt{QueueController} module:
+      \begin{lstlisting}[language=bash]
+lib/hiwi_web/controllers/queue_controller.ex
+      \end{lstlisting}
+    \item It accepts two parameters:
+      \begin{enumerate}
+        \item \texttt{conn} – manages the connection and response cycle.
+        \item \texttt{\%\{"id" => id\}} – identifies which queue record to fetch.
+      \end{enumerate}
+  \end{itemize}
+
+  \begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\scriptsize]
+defmodule HiwiWeb.QueueController do
+  use HiwiWeb, :controller
+  alias Hiwi.Queue
+  alias Hiwi.Repo
+
+  # Show function retrieves a single queue entry by ID
+  def show(conn, %{"id" => id}) do
+    # Fetch data from database; raises an error if not found
+    queue = Repo.get!(Queue, id)
+
+    # Render 'show.html.heex' template with queue data
+    render(conn, :show, queue: queue)
+  end
+end
+  \end{lstlisting}
+
+  \vspace{5pt}
+  \small The function connects the HTTP request to the database query and passes the retrieved data to the view layer for rendering.
+\end{frame}
+
+\begin{frame}[fragile]{Explanation of the Show Function (3/3)}
+\vspace{20pt}
+  \begin{itemize}
+    \item \texttt{Repo.get!(Queue, id)} retrieves one queue record by its \texttt{id}.  
+    If the record is missing, Phoenix automatically raises an error for safe debugging.
+    \item The retrieved record is assigned to \texttt{queue} and sent to the view with:
+      \texttt{render(conn, :show, queue: queue)}.
+    \item This view template (\texttt{show.html.heex}) displays queue information dynamically on the web page.
+    \item Example URL to trigger the function:
+      \begin{lstlisting}[language=bash]
+http://localhost:4000/queues/1
+      \end{lstlisting}
+    \item Overall, the \textbf{Show} feature demonstrates Phoenix’s integration between:
+      \begin{itemize}
+        \item URL routing through \texttt{Router};
+        \item Querying data via \texttt{Ecto.Repo};
+        \item Rendering dynamic HTML using \texttt{HEEx} templates.
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{View \texttt{show.html.heex} (1/5)}
+\vspace{20pt}
+  \begin{itemize}
+    \item Purpose: render a single queue’s details after \texttt{show/2} fetches \texttt{@queue}.
+    \item Technology: HEEx (HTML + Elixir expressions) with DaisyUI classes for consistent styling.
+    \item Location: \texttt{lib/hiwi\_web/controllers/queue\_html/show.html.heex}.
+    \item Data flow: \texttt{QueueController.show/2} $\rightarrow$ \texttt{render/3} $\rightarrow$ template uses \texttt{@queue}.
+    \item Layout wrapper (\texttt{HiwiWeb.Layouts.app}) provides flash messages and global page chrome.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{\texttt{show.html.heex} (2/5)}
+\vspace{20pt}
+\begin{lstlisting}[language=HTML, basicstyle=\ttfamily\scriptsize]
+<HiwiWeb.Layouts.app flash={@flash}>
+  <div class="max-w-2xl mx-auto">
+    <div class="card bg-base-100 shadow-sm border border-base-200">
+      <div class="card-body">
+        <h1 class="card-title mb-4">Queue Details</h1>
+        <dl class="divide-y divide-base-200">
+          <div class="py-2 grid grid-cols-3">
+            <dt class="font-medium text-base-content/70">Name</dt>
+            <dd class="col-span-2"><%= @queue.name %></dd>
+          </div>
+          <div class="py-2 grid grid-cols-3">
+            <dt class="font-medium text-base-content/70">Status</dt>
+            <dd class="col-span-2 capitalize"><%= @queue.status %></dd>
+          </div>
+          <div class="py-2 grid grid-cols-3">
+            <dt class="font-medium text-base-content/70">Prefix</dt>
+            <dd class="col-span-2"><%= @queue.prefix %></dd>
+          </div>
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{View \texttt{show.html.heex} (3/5)}
+\vspace{25pt}
+\begin{lstlisting}[language=HTML, basicstyle=\ttfamily\scriptsize]
+          <div class="py-2 grid grid-cols-3">
+            <dt class="font-medium text-base-content/70">Max Number</dt>
+            <dd class="col-span-2"><%= @queue.max_number %></dd>
+          </div>
+          <div class="py-2 grid grid-cols-3">
+            <dt class="font-medium text-base-content/70">Description</dt>
+            <dd class="col-span-2"><%= @queue.description || "-" %></dd>
+          </div>
+          <div class="py-2 grid grid-cols-3">
+            <dt class="font-medium text-base-content/70">Inserted At</dt>
+            <dd class="col-span-2">
+              <%= @queue.inserted_at && Calendar.strftime(@queue.inserted_at, "%Y-%m-%d %H:%M:%S") %>
+            </dd>
+          </div>
+          <div class="py-2 grid grid-cols-3">
+            <dt class="font-medium text-base-content/70">Updated At</dt>
+            <dd class="col-span-2">
+              <%= @queue.updated_at && Calendar.strftime(@queue.updated_at, "%Y-%m-%d %H:%M:%S") %>
+            </dd>
+          </div>
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{View \texttt{show.html.heex} (4/5)}
+\vspace{20pt}
+\begin{lstlisting}[language=HTML, basicstyle=\ttfamily\scriptsize]
+		</dl>
+        <div class="mt-6 flex justify-end gap-2">
+          <.link navigate={~p"/queues/edit/#{@queue.id}"} class="btn btn-sm btn-primary">
+            Edit
+          </.link>
+          <.link href={~p"/queues/delete/#{@queue.id}"} method="delete" data-confirm="Are you sure?" class="btn btn-sm btn-error">
+            Delete
+          </.link>
+          <.link navigate={~p"/"} class="btn btn-sm btn-ghost">
+            Back
+          </.link>
+        </div>
+      </div>
+    </div>
+  </div>
+</HiwiWeb.Layouts.app>
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}{View \texttt{show.html.heex} (5/5) — Explanation}
+\vspace{20pt}
+  \begin{itemize}
+    \item \textbf{Layout \& Card}: global layout + DaisyUI card ensure consistent look and spacing.
+    \item \textbf{Definition List (\texttt{dl/dt/dd})}: semantic label–value pairs for readability and accessibility.
+    \item \textbf{Dynamic Data}: HEEx tags (\texttt{<\%= ... \%>}) bind \texttt{@queue} fields to the view.
+    \item \textbf{Time Formatting}: \texttt{Calendar.strftime/2} renders timestamps in \texttt{YYYY-MM-DD HH:MM:SS}.
+    \item \textbf{Actions}: Edit (navigate), Delete (HTTP DELETE with confirm), Back (return to index).
+    \item \textbf{Outcome}: a clear, maintainable detail page aligned with Phoenix + HEEx best practices.
+  \end{itemize}
+\end{frame}
+
+
+\section{Update}
+
+
+\begin{frame}{Update Feature in Phoenix (1/5)}
+\vspace{20pt}
+  \begin{itemize}
+    \item The \textbf{Update} operation is a crucial part of the \textbf{CRUD} cycle (\textit{Create, Read, Update, Delete}), enabling users to modify existing records in the database.
+    \item In Phoenix, data updates involve two key steps:
+      \begin{enumerate}
+        \item Displaying an edit form for an existing record (\texttt{edit/2}).
+        \item Processing the submitted form and saving updates to the database (\texttt{update/2}).
+      \end{enumerate}
+    \item Both steps are implemented within \texttt{QueueController}, connecting HTTP requests, database operations, and user interface rendering.
+    \item Source file: \texttt{lib/hiwi\_web/controllers/queue\_controller.ex}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Controller: \texttt{edit/2} and \texttt{update/2} (2/5)}
+\vspace{20pt}
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\footnotesize]
+defmodule HiwiWeb.QueueController do
+  use HiwiWeb, :controller
+  alias Hiwi.Queue
+  alias Hiwi.Repo
+
+  def edit(conn, params) do
+    %{"id" => queue_id} = params
+    queue = Repo.get(Queue, queue_id)
+    changeset = Queue.changeset(queue, %{})
+    render(conn, :edit, changeset: changeset, queue: queue)
+  end
+\end{lstlisting}
+\begin{itemize}
+  \item \texttt{edit/2} fetches the record from the database and prepares a changeset.
+  \item The \texttt{changeset} contains validations and default values to prefill the edit form.
+  \item Finally, it renders the \texttt{edit.html.heex} page with both the record and changeset.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Controller: \texttt{update/2} Implementation (3/5)}
+\vspace{15pt}
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\footnotesize]
+  def update(conn, params) do
+    %{"id" => queue_id, "queue" => queue} = params
+    old_queue = Repo.get(Queue, queue_id)
+    changeset = Queue.changeset(old_queue, queue)
+
+    case Repo.update(changeset) do
+      {:ok, _queue} ->
+        conn
+        |> put_flash(:info, "Queue updated successfully.")
+        |> redirect(to: "/")
+      {:error, changeset} ->
+        render(conn, :edit, changeset: changeset, queue: queue)
+    end
+  end
+\end{lstlisting}
+
+Handles the user-submitted form, applies changes, validates input, and performs database update through \texttt{Repo.update/1}.
+\end{frame}
+
+\begin{frame}{Explanation of \texttt{edit/2} and \texttt{update/2} (4/5)}
+\vspace{20pt}
+\begin{itemize}
+  \item \textbf{\texttt{edit/2}}:
+    \begin{itemize}
+      \item Loads an existing record using \texttt{Repo.get/2}.
+      \item Builds a \texttt{changeset} with \texttt{Queue.changeset/2}.
+      \item Renders the edit form prefilled with existing values.
+    \end{itemize}
+  \item \textbf{\texttt{update/2}}:
+    \begin{itemize}
+      \item Extracts form data from \texttt{\%\{"queue" => queue\}}.
+      \item Updates the record using \texttt{Repo.update/1}.
+      \item On success: sets a flash message and redirects to the homepage.
+      \item On error: re-renders the form with validation feedback.
+    \end{itemize}
+  \item Both functions maintain data consistency and user feedback loops.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Update Process Summary (5/5)}
+\vspace{20pt}
+\begin{itemize}
+  \item The \textbf{Update} feature ensures data can be modified safely and efficiently.
+  \item Each step includes validation through the \texttt{changeset} mechanism, preventing invalid updates.
+  \item Users receive immediate feedback via Phoenix flash messages.
+  \item This demonstrates Phoenix’s robust handling of form-based data updates using:
+    \begin{itemize}
+      \item \texttt{Ecto.Repo} for persistence,
+      \item \texttt{Changeset} for validation,
+      \item \texttt{Controller + View} for rendering and feedback.
+    \end{itemize}
+  \item Together, they illustrate Elixir’s functional and declarative approach to safe web data management.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{View \texttt{edit.html.heex} (1/5)}
+\vspace{20pt}
+  \begin{itemize}
+    \item Purpose: present an edit form to update an existing queue record using \texttt{@changeset} and \texttt{@queue}.
+    \item Technology: HEEx (HTML + Embedded Elixir) with DaisyUI classes for cohesive styling.
+    \item Location: \texttt{lib/hiwi\_web/controllers/queue\_html/edit.html.heex}.
+    \item Data flow: \texttt{QueueController.edit/2} $\rightarrow$ \texttt{render/3} $\rightarrow$ template consumes \texttt{@changeset}, \texttt{@queue}.
+    \item Assigns: \texttt{@changeset} (validations + values), \texttt{@queue} (current record).
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{\texttt{edit.html.heex} (2/5)}
+\vspace{20pt}
+\begin{lstlisting}[language=HTML, basicstyle=\ttfamily\scriptsize]
+<HiwiWeb.Layouts.app flash={@flash}>
+  <div class="max-w-2xl mx-auto">
+    <div class="card bg-base-100 shadow-sm border border-base-200">
+      <div class="card-body">
+        <h1 class="card-title">Edit Queue</h1>
+        <p class="text-sm text-base-content/70 mb-2">
+          Update the queue details below.
+        </p>
+
+        <.form :let={f} for={@changeset} action={~p"/queues/#{@queue.id}"} method="put" class="space-y-4">
+          <!-- Name -->
+          <.input field={f[:name]} label="Name" required autofocus class="input input-bordered w-full" />
+
+          <!-- Status -->
+          <.input field={f[:status]} type="select" label="Status" prompt="Choose status" options={[Ready: "ready" ,
+            Running: "running" , Inactive: "inactive" ]} class="select select-bordered w-full" />
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{\texttt{edit.html.heex} (3/5)}
+\vspace{20pt}
+\begin{lstlisting}[language=HTML, basicstyle=\ttfamily\scriptsize]
+          <!-- Description -->
+          <.input field={f[:description]} type="textarea" label="Description"
+            class="textarea textarea-bordered w-full" />
+          <label class="label -mt-2">
+            <span class="label-text-alt text-base-content/60">
+              Optional. Brief note about this queue or counter.
+            </span>
+          </label>
+
+          <!-- Prefix & Max Number -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <.input field={f[:prefix]} label="Prefix" required class="input input-bordered w-full" />
+              <label class="label -mt-2">
+                <span class="label-text-alt text-base-content/60">
+                  Example: A, B, C
+                </span>
+              </label>
+            </div>
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{\texttt{edit.html.heex} (4/5)}
+\vspace{20pt}
+\begin{lstlisting}[language=HTML, basicstyle=\ttfamily\scriptsize]
+            <div>
+              <.input field={f[:max_number]} type="number" label="Max Number" min="1" required
+                class="input input-bordered w-full" />
+              <label class="label -mt-2"><span class="label-text-alt text-base-content/60">Upper bound for ticket numbers</span></label>
+            </div>
+          </div>
+          <!-- Buttons -->
+          <div class="flex items-center justify-end gap-2 pt-2">
+            <.link navigate={~p"/queues"} class="btn btn-ghost btn-sm">
+              Cancel
+            </.link>
+            <.button class="btn btn-primary btn-sm">
+              Save Changes
+            </.button>
+          </div>
+        </.form>
+      </div>
+    </div>
+  </div>
+</HiwiWeb.Layouts.app>
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}{\texttt{edit.html.heex} (5/5)}
+\vspace{20pt}
+  \begin{itemize}
+    \item \textbf{Layout \& Card}: global layout wrapper and DaisyUI card ensure consistent spacing and theme.
+    \item \textbf{Form Binding}: \texttt{for=\{@changeset\}} binds inputs to validations and existing values; \texttt{method="put"} targets update.
+    \item \textbf{Inputs}: Name (required), Status (select), Description (textarea), Prefix, Max Number (numeric with \texttt{min=1}).
+    \item \textbf{Responsive Grid}: two-column layout on \texttt{sm} screens for compact form organization.
+    \item \textbf{Actions}: Cancel returns to list; Save submits updates; feedback shown via flash in the layout.
+    \item \textbf{Outcome}: accessible, consistent, and maintainable update form aligned with Phoenix + HEEx best practices.
+  \end{itemize}
+\end{frame}
+
+\section{Delete}
+
+\begin{frame}{Delete Feature in Phoenix (1/3)}
+\vspace{20pt}
+  \begin{itemize}
+    \item The \textbf{Delete} operation represents the final stage in the \textbf{CRUD} cycle (\textit{Create, Read, Update, Delete}), used to remove records that are no longer needed.
+    \item In Phoenix, deletion is performed using the \texttt{Ecto.Repo.delete!/1} function, which permanently removes a record from the database.
+    \item Access to this feature is typically provided via a \textbf{Delete} button in the \texttt{show.html.heex} or \texttt{index.html.heex} page.
+    \item Before deletion, the system prompts for confirmation to prevent accidental data loss.
+    \item Once confirmed, an HTTP \texttt{DELETE} request is sent to the route defined in the \texttt{Router}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Controller Implementation — \texttt{delete/2} (2/3)}
+\vspace{15pt}
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\scriptsize]
+defmodule HiwiWeb.QueueController do
+  use HiwiWeb, :controller
+  alias Hiwi.Queue
+  alias Hiwi.Repo
+  ...
+  def delete(conn, params) do
+    %{"id" => queue_id} = params
+    queue = Repo.get!(Queue, queue_id)
+    result = Repo.delete!(queue)
+    IO.puts("result = " <> Kernel.inspect(result))
+    conn
+    |> put_flash(:info, "Queue deleted successfully.")
+    |> redirect(to: "/")
+  end
+  ...
+end
+\end{lstlisting}
+The \texttt{delete/2} function retrieves a record by its \texttt{id}, deletes it using  
+\texttt{Repo.delete!/1}, logs the result, and redirects the user with a success message.
+\end{frame}
+
+
+
+\begin{frame}{Delete Workflow and Key Insights (3/3)}
+\vspace{20pt}
+\begin{itemize}
+  \item \textbf{Workflow:}
+    \begin{enumerate}
+      \item User clicks the \texttt{Delete} button in the detail view.
+      \item Browser sends an HTTP \texttt{DELETE} request to \texttt{/queues/delete/:id}.
+      \item The \texttt{QueueController.delete/2} function executes.
+      \item \texttt{Repo.delete!/1} removes the record from the database.
+      \item User receives a success notification and is redirected to the homepage.
+    \end{enumerate}
+  \item \textbf{Safety \& Feedback:}
+    \begin{itemize}
+      \item Confirmation dialogs prevent unintended deletions.
+      \item Flash messages provide clear visual feedback.
+      \item \texttt{Repo.delete!/1} raises an error if deletion fails, ensuring reliability.
+    \end{itemize}
+  \item \textbf{Outcome:} A secure, transparent, and traceable deletion process leveraging Elixir’s pattern matching and functional error handling.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Summary}
+\vspace{20pt}
+  \begin{itemize}
+    \item This chapter discussed three essential data management operations in the \textit{Phoenix Framework}: \textbf{Show}, \textbf{Update}, and \textbf{Delete}, completing the full \textbf{CRUD} (\textit{Create, Read, Update, Delete}) cycle.  
+    \item It demonstrated how the \texttt{Router}, \texttt{Controller}, and \texttt{View} work together to handle user requests, process data, and present results through a consistent interface.  
+    \item The \texttt{show/2} function displays queue details, \texttt{edit/2} and \texttt{update/2} manage data modifications, and \texttt{delete/2} performs secure record removal with user feedback.  
+    \item These implementations highlight the functional and declarative power of Elixir in building efficient, maintainable, and structured web applications.  
+    \item Understanding these operations enables developers to manage data lifecycles while maintaining consistent business logic and user interface design in Phoenix applications.  
+  \end{itemize}
+\end{frame}
+
+
+\end{document}
