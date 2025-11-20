@@ -1,4 +1,937 @@
-\chapter{Open Authentication Menggunakan GitHub}
+\chapter{GitHub OAuth di Phoenix}
 
 \section{Pendahuluan}
-Test
+OAuth adalah standar autentikasi modern yang memungkinkan aplikasi untuk memverifikasi identitas pengguna tanpa perlu mengelola kata sandi secara langsung. Dengan pendekatan ini, aplikasi cukup meminta izin kepada penyedia layanan seperti GitHub untuk mengakses informasi dasar pengguna secara aman. Hal ini tidak hanya mengurangi risiko keamanan, tetapi juga meningkatkan kenyamanan pengguna karena mereka dapat masuk ke aplikasi tanpa membuat akun baru.
+
+Dalam konteks Phoenix Framework, integrasi OAuth dapat dilakukan secara mudah menggunakan pustaka \texttt{Ueberauth}. Pustaka ini bertindak sebagai middleware yang menangani seluruh alur autentikasi, mulai dari mengalihkan pengguna ke GitHub hingga menerima data profil saat proses login selesai. Dengan memanfaatkan \texttt{ueberauth\_github}, aplikasi Phoenix dapat menyediakan fitur “Login dengan GitHub” secara cepat, aman, dan sesuai praktik terbaik dalam pengembangan web modern.
+
+
+\section{How OAuth Works}
+
+OAuth 2.0 bekerja dengan melibatkan beberapa komponen utama: \emph{resource owner} (pengguna), \emph{client} yang meminta akses (dalam konteks ini adalah aplikasi Phoenix di sisi server), \emph{authorization server} (GitHub yang memverifikasi identitas pengguna dan menerbitkan token), serta \emph{resource server} (API GitHub yang menyimpan data profil pengguna). Alih-alih aplikasi meminta username dan password GitHub secara langsung, OAuth menggunakan mekanisme \emph{authorization code} untuk memastikan proses autentikasi dan otorisasi berlangsung aman. Aplikasi cukup mengarahkan pengguna ke GitHub, pengguna login dan memberikan izin, lalu GitHub mengirimkan sebuah kode singkat yang hanya dapat dipakai oleh server aplikasi untuk memperoleh \emph{access token}. Token inilah yang dipakai server untuk mengambil data profil pengguna secara aman tanpa pernah melihat kata sandi GitHub.
+
+Dalam skenario login menggunakan GitHub di Phoenix Framework, alur komunikasi melibatkan tiga pihak: \textbf{Web Browser} sebagai \emph{frontend client}, \textbf{Phoenix App} sebagai \emph{backend server sekaligus OAuth client}, dan \textbf{GitHub} sebagai \emph{authorization server} sekaligus \emph{resource server}. Prosesnya berlangsung sebagai berikut: (1) pengguna mengklik tombol \emph{“Login with GitHub”} pada browser, (2) browser meminta endpoint login di Phoenix, (3) Phoenix mengarahkan (redirect) browser ke GitHub untuk proses login dan consent, (4) setelah pengguna menyetujui, GitHub mengirimkan \emph{authorization code} kembali ke endpoint callback Phoenix melalui browser, (5) Phoenix menukar kode tersebut dengan \emph{access token} melalui permintaan server-to-server yang aman, dan (6) dengan token itu Phoenix meminta data profil pengguna ke GitHub dan membuat sesi login di aplikasinya. Dengan cara ini, kata sandi GitHub tidak pernah berada di browser maupun di Phoenix, tetapi identitas pengguna tetap dapat diverifikasi secara terpercaya.
+
+
+\begin{figure}[h]
+    \centering
+    \begin{tikzpicture}[
+        >=Stealth,
+        node distance=1cm,
+        actor/.style={
+          rectangle,
+          draw,
+          rounded corners,
+          minimum width=1cm,
+          minimum height=1cm,
+          align=center
+        },
+        seq/.style={font=\footnotesize}
+    ]
+
+    % Tiga aktor utama
+    \node[actor, fill=blue!20] (browser) {\textbf{Web Browser}\\\textbf{(User /}\\\textbf{Frontend Client)}};
+    \node[actor, right=of browser, fill=green!20] (server) {\textbf{Phoenix App}\\(\textbf{Server /} \\\textbf{OAuth Client)}};
+    \node[actor, right=of server, fill=red!20] (github) {\textbf{GitHub}\\\textbf{(Authorization \&} \\\textbf{Resource Server)}};
+
+    % Lifeline (garis putus-putus ke bawah)
+    \draw[dashed] (browser.south) -- ($(browser.south)+(0,-7)$);
+    \draw[dashed] (server.south)  -- ($(server.south)+(0,-7)$);
+    \draw[dashed] (github.south)  -- ($(github.south)+(0,-7)$);
+
+    % Koordinat langkah (vertikal)
+    \coordinate (b1) at ($(browser.south)+(0,-0.8)$);
+    \coordinate (s1) at ($(server.south) +(0,-0.8)$);
+
+    \coordinate (b2) at ($(browser.south)+(0,-1.6)$);
+    \coordinate (s2) at ($(server.south) +(0,-1.6)$);
+
+    \coordinate (b3) at ($(browser.south)+(0,-2.4)$);
+    \coordinate (g3) at ($(github.south) +(0,-2.4)$);
+
+    \coordinate (b4) at ($(browser.south)+(0,-3.2)$);
+    \coordinate (g4) at ($(github.south) +(0,-3.2)$);
+
+    \coordinate (b5) at ($(browser.south)+(0,-4.0)$);
+    \coordinate (s5) at ($(server.south) +(0,-4.0)$);
+
+    \coordinate (s6) at ($(server.south) +(0,-4.8)$);
+    \coordinate (g6) at ($(github.south) +(0,-4.8)$);
+
+    \coordinate (s7) at ($(server.south) +(0,-5.6)$);
+    \coordinate (g7) at ($(github.south) +(0,-5.6)$);
+
+    \coordinate (s8) at ($(server.south) +(0,-6.4)$);
+    \coordinate (b8) at ($(browser.south)+(0,-6.4)$);
+
+    % 1. Browser -> Server: minta login
+    \draw[->] (b1) -- (s1)
+      node[midway, above, seq]{\textbf{1. Browser meminta /auth/github (user klik "Login with GitHub")}};
+
+    % 2. Server -> Browser: redirect ke GitHub
+    \draw[->] (s2) -- (b2)
+      node[midway, above, seq]{\textbf{2. Server mengirim redirect ke GitHub (authorization request + client\_id)}};
+
+    % 3. Browser -> GitHub: authorization request
+    \draw[->] (b3) -- (g3)
+      node[midway, above, seq]{\textbf{3. Browser mengikuti redirect dan mengirim authorization request ke GitHub}};
+
+    % 4. GitHub -> Browser: halaman login/consent
+    \draw[->] (g4) -- (b4)
+      node[midway, above, seq]{\textbf{4. GitHub menampilkan halaman login dan consent ke browser}};
+
+    % 5. Browser -> Server: callback berisi authorization code
+    \draw[->] (b5) -- (s5)
+      node[midway, above, seq]{\textbf{5. Setelah disetujui, browser memanggil callback server dengan authorization code}};
+
+    % 6. Server -> GitHub: tukar code dengan token
+    \draw[->] (s6) -- (g6)
+      node[midway, above, seq]{\textbf{6. Server mengirim permintaan token ke GitHub (berisi authorization code)}};
+
+    % 7. GitHub -> Server: access token (+ profil)
+    \draw[->] (g7) -- (s7)
+      node[midway, above, seq]{\textbf{7. GitHub membalas dengan access token dan (opsional) data profil user}};
+
+    % 8. Server -> Browser: sesi dibuat, redirect ke dashboard
+    \draw[->] (s8) -- (b8)
+      node[midway, above, seq]{\textbf{8. Server membuat sesi login dan redirect browser ke dashboard aplikasi}};
+
+    \end{tikzpicture}
+    \caption{Alur OAuth 2.0 Authorization Code Flow: interaksi antara Web Browser, Phoenix Server
+    (OAuth client), dan GitHub (authorization \& resource server).}
+\end{figure}
+
+
+
+
+
+
+\section{Migration}
+
+Untuk menyimpan data pengguna yang login melalui GitHub, kita perlu membuat sebuah tabel \texttt{users} di dalam basis data. Tabel ini akan menyimpan informasi dasar seperti email, penyedia autentikasi (\texttt{provider}), serta \texttt{access token} yang diterima dari GitHub. Token ini dapat digunakan untuk memanggil API GitHub jika aplikasi membutuhkan data lebih lanjut di kemudian hari. Pembuatan tabel dilakukan menggunakan \emph{migration} pada Ecto, yaitu mekanisme untuk mendefinisikan dan memodifikasi struktur database secara terkontrol dan dapat direproduksi.
+
+Migration berikut dibuat di dalam direktori \texttt{priv/repo/migrations/} dengan nama \texttt{20251102090628\_add\_users.exs}. Migration ini mendefinisikan sebuah tabel baru bernama \texttt{users} yang memiliki kolom \texttt{:email}, \texttt{:provider}, dan \texttt{:token}. Ecto juga akan menambahkan kolom \texttt{inserted\_at} dan \texttt{updated\_at} secara otomatis melalui \texttt{timestamps()}. Setelah migration dibuat, langkah selanjutnya adalah menjalankannya menggunakan perintah \texttt{mix ecto.migrate} agar struktur tabel benar-benar diterapkan ke dalam database aplikasi.
+
+\begin{lstlisting}[language=Elixir, caption={Migration: priv/repo/migrations/20251102090628\_add\_users.exs}]
+defmodule Hiwi.Repo.Migrations.AddUsers do
+  use Ecto.Migration
+
+  def change do
+    create table(:users) do
+      add :email, :string
+      add :provider, :string
+      add :token, :string
+      timestamps()
+    end
+  end
+end
+\end{lstlisting}
+
+Untuk menerapkan migration ini ke dalam database, jalankan perintah berikut di terminal:
+
+\begin{lstlisting}[language=bash, caption={Menjalankan migration}]
+mix ecto.migrate
+\end{lstlisting}
+
+Jika migration berjalan dengan sukses, Anda akan melihat output yang kurang lebih seperti berikut:
+
+\begin{lstlisting}[language=bash]
+== Running 20251102090628 Hiwi.Repo.Migrations.AddUsers.change/0 forward
+== Migrated 20251102090628 in 0.03s
+\end{lstlisting}
+
+Dengan demikian, tabel \texttt{users} kini telah tersedia dan siap digunakan untuk menyimpan data autentikasi GitHub pada tahap implementasi berikutnya.
+
+
+
+\section{Model}
+
+Setelah membuat tabel \texttt{users} melalui migrasi, langkah berikutnya adalah mendefinisikan struktur data yang akan digunakan oleh aplikasi untuk berinteraksi dengan baris-baris di tabel tersebut. Pada Phoenix dan Ecto, struktur data ini didefinisikan melalui \emph{schema} di dalam sebuah modul. Schema berfungsi sebagai representasi dalam kode dari struktur tabel di basis data, termasuk kolom, tipe data, serta fungsi validasi.
+
+Pada aplikasi ini, kita membuat sebuah modul \texttt{Hiwi.User} yang menjadi representasi dari tabel \texttt{users}. Modul ini mendeklarasikan field yang tersedia (\texttt{email}, \texttt{provider}, dan \texttt{token}), termasuk timestamp default, serta menyediakan fungsi \texttt{changeset/2} untuk memeriksa dan memvalidasi data sebelum disimpan ke basis data.
+
+\begin{lstlisting}[language=Elixir, caption={File: lib/hiwi/user.ex}]
+defmodule Hiwi.User do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  schema "users" do
+    field :email, :string
+    field :provider, :string
+    field :token, :string
+    timestamps(type: :utc_datetime)
+  end
+
+  def changeset(user, attrs) do
+    user
+    |> cast(attrs, [:email, :provider, :token])
+    |> validate_required([:email, :provider, :token])
+  end
+end
+\end{lstlisting}
+
+Penjelasan komponen penting dari schema di atas:
+
+\begin{itemize}
+  \item \textbf{\texttt{use Ecto.Schema}}  
+  Mengaktifkan fitur schema Ecto di dalam modul, memungkinkan kita mendeklarasikan struktur tabel.
+
+  \item \textbf{\texttt{schema "users" do ... end}}  
+  Menentukan nama tabel yang dipetakan dan daftar kolom (field) di dalamnya. Setiap \texttt{field} memiliki tipe data yang sesuai dengan database.
+
+  \item \textbf{\texttt{timestamps(type: :utc\_datetime)}}  
+  Menambahkan kolom \texttt{inserted\_at} dan \texttt{updated\_at} secara otomatis dengan tipe waktu UTC. Phoenix menggunakan kolom ini untuk mencatat waktu pembuatan dan pembaruan data.
+
+  \item \textbf{\texttt{changeset/2}}  
+  Fungsi penting untuk memproses input yang datang dari luar (misalnya dari OAuth GitHub). Fungsi ini:
+  \begin{itemize}
+    \item mengambil data awal (\texttt{user}) dan parameter baru (\texttt{attrs}),
+    \item memilih (cast) hanya field yang diizinkan,
+    \item memvalidasi bahwa \texttt{email}, \texttt{provider}, dan \texttt{token} wajib diisi.
+  \end{itemize}
+  Ecto akan menolak data yang tidak lolos validasi, sehingga membantu menjaga integritas data dalam basis data.
+\end{itemize}
+
+Model \texttt{User} ini kemudian dapat digunakan di dalam controller atau konteks lain untuk membuat, memperbarui, atau mengambil data pengguna yang login melalui GitHub. Jika di kemudian hari Anda ingin menambah field seperti \texttt{name}, \texttt{avatar\_url}, atau \texttt{github\_id}, schema ini dapat dengan mudah diperluas mengikuti kebutuhan aplikasi.
+
+\section{Depedencies}
+
+Untuk mendukung proses autentikasi menggunakan OAuth di Phoenix, kita memanfaatkan ekosistem \texttt{Ueberauth}. \texttt{Ueberauth} adalah sebuah \emph{pluggable authentication system} untuk Elixir yang menyediakan kerangka kerja umum untuk berbagai strategi login (\emph{providers}) seperti GitHub, Google, dan lain-lain.\footnote{Dokumentasi Ueberauth: \url{https://github.com/ueberauth/ueberauth}}  
+Dalam bab ini, kita menggunakan strategi khusus GitHub melalui pustaka \texttt{ueberauth\_github}, yaitu adaptor yang menghubungkan Ueberauth dengan OAuth 2.0 milik GitHub.\footnote{Dokumentasi Ueberauth GitHub: \url{https://github.com/ueberauth/ueberauth_github}} Pustaka ini menangani detail teknis seperti membangun URL otorisasi, menukar \emph{authorization code} dengan \emph{access token}, dan mengambil data profil pengguna dari GitHub.
+
+Agar kedua pustaka ini dapat digunakan di dalam aplikasi Phoenix, kita perlu menambahkan keduanya sebagai dependency di \texttt{mix.exs}. Selain itu, modul aplikasi juga perlu diberi tahu bahwa aplikasi OTP \texttt{:ueberauth} dan \texttt{:ueberauth\_github} harus dijalankan bersama aplikasi utama. Cuplikan berikut menunjukkan bagian penting dari berkas \texttt{mix.exs} yang perlu disesuaikan.
+
+\begin{lstlisting}[language=Elixir, caption={Menambahkan Ueberauth dan Ueberauth GitHub di mix.exs}]
+defmodule Hiwi.MixProject do
+  use Mix.Project
+  ...
+  def application do
+    [
+      mod: {Hiwi.Application, []},
+      extra_applications: [ :logger, :runtime_tools, 
+							:ueberauth, :ueberauth_github ]
+    ]
+  end
+  ...
+  defp deps do
+    [
+       ...
+      # dependency OAuth
+      {:ueberauth, "~> 0.10"},
+      {:ueberauth_github, "~> 0.8.3"}
+    ]
+  end
+  ...
+end
+\end{lstlisting}
+
+Setelah menambahkan entri di atas, jalankan perintah berikut untuk mengambil dan mengkompilasi dependency yang baru:
+
+\begin{lstlisting}[language=bash, caption={Mengambil dependency Ueberauth dan Ueberauth GitHub}]
+$ mix deps.get
+$ mix compile
+\end{lstlisting}
+
+Pada tahap ini, aplikasi Phoenix sudah mengenali pustaka \texttt{Ueberauth} dan \texttt{Ueberauth\_github}. Langkah berikutnya (yang akan dijelaskan di bagian konfigurasi) adalah mengatur provider GitHub di berkas konfigurasi, menambahkan route \texttt{/auth/github} dan \texttt{/auth/github/callback}, serta menghubungkannya dengan controller yang memproses data profil pengguna dari GitHub.
+
+
+\section{GitHub}
+
+Sebelum aplikasi Phoenix dapat menggunakan GitHub sebagai penyedia autentikasi OAuth, kita harus terlebih dahulu membuat sebuah \textit{OAuth App} di akun GitHub. OAuth App inilah yang memberikan \textbf{Client ID} dan \textbf{Client Secret}—dua data penting yang digunakan aplikasi untuk berkomunikasi dengan GitHub secara aman. Berikut adalah langkah-langkah lengkap untuk membuat dan mengonfigurasi aplikasi OAuth di GitHub:
+
+\begin{enumerate}
+  \item \textbf{Login ke akun GitHub Anda}.  
+        Pastikan Anda menggunakan akun pribadi atau akun organisasi yang memiliki izin untuk membuat OAuth App.
+
+  \item \textbf{Buka halaman pengaturan OAuth GitHub}.  
+        Pada bagian pojok kanan atas, klik foto profil Anda, lalu pilih:
+        \[
+        \texttt{Settings $\rightarrow$ Developer Settings $\rightarrow$ OAuth Apps}
+        \]
+        Di halaman ini Anda akan melihat daftar OAuth App yang pernah dibuat sebelumnya (jika ada).
+
+  \item \textbf{Klik tombol ``New OAuth App'' untuk membuat aplikasi baru}.  
+        Anda akan diminta mengisi informasi aplikasi:
+
+        \begin{itemize}
+          \item \textbf{Application Name}: \texttt{Hiwi}  
+                Nama aplikasi yang ditampilkan kepada pengguna saat proses login.
+
+          \item \textbf{Homepage URL}: \texttt{https://www.hiwi.com}  
+                URL resmi aplikasi Anda. Untuk pengembangan lokal, dapat menggunakan URL proyek Anda.
+
+          \item \textbf{Application Description}: \texttt{Queue Management System}  
+                Deskripsi singkat mengenai tujuan aplikasi.
+
+          \item \textbf{Authorization Callback URL}:  
+                \texttt{http://localhost:4000/auth/github/callback}  
+                URL penting yang akan dipanggil GitHub setelah pengguna menyetujui proses login.  
+                \textbf{Catatan}: pastikan URL ini sesuai dengan route callback aplikasi Phoenix Anda.
+        \end{itemize}
+
+  \item \textbf{Klik tombol ``Register application''}.  
+        GitHub akan membuat OAuth App baru berdasarkan data yang Anda masukkan.
+
+  \item \textbf{Buka kembali aplikasi OAuth yang telah dibuat}.  
+        Di daftar OAuth Apps, klik nama aplikasi Anda (\texttt{Hiwi}), lalu pilih opsi \texttt{Edit} untuk melihat detail lebih lanjut.
+
+  \item \textbf{Salin dan simpan \texttt{Client ID}}.  
+        Client ID adalah identitas publik aplikasi Anda. Nilai ini akan digunakan pada konfigurasi Ueberauth.
+
+  \item \textbf{Generate Client Secret baru}.  
+        Klik tombol \texttt{Generate a new client secret}. GitHub akan menampilkan \emph{secret} satu kali saja:
+        \begin{itemize}
+          \item Salin dan simpan kode tersebut ke tempat yang aman.
+          \item Jika halaman ditutup sebelum disalin, kode tidak dapat dilihat kembali—Anda harus membuatnya ulang.
+        \end{itemize}
+\end{enumerate}
+
+Setelah langkah-langkah ini selesai, Anda kini memiliki:
+\begin{itemize}
+  \item \textbf{GITHUB\_CLIENT\_ID}
+  \item \textbf{GITHUB\_CLIENT\_SECRET}
+\end{itemize}
+
+Keduanya harus dimasukkan sebagai \textit{environment variables} dan digunakan dalam konfigurasi Ueberauth agar aplikasi dapat melakukan proses OAuth dengan GitHub secara aman.
+
+\section{Configuration}
+
+Setelah menambahkan dependency \texttt{Ueberauth} dan \texttt{ueberauth\_github}, langkah berikutnya adalah melakukan konfigurasi pada aplikasi Phoenix agar dapat berkomunikasi dengan GitHub melalui OAuth 2.0. Konfigurasi ini menentukan bagaimana aplikasi mendapatkan \textit{client ID} dan \textit{client secret} yang dikeluarkan oleh GitHub serta modul strategi OAuth mana yang harus dipakai. Semua pengaturan tersebut biasanya diletakkan di dalam berkas \texttt{config/config.exs}.
+
+Konfigurasi berikut memerintahkan Ueberauth untuk menggunakan \texttt{Ueberauth.Strategy.Github.OAuth} dan membaca \texttt{client\_id} serta \texttt{client\_secret} dari \emph{environment variables}. Cara ini jauh lebih aman dibandingkan menuliskannya secara langsung dalam kode, karena mencegah kredensial sensitif masuk ke dalam repository Git.
+
+\begin{lstlisting}[language=Elixir, caption={Konfigurasi OAuth GitHub di config/config.exs}]
+import Config
+
+# ...
+config :ueberauth, Ueberauth.Strategy.Github.OAuth,
+  client_id: System.get_env("GITHUB_CLIENT_ID"),
+  client_secret: System.get_env("GITHUB_CLIENT_SECRET")
+# ...
+\end{lstlisting}
+
+Pada saat aplikasi dijalankan, Ueberauth akan membaca nilai \texttt{GITHUB\_CLIENT\_ID} dan \texttt{GITHUB\_CLIENT\_SECRET} dari lingkungan sistem (environment). Untuk memastikan nilai ini tersedia, kita perlu mendefinisikannya terlebih dahulu di lingkungan shell yang digunakan.
+
+\section{Environment Variables}
+
+Environment variable adalah cara yang aman untuk menyimpan data rahasia seperti token, API key, atau \textit{client secret}. Nilai ini tidak disimpan dalam kode sumber, melainkan dimuat oleh shell sebelum aplikasi dijalankan. Pada sistem Linux atau macOS, variabel lingkungan dapat didefinisikan di dalam berkas konfigurasi shell seperti \texttt{\textasciitilde/.bashrc}, \texttt{\textasciitilde/.zshrc}, atau \texttt{\textasciitilde/.profile} tergantung shell yang Anda gunakan.
+
+Berikut adalah contoh cara menambahkan variabel lingkungan untuk GitHub OAuth di file \texttt{\textasciitilde/.bashrc} menggunakan editor \texttt{nano}:
+
+\begin{lstlisting}[language=bash, caption={Menambahkan variabel lingkungan di ~/.bashrc}]
+$ nano ~/.bashrc
+
+# Tambahkan baris berikut di bagian bawah file
+
+# GitHub OAuth
+export GITHUB_CLIENT_ID=put your github client id here
+export GITHUB_CLIENT_SECRET=put your github client secret code here
+\end{lstlisting}
+
+Setelah menyimpan perubahan, lakukan \texttt{reload} terhadap file konfigurasi agar environment variable dapat digunakan pada sesi terminal yang sedang berjalan:
+
+\begin{lstlisting}[language=bash, caption={Memuat ulang ~/.bashrc}]
+$ source ~/.bashrc
+\end{lstlisting}
+
+Atau jika Anda membuka terminal baru setelah mengubah \texttt{.bashrc}, environment variable akan otomatis tersedia.
+
+Dengan konfigurasi dan environment variable ini, aplikasi Phoenix kini dapat melakukan proses OAuth ke GitHub melalui Ueberauth. Pada saat runtime, \texttt{client\_id} dan \texttt{client\_secret} akan dibaca dari lingkungan dan digunakan untuk menghubungkan aplikasi dengan layanan otorisasi GitHub secara aman.
+
+
+\section{View}
+
+Agar pengguna dapat memulai proses autentikasi menggunakan GitHub, aplikasi perlu menyediakan sebuah tautan yang mengarah ke endpoint \texttt{/auth/github}. Endpoint ini adalah pintu masuk utama ke alur OAuth Ueberauth, di mana pengguna akan diarahkan ke GitHub untuk login dan memberikan izin akses. Biasanya, tautan ini ditempatkan pada bagian navigasi utama (navbar) atau menu aplikasi sehingga mudah ditemukan oleh pengguna.
+
+Dalam aplikasi Phoenix, struktur layout umum didefinisikan di dalam berkas:
+
+\begin{center}
+\texttt{lib/hiwi\_web/components/layouts.ex}
+\end{center}
+
+Berkas ini mengatur berbagai komponen utama tampilan seperti header, footer, dan navigation bar. Untuk menambahkan tombol OAuth GitHub, kita cukup menambahkan elemen HTML dalam bentuk tag \texttt{<a>} ke dalam daftar menu.
+
+Berikut cuplikan kode yang menambahkan tombol \textbf{OAuth GitHub} ke dalam navigasi:
+
+\begin{lstlisting}[language=html, caption={Menambahkan tombol OAuth GitHub pada layout aplikasi}]
+...
+<li>
+  <a href="http://localhost:4000/auth/github" class="btn btn-ghost">
+    OAuth GitHub
+  </a>
+</li>
+<li>
+  <a href="https://phoenixframework.org/" class="btn btn-ghost">
+    Website
+  </a>
+</li>
+...
+\end{lstlisting}
+
+Penjelasan dari elemen tersebut:
+
+\begin{itemize}
+  \item \textbf{\texttt{<a href="/auth/github">}}  
+        Ini adalah tautan untuk memulai alur autentikasi OAuth. Saat pengguna mengklik tombol ini, request dikirim ke route \texttt{/auth/github} yang akan ditangani Ueberauth secara otomatis.
+
+  \item \textbf{\texttt{"btn btn-ghost"}}  
+        Kelas CSS ini biasanya berasal dari framework seperti Tailwind atau DaisyUI.  
+        \begin{itemize}
+            \item \texttt{btn} memberikan gaya tombol dasar.
+            \item \texttt{btn-ghost} memberikan tampilan transparan elegan sesuai tema.
+        \end{itemize}
+
+  \item \textbf{Penempatan di dalam \texttt{<li>}}  
+        Mengindikasikan bahwa tombol ini adalah bagian dari menu navigasi (list item) di header / navbar aplikasi.
+
+  \item \textbf{URL lokal \texttt{http://localhost:4000/auth/github}}  
+        Pada tahap pengembangan, aplikasi berjalan pada port 4000.  
+        Pada tahap produksi Anda dapat menggantinya dengan URL domain utama, misalnya:
+        \[
+          \texttt{https://www.hiwi.com/auth/github}
+        \]
+\end{itemize}
+
+Ketika tombol \textbf{OAuth GitHub} diklik, alur akan berlangsung sebagai berikut:
+
+\begin{enumerate}
+  \item Browser mengirim permintaan \texttt{/auth/github} ke Phoenix Server.
+  \item Phoenix mengeksekusi plug Ueberauth.
+  \item Pengguna diarahkan ke halaman login GitHub.
+  \item Setelah login, GitHub mengembalikan \texttt{authorization code} ke callback.
+  \item Phoenix menangani callback dan membuat sesi pengguna.
+\end{enumerate}
+
+Selain dalam layout utama, tombol ini juga dapat ditempatkan:
+
+\begin{itemize}
+  \item pada halaman login khusus,
+  \item sebagai bagian dari modal login,
+  \item di halaman profil pengguna untuk re-authorize,
+  \item dalam menu dropdown di pojok kanan atas.
+\end{itemize}
+
+Jika Anda ingin menambahkan ikon GitHub secara visual (misalnya dari Heroicons atau Bootstrap Icons), atau ingin membuat tombol versi \texttt{LiveComponent}, saya juga dapat membantu menyesuaikannya.
+
+
+\section{Revoking Access / Logout}
+
+Pada aplikasi yang menggunakan OAuth, proses logout tidak hanya berarti menghapus sesi (\textit{session}) pengguna di sisi aplikasi. Karena autentikasi dilakukan oleh pihak ketiga (dalam hal ini GitHub), terkadang pengguna atau administrator perlu mencabut (\textit{revoke}) akses yang pernah diberikan. GitHub menyediakan dua mekanisme revocation: mencabut akses untuk satu pengguna tertentu, atau mencabut seluruh token pada aplikasi OAuth. Kedua opsi ini penting, terutama ketika ingin memastikan keamanan akses atau saat aplikasi mengalami perubahan besar.
+
+\subsection*{Mencabut Akses untuk Satu Pengguna (Individual User)}
+Jika seorang pengguna tidak lagi ingin mengizinkan aplikasi tertentu mengakses akun GitHub miliknya, pengguna tersebut dapat mencabut token OAuth secara manual melalui halaman pengaturan GitHub. Ini adalah skenario umum ketika pengguna ingin meningkatkan keamanan akun atau merasa tidak lagi memerlukan integrasi dengan aplikasi terkait.
+
+Untuk mencabut akses dari satu pengguna:
+
+\begin{enumerate}
+    \item Masuk ke akun GitHub Anda.
+    \item Buka menu:
+    \[
+      \texttt{Settings $\rightarrow$ Applications $\rightarrow$ Authorized OAuth Apps}
+    \]
+    \item Cari aplikasi yang ingin dicabut aksesnya.
+    \item Klik ikon tiga titik (\texttt{\vdots}) di bagian kanan aplikasi.
+    \item Pilih opsi \textbf{Revoke}.
+\end{enumerate}
+
+Setelah akses dicabut, token yang dimiliki aplikasi menjadi tidak valid. Aplikasi yang mencoba menggunakan token tersebut untuk memanggil API GitHub akan menerima respon \textit{Unauthorized}. Untuk menggunakan aplikasi kembali, pengguna harus melakukan proses login OAuth ulang.
+
+\subsection*{Mencabut Seluruh Token Pengguna (Revoke All User Tokens)}
+Selain mencabut akses per pengguna, GitHub juga menyediakan opsi untuk mencabut seluruh token OAuth dari semua pengguna yang pernah menghubungkan aplikasinya. Opsi ini biasanya dibutuhkan ketika:
+
+\begin{itemize}
+    \item terdapat perubahan signifikan di aplikasi,
+    \item terjadi insiden keamanan (misalnya token bocor),
+    \item aplikasi dipindahkan atau direstrukturisasi,
+    \item administrator ingin mereset seluruh akses pengguna.
+\end{itemize}
+
+Untuk mencabut semua token pengguna:
+
+\begin{enumerate}
+    \item Masuk ke GitHub dan buka:
+    \[
+      \texttt{Settings $\rightarrow$ Developer Settings $\rightarrow$ OAuth Apps}
+    \]
+    \item Pilih aplikasi OAuth yang ingin Anda kelola.
+    \item Klik tombol \textbf{Edit}.
+    \item Tekan tombol \textbf{Revoke All User Tokens}.
+\end{enumerate}
+
+Setelah fitur ini dijalankan, semua \emph{access token} yang pernah dihasilkan untuk aplikasi tersebut menjadi tidak valid. Hal ini membuat seluruh pengguna harus melalui proses login OAuth kembali agar aplikasi mendapatkan token baru.
+
+\subsection*{Dampak Revocation pada Aplikasi Phoenix}
+Ketika token dicabut:
+
+\begin{itemize}
+    \item Permintaan API GitHub yang menggunakan token lama akan gagal.
+    \item Aplikasi Phoenix dapat mendeteksi kegagalan ini dan mengarahkan pengguna untuk login ulang.
+    \item Sesi lokal di aplikasi tetap valid sampai dihapus, tetapi akses ke GitHub tidak dapat dilakukan hingga token baru diterima.
+\end{itemize}
+
+Dengan memahami mekanisme revocation ini, administrator dan pengguna dapat menjaga keamanan akses aplikasi yang terintegrasi dengan layanan OAuth seperti GitHub.
+
+\section{Router}
+
+Pada aplikasi Phoenix, semua rute HTTP didefinisikan di dalam file:
+
+\begin{center}
+\texttt{lib/hiwi\_web/router.ex}
+\end{center}
+
+Router berfungsi sebagai penghubung antara browser, server Phoenix, dan GitHub dalam proses OAuth. Ketika pengguna mengakses URL seperti \texttt{/auth/github}, router meneruskan permintaan tersebut ke \texttt{AuthController} yang akan memulai alur autentikasi menggunakan Ueberauth.
+
+Phoenix menggunakan konsep \textbf{pipeline}, \textbf{scope}, dan \textbf{controller actions}. Untuk menambahkan dukungan OAuth GitHub, kita membuat sebuah scope khusus \texttt{/auth} yang menangani permintaan login dan callback.
+
+\begin{lstlisting}[language=Elixir, caption={Router OAuth GitHub di lib/hiwi\_web/router.ex}]
+defmodule HiwiWeb.Router do
+  use HiwiWeb, :router
+
+  # ...
+
+  scope "/auth", HiwiWeb do
+    pipe_through :browser
+
+    # Memulai proses OAuth
+    get "/:provider", AuthController, :request
+
+    # Callback setelah login di GitHub
+    get "/:provider/callback", AuthController, :callback
+  end
+
+  # ...
+end
+\end{lstlisting}
+
+\subsection*{Contoh URL yang Digunakan}
+
+URL untuk memulai proses OAuth:
+
+\begin{lstlisting}[language=bash]
+/auth/github
+\end{lstlisting}
+
+URL callback OAuth (harus sama seperti yang didaftarkan di GitHub OAuth App):
+
+\begin{lstlisting}[language=bash]
+/auth/github/callback
+\end{lstlisting}
+
+Contoh URL lengkap dengan domain lokal:
+
+\begin{lstlisting}[language=bash]
+http://localhost:4000/auth/github
+http://localhost:4000/auth/github/callback
+\end{lstlisting}
+
+\subsection*{Penjelasan Rute}
+
+\begin{itemize}
+  \item \textbf{scope "/auth"}  
+        Mengelompokkan semua rute autentikasi OAuth.
+
+  \item \textbf{get "/:provider"}  
+        Memulai login OAuth. Dalam kasus ini, provider adalah \texttt{github}, sehingga URL menjadi:
+
+        \begin{lstlisting}[language=bash]
+        /auth/github
+        \end{lstlisting}
+
+  \item \textbf{get "/:provider/callback"}  
+        Endpoint untuk menerima authorization code dari GitHub:
+
+        \begin{lstlisting}[language=bash]
+        /auth/github/callback
+        \end{lstlisting}
+
+        Endpoint ini menangani:
+        \begin{itemize}
+            \item penerimaan authorization code,
+            \item pertukaran code → access token,
+            \item pengambilan data profil user,
+            \item pembuatan sesi login.
+        \end{itemize}
+\end{itemize}
+
+
+\section{Controller}
+
+Setelah melakukan konfigurasi Ueberauth dan menambahkan rute untuk memulai serta menerima callback OAuth, langkah penting berikutnya adalah membuat controller yang akan menangani proses tersebut. Controller bertanggung jawab untuk:
+
+\begin{itemize}
+  \item menerima \texttt{authorization code} dari GitHub,
+  \item meminta \emph{access token},
+  \item mengambil informasi pengguna,
+  \item membuat atau memuat user dari database,
+  \item membuat sesi login pengguna.
+\end{itemize}
+
+Pada aplikasi ini, seluruh proses tersebut ditangani oleh modul:
+
+\begin{center}
+\texttt{lib/hiwi\_web/controllers/auth\_controller.ex}
+\end{center}
+
+Kode lengkapnya sebagai berikut:
+
+\begin{lstlisting}[language=Elixir, caption={AuthController menangani OAuth GitHub callback}]
+defmodule HiwiWeb.AuthController do
+  use HiwiWeb, :controller
+  plug Ueberauth
+  alias Hiwi.User
+  alias Hiwi.Repo
+
+  def callback(conn, params) do
+    IO.puts("conn = " <> Kernel.inspect(conn))
+    IO.puts("conn: ")
+    IO.inspect(conn)
+    IO.puts("params = " <> Kernel.inspect(params))
+    %{"code" => _code, "provider" => provider, "state" => _state} = params
+    %{assigns: %{ueberauth_auth: auth}} = conn
+    %{credentials: %{token: token}, info: %{email: email, nickname: nickname}} = auth
+
+    user_params = %{
+      token: token,
+      email: email || nickname,
+      provider: provider
+    }
+
+    IO.puts("user_params = " <> Kernel.inspect(user_params))
+
+    changeset = User.changeset(%User{}, user_params)
+
+    signin(conn, changeset)
+  end
+
+  defp signin(conn, changeset) do
+    case insert_or_update_user(changeset) do
+      {:ok, user} ->
+        conn
+        |> put_flash(:info, "Good to see you again!")
+        |> put_session(:user_id, user.id)
+        |> redirect(to: "/")
+
+      {:error, reason} ->
+        conn
+        |> put_flash(:error, "Error when signing in: #{reason}")
+        |> redirect(to: "/")
+    end
+  end
+
+  defp insert_or_update_user(changeset) do
+    case Repo.get_by(User, email: changeset.changes.email) do
+      nil ->
+        Repo.insert(changeset)
+
+      user ->
+        {:ok, user}
+    end
+  end
+end
+\end{lstlisting}
+
+\subsection*{Penjelasan Alur Controller}
+
+\subsubsection*{1. \textbf{\texttt{plug Ueberauth}}}
+Baris ini memastikan bahwa setiap request pada rute:
+\begin{lstlisting}[language=bash]
+/auth/github
+/auth/github/callback
+\end{lstlisting}
+akan diproses oleh Ueberauth.  
+Ueberauth akan menghasilkan data autentikasi dan menambahkannya ke:
+
+\begin{lstlisting}[language=Elixir]
+conn.assigns.ueberauth_auth
+\end{lstlisting}
+
+\subsubsection*{2. \textbf{\texttt{callback/2}} — menerima respons GitHub}
+
+Saat GitHub mengembalikan authorization code, rute callback akan memanggil fungsi ini. Tahap ini:
+
+\begin{enumerate}
+  \item Mencetak \texttt{conn} dan \texttt{params} untuk debugging.
+  \item Mengekstrak \texttt{provider} dari parameter.
+  \item Mengambil informasi autentikasi dari:
+  \begin{lstlisting}[language=Elixir]
+  conn.assigns.ueberauth_auth
+  \end{lstlisting}
+  \item Mengambil:
+  \begin{itemize}
+      \item \textbf{access token} dari \texttt{auth.credentials.token}
+      \item \textbf{email atau nickname} dari \texttt{auth.info}
+  \end{itemize}
+  \item Menyusun \texttt{user\_params} untuk dimasukkan ke database.
+  \item Membuat changeset menggunakan \texttt{User.changeset/2}.
+  \item Meneruskan proses ke fungsi \texttt{signin/2}.
+\end{enumerate}
+
+\subsubsection*{3. \textbf{\texttt{signin/2}} — membuat sesi login}
+
+Fungsi ini bertanggung jawab untuk:
+
+\begin{itemize}
+  \item Memasukkan user baru atau memuat user lama,
+  \item Menyimpan \texttt{user\_id} ke dalam session:
+  \begin{lstlisting}[language=Elixir]
+  put_session(:user_id, user.id)
+  \end{lstlisting}
+  \item Menampilkan pesan flash,
+  \item Melakukan redirect ke halaman utama.
+\end{itemize}
+
+\subsubsection*{4. \textbf{\texttt{insert\_or\_update\_user/1}} — menyimpan data user}
+
+Fungsi ini memeriksa apakah email sudah ada di database:
+
+\begin{itemize}
+  \item Jika belum ada → user baru dimasukkan.
+  \item Jika sudah ada → user lama digunakan kembali (tidak membuat duplikasi).
+\end{itemize}
+
+\subsection*{Ringkasan Alur Controller}
+
+\begin{enumerate}
+  \item User klik \texttt{/auth/github}.
+  \item Ueberauth mengarahkan user ke GitHub.
+  \item GitHub mengembalikan authorization code ke callback.
+  \item \texttt{AuthController.callback} mengekstrak token dan profil user.
+  \item User disimpan atau dimuat dari database.
+  \item Session dibuat, dan user diarahkan ke halaman utama.
+\end{enumerate}
+
+Controller ini adalah inti dari proses login GitHub dengan OAuth.  
+Jika Anda ingin memperluasnya (misalnya menyimpan avatar GitHub, username, expiry token, atau menambah logout), saya bisa bantu menambahkannya.
+
+\section{Inspect / Debug}
+
+Selama proses pengembangan integrasi OAuth, sangat penting untuk melakukan debugging terhadap data yang diterima dari GitHub maupun struktur \texttt{conn} yang dibangun oleh Phoenix. Ueberauth secara otomatis mengisi data autentikasi di dalam:
+
+\begin{lstlisting}[language=Elixir]
+conn.assigns.ueberauth_auth
+\end{lstlisting}
+
+Untuk melihat isi objek tersebut, kita menggunakan fungsi bawaan Elixir seperti \texttt{IO.puts/1}, \texttt{Kernel.inspect/1}, dan \texttt{IO.inspect/1}. Teknik ini membantu memastikan bahwa:
+
+\begin{itemize}
+  \item token diterima dengan benar,
+  \item email / nickname terbaca,
+  \item provider benar (GitHub),
+  \item parameter callback lengkap (code, state, provider),
+  \item struktur \texttt{Plug.Conn} sudah sesuai.
+\end{itemize}
+
+Contoh kode debugging di dalam \texttt{callback/2}:
+
+\begin{lstlisting}[language=Elixir, caption={Cuplikan debug pada AuthController}]
+IO.puts("conn: ")
+IO.inspect(conn)
+IO.puts("params = " <> Kernel.inspect(params))
+IO.puts("user_params = " <> Kernel.inspect(user_params))
+\end{lstlisting}
+
+Ketika pengguna berhasil login menggunakan GitHub, dan GitHub memanggil kembali endpoint callback pada aplikasi, keluaran debugging tersebut dapat terlihat di terminal Phoenix. Contoh output di bawah ini menggunakan \texttt{lstlisting[language=bash]} untuk menampilkan hasil log secara jelas:
+
+\begin{lstlisting}[language=bash, caption={Output debug saat callback OAuth dipanggil}]
+conn: 
+%Plug.Conn{
+  ...
+  assigns: %{
+    ueberauth_auth: %Ueberauth.Auth{
+      provider: :github,
+      ...
+      info: %Ueberauth.Auth.Info{
+        name: "Alfa Yohannis",
+        ...
+        nickname: "alfa-yohannis",
+        ...
+      },
+      credentials: %Ueberauth.Auth.Credentials{
+        token: "something",
+        ...
+      },
+      ...
+    }
+  },
+  params: %{
+    "code" => "something",
+    "provider" => "github",
+    "state" => "something"
+  },
+  ...
+}
+
+params = %{
+  "code" => "something",
+  "provider" => "github",
+  "state" => "something"
+}
+
+user_params = %{
+  token: "something",
+  provider: "github",
+  email: "alfa-yohannis"
+}
+\end{lstlisting}
+
+\subsection*{Analisis Output}
+
+Beberapa poin penting dari debugging di atas:
+
+\begin{itemize}
+  \item \textbf{provider: :github} — menunjukkan bahwa Ueberauth berhasil mengenali provider.
+  \item \textbf{info.nickname / info.email} — GitHub terkadang tidak mengembalikan email jika disembunyikan; fallback ke nickname adalah solusi aman.
+  \item \textbf{credentials.token} — \emph{access token} GitHub yang digunakan aplikasi untuk mengambil data pengguna jika diperlukan.
+  \item \textbf{params["code"]} — kode otorisasi yang dikirim GitHub ke callback.
+  \item \textbf{user\_params} — data yang sudah diringkas dan siap disimpan dalam database.
+\end{itemize}
+
+Debug prints seperti ini sangat membantu untuk:
+
+\begin{itemize}
+  \item memastikan alur OAuth bekerja dengan benar,
+  \item menemukan error konfigurasi di GitHub,
+  \item memeriksa apakah struktur Ueberauth cocok dengan versi library,
+  \item mencari tahu jika email kosong atau hilang,
+  \item memverifikasi bahwa token berhasil masuk sebelum membuat sesi login.
+\end{itemize}
+
+Jika diperlukan, kita juga dapat memperluas debugging dengan:
+
+\begin{itemize}
+  \item menampilkan header pemanggilan,
+  \item mencetak seluruh \texttt{conn.assigns},
+  \item menyimpan token ke log file terpisah (untuk environment development).
+\end{itemize}
+
+\section{Demo}
+
+Setelah seluruh konfigurasi—mulai dari dependency, router, controller, hingga environment variables—selesai dilakukan, Anda dapat menguji alur OAuth GitHub secara langsung melalui aplikasi Phoenix. Bagian ini menunjukkan langkah-langkah praktis untuk melakukan \emph{end-to-end test} dari proses login menggunakan GitHub.
+
+\subsection*{1. Jalankan Server Phoenix}
+
+Pertama, pastikan server Phoenix aktif dan dapat menerima request dari browser. Jalankan perintah berikut di terminal:
+
+\begin{lstlisting}[language=bash]
+mix phx.server
+\end{lstlisting}
+
+Jika server berjalan dengan benar, Phoenix akan menampilkan log seperti:
+
+\begin{lstlisting}[language=bash]
+[info] Access HiwiWeb.Endpoint at http://localhost:4000
+\end{lstlisting}
+
+\subsection*{2. Akses Aplikasi di Browser}
+
+Buka browser Anda dan arahkan ke URL berikut:
+
+\begin{lstlisting}[language=bash]
+http://localhost:4000
+\end{lstlisting}
+
+Anda akan melihat halaman utama aplikasi Hiwi, lengkap dengan menu navigasi yang berisi tombol:
+
+\begin{lstlisting}[language=bash]
+OAuth GitHub
+\end{lstlisting}
+
+Biasanya tombol ini berada di bagian kiri atas sesuai struktur layout Anda.
+
+\subsection*{3. Klik Tombol "OAuth GitHub"}
+
+Klik tombol tersebut untuk memulai alur login OAuth. Router akan memanggil:
+
+\begin{lstlisting}[language=bash]
+/auth/github
+\end{lstlisting}
+
+dan Ueberauth akan mengarahkan browser Anda ke halaman otorisasi GitHub.
+
+\subsection*{4. Halaman "Authorize Application" Muncul}
+
+GitHub akan menampilkan halaman otorisasi yang biasanya berisi:
+
+\begin{itemize}
+  \item nama aplikasi (misalnya: \texttt{Hiwi}),
+  \item detail akses yang diminta,
+  \item akun GitHub yang sedang login,
+  \item tombol konfirmasi akses.
+\end{itemize}
+
+Anda akan melihat tombol:
+
+\begin{lstlisting}[language=bash]
+Authorize <username>
+\end{lstlisting}
+
+Klik tombol tersebut untuk memberikan izin kepada aplikasi Hiwi.
+
+\subsection*{5. GitHub Mengembalikan Callback ke Phoenix}
+
+Setelah tombol \texttt{Authorize} ditekan, GitHub akan mengarahkan kembali ke aplikasi Phoenix melalui URL:
+
+\begin{lstlisting}[language=bash]
+http://localhost:4000/auth/github/callback
+\end{lstlisting}
+
+Pada titik ini:
+
+\begin{itemize}
+  \item \texttt{AuthController.callback/2} dijalankan,
+  \item \emph{authorization code} dikonversi menjadi \emph{access token},
+  \item data profil user diambil,
+  \item perubahan user dibuat atau dicari dalam database,
+  \item sesi login disimpan di browser.
+\end{itemize}
+
+\subsection*{6. Flash Message Ditampilkan}
+
+Jika proses login berhasil, Anda akan diarahkan kembali ke halaman utama aplikasi dengan pesan flash seperti:
+
+\begin{lstlisting}[language=bash]
+Good to see you again!
+\end{lstlisting}
+
+Pesan ini berasal dari baris berikut di \texttt{AuthController}:
+
+\begin{lstlisting}[language=Elixir]
+put_flash(:info, "Good to see you again!")
+\end{lstlisting}
+
+Pesan ini menandakan bahwa:
+
+\begin{itemize}
+  \item OAuth GitHub berhasil,
+  \item user berhasil dimuat atau dibuat,
+  \item sesi pengguna berhasil dimulai.
+\end{itemize}
+
+\subsection*{7. Verifikasi Session Pengguna}
+
+Anda dapat memeriksa apakah session sudah tersimpan dengan melihat \texttt{user\_id} di dalam \texttt{conn}:
+
+\begin{lstlisting}[language=bash]
+:session => %{ "user_id" => 1 }
+\end{lstlisting}
+
+Artinya pengguna kini sudah “login” ke aplikasi Anda menggunakan GitHub OAuth.
+
+\bigskip
+
+Dengan langkah-langkah ini, alur login OAuth GitHub telah terverifikasi bekerja dari awal hingga akhir. Jika Anda ingin menambahkan:
+
+\begin{itemize}
+  \item tombol logout,
+  \item tampilan profil pengguna,
+  \item penyimpanan avatar GitHub,
+  \item atau autentikasi pada rute tertentu,
+\end{itemize}
+
+saya dapat membantu mengembangkan bab berikutnya.
+
+\section{Summary}
+
+Bab ini memperkenalkan cara mengintegrasikan GitHub OAuth ke dalam aplikasi Phoenix menggunakan pustaka Ueberauth dan strategi \texttt{ueberauth\_github}. Dimulai dari konsep dasar OAuth 2.0 (resource owner, client, authorization server, resource server) dan alur Authorization Code Flow, bab ini menjelaskan bagaimana browser, Phoenix App, dan GitHub saling berinteraksi tanpa pernah membagikan kata sandi GitHub secara langsung. Dengan alur ini, aplikasi cukup menerima authorization code, menukarnya dengan access token, lalu menggunakan token tersebut untuk mengambil data profil pengguna secara aman dan membangun sesi login di sisi Phoenix.
+
+Secara teknis, bab ini menuntun pembaca melalui langkah-langkah praktis: membuat migration dan schema \texttt{User}, menambahkan dependency Ueberauth di \texttt{mix.exs}, mendaftarkan OAuth App di GitHub untuk mendapatkan \texttt{CLIENT\_ID} dan \texttt{CLIENT\_SECRET}, mengatur konfigurasi dan environment variables, serta mendefinisikan router, view (tombol “OAuth GitHub”), dan \texttt{AuthController} yang menangani callback. Selain itu, dibahas juga teknik debugging menggunakan \texttt{IO.inspect}, cara melakukan demo end-to-end login dengan GitHub, serta mekanisme revoking access dari sisi GitHub jika akses perlu dicabut. Dengan demikian, pembaca memperoleh gambaran utuh dari konsep hingga implementasi lengkap GitHub OAuth di Phoenix.

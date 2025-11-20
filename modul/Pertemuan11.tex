@@ -1,505 +1,339 @@
 \chapter{Plugs untuk Autentikasi dan Otorisasi Pengguna}
 
 \section{Pendahuluan}
-Bab ini menjelaskan penggunaan plugs dalam framework Phoenix untuk Elixir. Plugs adalah bagian penting dalam Phoenix yang digunakan untuk pemrosesan permintaan, seperti manajemen sesi, autentikasi pengguna, dan otorisasi. Dalam modul ini, akan dibahas cara membuat plug untuk mengatur pengguna, memastikan autentikasi, dan menerapkan otorisasi di dalam controller.
+Bab ini menjelaskan penggunaan \textit{plugs} dalam framework Phoenix untuk menangani autentikasi dan otorisasi pengguna. Dalam aplikasi Phoenix, plugs digunakan pada router, endpoint, dan controller untuk memproses permintaan, membaca sesi, memuat pengguna yang sedang login, serta memastikan bahwa hanya pengguna yang berhak dapat mengakses suatu resource. Pada modul ini, fokus utamanya adalah bagaimana plug digunakan untuk menetapkan \texttt{@current\_user} dan bagaimana hal tersebut terhubung dengan struktur database yang mendukung kepemilikan data.
+
+\section{Membangun Asosiasi Database dengan Ecto}
+Agar antrean (\texttt{queues}) dapat terhubung dengan pengguna, diperlukan relasi antara skema \texttt{User} dan \texttt{Queue}. Dengan adanya relasi ini, setiap antrean dapat memiliki seorang pemilik. Relasi tersebut menjadi dasar penerapan logika otorisasi, misalnya memastikan bahwa pengguna hanya dapat mengubah antrean yang mereka miliki.
+
+\subsection{Membuat Migrasi untuk Menambahkan \texttt{user\_id} ke Tabel \texttt{queues}}
+Langkah pertama adalah menambahkan kolom \texttt{user\_id} ke dalam tabel \texttt{queues}. Kolom ini berfungsi sebagai kunci asing yang merujuk pada tabel \texttt{users} dan menandakan siapa pemilik dari antrean tersebut.
+
+\begin{lstlisting}[language=bash, caption={Membuat migrasi \texttt{add\_user\_id\_to\_queues}.}]
+mix ecto.gen.migration add_user_id_to_queues
+\end{lstlisting}
+
+Isi migrasi:
+
+\begin{lstlisting}[language=Elixir, caption={Menambahkan kolom \texttt{user\_id} pada tabel \texttt{queues}.}]
+defmodule Hiwi.Repo.Migrations.AddUserIdToQueues do
+  use Ecto.Migration
+
+  def change do
+    alter table(:queues) do
+      add :user_id, references(:users)
+    end
+  end
+end
+\end{lstlisting}
+
+Menjalankan migrasi:
+
+\begin{lstlisting}[language=bash, caption={Menjalankan migrasi.}]
+mix ecto.migrate
+\end{lstlisting}
+
+Bagian migrasi ini melakukan tiga hal. Pertama, deklarasi \texttt{use Ecto.Migration} menandakan bahwa modul tersebut merupakan modul migrasi. Kedua, perintah \texttt{alter table(:queues)} menunjukkan bahwa perubahan dilakukan pada tabel \texttt{queues}. Ketiga, baris \texttt{add :user\_id, references(:users)} menambahkan kolom baru bertipe referensi ke tabel \texttt{users}, sehingga setiap antrean dapat dikaitkan dengan pengguna tertentu sebagai pemiliknya.
+
+Setelah migrasi dijalankan, tabel \texttt{queues} telah memiliki kolom \texttt{user\_id}. Kolom ini memungkinkan aplikasi menentukan antrean mana yang dimiliki oleh pengguna yang sedang login dan menjadi dasar untuk plug otorisasi yang memastikan hanya pemilik antrean yang dapat melakukan operasi tertentu.
+
+
+\subsection{Memodifikasi Skema \texttt{User}}
+Skema \texttt{User} perlu diperbarui agar dapat terhubung dengan antrean yang dimiliki oleh pengguna. Relasi ini didefinisikan dengan menambahkan \texttt{has\_many} pada skema, sehingga setiap pengguna memiliki akses langsung ke daftar antrean yang ia miliki.
+
+\begin{lstlisting}[language=Elixir, caption={\texttt{lib/hiwi/user.ex}}]
+schema "users" do
+  field :email, :string
+  ...
+  has_many :queues, Hiwi.Queue
+  ...
+end
+\end{lstlisting}
+
+Bagian \texttt{schema "users"} mendefinisikan struktur data untuk tabel \texttt{users}, sedangkan baris \texttt{has\_many :queues, Hiwi.Queue} menambahkan relasi one-to-many antara pengguna dan antrean. Dengan relasi ini, aplikasi dapat memuat seluruh antrean yang dimiliki oleh pengguna tanpa harus menulis relasi secara manual dalam query. Skema \texttt{User} kini dapat merujuk pada semua antrean yang terhubung melalui kolom \texttt{user\_id} pada tabel \texttt{queues}.
+
+\subsection{Memodifikasi Skema \texttt{Queue}}
+Untuk melengkapi relasi tersebut, skema \texttt{Queue} perlu mencakup informasi mengenai pemilik antrean. Hal ini dilakukan dengan menambahkan \texttt{belongs\_to} yang menghubungkan setiap antrean dengan satu pengguna. Relasi ini selaras dengan kolom \texttt{user\_id} yang telah ditambahkan melalui migrasi sebelumnya.
+
+\begin{lstlisting}[language=Elixir, caption={\texttt{lib/hiwi/queue.ex}}]
+schema "queues" do
+  field :name, :string
+  ...
+  belongs_to :user, Hiwi.User
+  ...
+end
+\end{lstlisting}
+
+Bagian \texttt{schema "queues"} mendefinisikan struktur untuk tabel \texttt{queues}. Baris \texttt{belongs\_to :user, Hiwi.User} menyatakan bahwa setiap antrean dimiliki oleh satu pengguna. Relasi ini memanfaatkan kolom \texttt{user\_id} sebagai kunci asing yang menghubungkan antrean dengan pemiliknya.
+
+\subsubsection{Keuntungan dari Asosiasi One-to-Many antara \texttt{User} dan \texttt{Queue}}
+Asosiasi antara \texttt{User} dan \texttt{Queue} membawa beberapa keuntungan penting. Pertama, akses data menjadi lebih mudah karena setiap pengguna dapat mengambil antrean miliknya melalui relasi yang sudah didefinisikan pada skema. Kedua, integritas data tetap terjaga karena referensi antara pengguna dan antrean disimpan secara konsisten melalui kunci asing. Ketiga, kueri yang membutuhkan informasi kepemilikan antrean dapat dilakukan dengan lebih efisien karena Ecto sudah mengetahui relasi antara kedua entitas tersebut.
+
+Asosiasi ini menjadi fondasi penting bagi fitur-fitur aplikasi yang melibatkan pengelolaan antrean berdasarkan pengguna, serta memastikan bahwa setiap antrean terhubung dengan pemilik yang benar.
+
 
 \section{Plugs}
 
 \subsection{Definisi Plugs}
-\texttt{Plugs} adalah komponen penting dalam Phoenix framework yang digunakan untuk memproses dan memanipulasi permintaan (request) dan respons (response) HTTP pada berbagai tahap alur permintaan. Konsep \texttt{plugs} berfungsi sebagai lapisan middleware yang dapat disisipkan dalam alur pemrosesan permintaan untuk melakukan tugas-tugas spesifik seperti autentikasi, otorisasi, logging, manajemen sesi, dan pemformatan data.
+\texttt{Plugs} merupakan komponen dasar dalam Phoenix yang berfungsi memproses permintaan (request) dan respons (response) HTTP. Phoenix menggunakan \texttt{plugs} sebagai middleware yang dapat disisipkan ke berbagai tahap alur permintaan untuk menangani tugas seperti autentikasi, otorisasi, logging, manajemen sesi, hingga modifikasi data sebelum diteruskan ke tahap berikutnya.
 
-Setiap \texttt{plug} menerima objek \texttt{conn} (koneksi) yang berisi informasi mengenai permintaan HTTP yang masuk dan memungkinkan manipulasi terhadap koneksi sebelum diteruskan ke tahap berikutnya. Dalam Phoenix, \texttt{plugs} dapat digunakan di tiga tingkatan berbeda:
-\begin{itemize}
-	\item \textbf{Endpoint-Level Plugs}: Diterapkan pada \texttt{endpoint} aplikasi, yaitu pada tingkatan global yang mempengaruhi semua permintaan. Contoh penggunaannya adalah logging global atau pengaturan keamanan.
-	\item \textbf{Router-Level Plugs}: Diterapkan di dalam \texttt{router}, memungkinkan \texttt{plug} hanya diaktifkan pada rute atau pipeline tertentu. Misalnya, penerapan plug autentikasi hanya pada rute yang memerlukan autentikasi pengguna.
-	\item \textbf{Controller-Level Plugs}: Diterapkan langsung di dalam \texttt{controller}, yang memungkinkan pemrosesan plug khusus pada tindakan tertentu dalam controller.
-\end{itemize}
+Setiap \texttt{plug} menerima objek \texttt{conn}, yaitu struktur yang mewakili seluruh konteks permintaan HTTP yang sedang diproses. Plug dapat membaca atau memodifikasi nilai di dalam \texttt{conn}, misalnya menambah nilai ke \texttt{conn.assigns}, memeriksa sesi, atau menghentikan alur permintaan. Phoenix menyediakan tiga lokasi utama untuk menerapkan \texttt{plugs}: pada endpoint, pada router, dan pada controller. Ketiganya memungkinkan pengaturan plug sesuai kebutuhan, dari pengaturan global hingga spesifik pada aksi tertentu.
 
-\texttt{Plugs} ditulis sebagai modul Elixir dengan dua fungsi utama, yaitu:
-\begin{itemize}
-	\item \texttt{init/1}: Fungsi inisialisasi yang menerima parameter konfigurasi awal dan mengembalikannya sebagai hasil. Fungsi ini biasanya hanya digunakan untuk mengatur konfigurasi \texttt{plug} yang dibutuhkan pada tahap \texttt{call}.
-	\item \texttt{call/2}: Fungsi utama yang menerima objek \texttt{conn} dan parameter yang dihasilkan dari \texttt{init/1}. Di sinilah logika utama \texttt{plug} diterapkan, misalnya menambahkan data ke dalam \texttt{conn.assigns} atau menghentikan permintaan jika kondisi tertentu tidak terpenuhi.
-\end{itemize}
+Sebuah \texttt{plug} ditulis sebagai modul Elixir dengan dua fungsi utama. Fungsi \texttt{init/1} dipanggil sekali saat aplikasi dijalankan untuk menginisialisasi konfigurasi. Nilai yang dikembalikan oleh \texttt{init/1} kemudian diteruskan ke fungsi \texttt{call/2} setiap kali permintaan masuk. Fungsi \texttt{call/2} adalah tempat logika utama plug dijalankan, seperti memverifikasi sesi pengguna atau menghentikan permintaan jika kondisi tertentu tidak terpenuhi.
 
-Berikut adalah contoh sederhana dari implementasi \texttt{plug}:
+Berikut contoh implementasi plug sederhana:
 
 \begin{lstlisting}[language=Elixir, caption={Contoh Implementasi Plug Sederhana}]
-	defmodule MyAppWeb.Plugs.CheckAuth do
-	import Plug.Conn
-	
-	def init(default), do: default
-	
-	def call(conn, _opts) do
-	if get_session(conn, :user_id) do
-	conn
-	else
-	conn
-	|> put_flash(:error, "Autentikasi diperlukan.")
-	|> redirect(to: "/login")
-	|> halt()
-	end
-	end
-	end
+defmodule MyAppWeb.Plugs.CheckAuth do
+  import Plug.Conn
+
+  def init(default), do: default
+  
+  def call(conn, _opts) do
+    if get_session(conn, :user_id) do
+      conn
+    else
+      conn
+      |> put_flash(:error, "Autentikasi diperlukan.")
+      |> redirect(to: "/login")
+      |> halt()
+    end
+  end
+end
 \end{lstlisting}
 
-Dalam contoh di atas, \texttt{CheckAuth} adalah plug yang memeriksa apakah \texttt{user\_id} tersedia dalam sesi. Jika \texttt{user\_id} tidak ditemukan, maka \texttt{plug} ini akan menampilkan pesan error, mengarahkan pengguna ke halaman login, dan menghentikan alur permintaan menggunakan \texttt{halt()}. Dengan demikian, \texttt{plugs} memungkinkan pengaturan dan kontrol yang fleksibel terhadap setiap permintaan di dalam aplikasi Phoenix.
+Pada contoh tersebut, plug \texttt{CheckAuth} memeriksa apakah sesi mengandung \texttt{:user\_id}. Jika tidak ada, pengguna diarahkan ke halaman login dan alur permintaan dihentikan dengan \texttt{halt()}. Dengan mekanisme seperti ini, Phoenix memungkinkan pengaturan alur permintaan yang lebih terstruktur dan mudah dikontrol.
 
 \subsection{Membuat Plug \texttt{SetUser}}
-Plug \texttt{SetUser} berfungsi untuk menetapkan pengguna yang sedang terautentikasi ke dalam \texttt{conn.assigns}, sehingga data pengguna tersebut dapat diakses di seluruh permintaan selama sesi berjalan. Dengan menghubungkan \texttt{user\_id} yang tersimpan dalam sesi ke data pengguna di database, plug ini memastikan bahwa setiap permintaan HTTP memiliki akses terhadap data pengguna yang relevan.
+Plug \texttt{SetUser} digunakan untuk memuat pengguna yang sedang login dan menyimpannya ke dalam \texttt{conn.assigns}. Dengan memanfaatkan \texttt{user\_id} yang tersimpan di sesi, plug ini mengambil data pengguna dari database dan menjadikannya tersedia untuk seluruh permintaan selama sesi tersebut berlangsung. Hal ini sangat penting untuk fitur yang memerlukan informasi mengenai pengguna saat ini, seperti otorisasi atau penyesuaian tampilan antarmuka.
 
-\begin{lstlisting}[language=Elixir, caption={\texttt{lib/hello\_web/plugs/set\_user.ex}}]
-	defmodule HelloWeb.Plugs.SetUser do
-	import Plug.Conn
-	alias Hello.Repo
-	alias Hello.User
-	
-	def init(_params), do: nil
-	
-	@spec call(Plug.Conn.t(), any()) :: Plug.Conn.t()
-	def call(conn, _params) do
-	user_id = get_session(conn, :user_id)
-	
-	cond do
-	user = user_id && Repo.get(User, user_id) ->
-	assign(conn, :user, user)
-	true ->
-	assign(conn, :user, nil)
-	end
-	end
-	end
+\begin{lstlisting}[language=Elixir, caption={\texttt{lib/hiwi\_web/plugs/set\_user.ex}}]
+defmodule HiwiWeb.Plugs.SetUser do
+  import Plug.Conn
+
+  alias Hiwi.Repo
+  alias Hiwi.User
+
+  def init(_params) do
+  end
+
+  def call(conn, _params) do
+    user_id = get_session(conn, :user_id)
+
+    cond do
+      user = user_id && Repo.get(User, user_id) ->
+        assign(conn, :user, user)
+      true ->
+        assign(conn, :user, nil)
+    end
+  end
+end
 \end{lstlisting}
 
-Penjelasan dari setiap bagian kode di atas adalah sebagai berikut:
+Modul \texttt{SetUser} berada dalam namespace \texttt{HiwiWeb.Plugs} dan mengimpor fungsi-fungsi dari \texttt{Plug.Conn} untuk membaca sesi serta menetapkan nilai pada \texttt{conn.assigns}. Modul ini juga menggunakan \texttt{Hiwi.Repo} dan skema \texttt{Hiwi.User} untuk melakukan query ke database. Fungsi \texttt{init/1} tidak memerlukan konfigurasi, sehingga cukup dibiarkan tanpa nilai kembalian.
 
-\begin{itemize}
-	\item \textbf{Modul dan Impor:} 
-	\begin{itemize}
-		\item \texttt{defmodule HelloWeb.Plugs.SetUser} mendefinisikan modul \texttt{SetUser} sebagai plug khusus di dalam namespace \texttt{HelloWeb.Plugs}.
-		\item \texttt{import Plug.Conn} mengimpor fungsi-fungsi dari modul \texttt{Plug.Conn}, seperti \texttt{get\_session} dan \texttt{assign}, yang digunakan untuk manipulasi koneksi (conn).
-		\item \texttt{alias Hello.Repo} dan \texttt{alias Hello.User} menghubungkan modul ini ke database (\texttt{Repo}) dan skema \texttt{User}, yang dibutuhkan untuk mengambil data pengguna berdasarkan \texttt{user\_id}.
-	\end{itemize}
-	
-	\item \textbf{Fungsi \texttt{init/1}:} Fungsi ini digunakan untuk inisialisasi parameter plug, tetapi dalam kasus ini, tidak ada parameter yang diperlukan sehingga fungsi hanya mengembalikan \texttt{nil}.
-	
-	\item \textbf{Fungsi \texttt{call/2}:} 
-	\begin{itemize}
-		\item Fungsi utama plug ini adalah \texttt{call}, yang menerima \texttt{conn} (koneksi) dan \texttt{\_params} sebagai argumen. Di sinilah logika untuk mendapatkan data pengguna dari sesi dan database dilakukan.
-		\item \texttt{user\_id = get\_session(conn, :user\_id)} mengambil \texttt{user\_id} dari sesi saat ini. Jika \texttt{user\_id} ditemukan, maka itu berarti pengguna telah terautentikasi pada sesi ini. Jika tidak ada \texttt{user\_id} dalam sesi, nilai \texttt{user\_id} akan \texttt{nil}, yang berarti tidak ada pengguna yang masuk.
-	\end{itemize}
-	
-	\item \textbf{Blok \texttt{cond}:} 
-	\begin{itemize}
-		\item Pada blok \texttt{cond}, plug memeriksa apakah \texttt{user\_id} ditemukan di sesi dan apakah pengguna tersebut ada di database.
-		\item \texttt{user = user\_id \&\& Repo.get(User, user\_id)} adalah ekspresi yang pertama kali mengecek apakah \texttt{user\_id} bernilai benar. Jika \texttt{user\_id} ada, ekspresi ini melanjutkan untuk mencari pengguna di database menggunakan \texttt{Repo.get(User, user\_id)}.
-		\begin{itemize}
-			\item Jika pengguna ditemukan di database, maka plug menambahkan data pengguna ke \texttt{conn.assigns} dengan \texttt{assign(conn, :user, user)}, sehingga data pengguna tersebut dapat diakses pada setiap permintaan yang menggunakan sesi yang sama.
-		\end{itemize}
-		\item \texttt{true -> assign(conn, :user, nil)} merupakan kondisi alternatif yang menangani kasus ketika \texttt{user\_id} tidak ditemukan atau tidak valid (misalnya, pengguna dihapus dari database). Dalam kasus ini, plug menetapkan \texttt{nil} ke \texttt{conn.assigns[:user]}.
-	\end{itemize}
-\end{itemize}
+Logika utama berada pada fungsi \texttt{call/2}. Fungsi ini mengambil \texttt{user\_id} dari sesi. Jika nilai tersebut ada, plug mencoba memuat pengguna terkait dari database menggunakan \texttt{Repo.get/2}. Ketika pengguna valid ditemukan, hasilnya disimpan di dalam \texttt{conn.assigns} menggunakan \texttt{assign/3}. Jika \texttt{user\_id} tidak ada atau pengguna tidak ditemukan, nilai \texttt{nil} diberikan sebagai pengganti.
 
-Dengan demikian, plug \texttt{SetUser} ini memiliki fungsi penting dalam mengelola sesi pengguna di aplikasi Phoenix. Setiap kali pengguna mengirim permintaan, plug ini memastikan bahwa data pengguna yang valid diambil dari database dan ditambahkan ke \texttt{conn.assigns}. Ini memungkinkan berbagai komponen aplikasi, seperti tampilan dan controller, untuk mengakses informasi pengguna dengan aman tanpa harus mengambil data pengguna berulang kali dari database.
+Plug ini memastikan bahwa setiap permintaan HTTP memiliki informasi pengguna yang akurat. Dengan demikian, controller, view, maupun komponen lain dapat mengakses \texttt{@user} tanpa perlu melakukan query ulang secara eksplisit, sehingga alur aplikasi menjadi lebih efisien dan konsisten.
 
 \subsubsection{Manfaat Menggunakan Plug \texttt{SetUser}}
-Dengan menetapkan pengguna ke dalam \texttt{conn.assigns}, terdapat beberapa manfaat sebagai berikut:
+Dengan menetapkan \texttt{user} ke dalam \texttt{conn.assigns}, terdapat beberapa manfaat sebagai berikut:
 \begin{itemize}
 	\item \textbf{Efisiensi}: Data pengguna hanya diambil sekali per permintaan, sehingga mengurangi permintaan yang tidak perlu ke database.
-	\item \textbf{Kemudahan Akses}: Controller dan komponen lainnya dapat mengakses data pengguna dengan mudah melalui \texttt{conn.assigns[:user]}.
+	\item \textbf{Kemudahan Akses}: Controller dan komponen lainnya dapat mengakses data pengguna dengan mudah melalui \texttt{@user}.
 	\item \textbf{Keamanan}: Dengan memverifikasi data pengguna pada setiap permintaan, plug memastikan bahwa data yang digunakan hanya berasal dari pengguna yang terautentikasi, sehingga mencegah akses yang tidak sah.
 \end{itemize}
 
 
 \subsection{Membuat Plug \texttt{RequireAuth}}
-Plug \texttt{RequireAuth} memastikan bahwa hanya pengguna yang terautentikasi yang dapat mengakses tindakan tertentu. Plug ini memberikan lapisan otorisasi tambahan, dengan memverifikasi bahwa sesi berisi pengguna yang valid sebelum melanjutkan eksekusi permintaan. Jika tidak ada pengguna yang terdaftar, plug akan mengarahkan koneksi ke halaman utama dan menampilkan pesan error.
+Plug \texttt{RequireAuth} digunakan untuk memastikan bahwa hanya pengguna yang telah login yang dapat mengakses tindakan atau halaman tertentu. Plug ini melakukan pengecekan sederhana terhadap nilai pengguna yang telah disimpan dalam \texttt{conn.assigns} oleh plug sebelumnya, seperti \texttt{SetUser}. Jika tidak ada pengguna yang ditemukan, permintaan tidak diteruskan dan koneksi akan diarahkan ke halaman utama dengan pesan flash yang sesuai.
 
-\begin{lstlisting}[language=Elixir, caption={\texttt{lib/hello\_web/plugs/require\_auth.ex}}]
-	defmodule HelloWeb.Plugs.RequireAuth do
-	import Plug.Conn
-	import Phoenix.Controller
-	
-	def init(_params), do: nil
-	
-	def call(conn, _params) do
-	if conn.assigns[:user] do
-	conn
-	else
-	conn
-	|> put_flash(:error, "Anda belum masuk.")
-	|> redirect(to: "/")
-	|> halt()
-	end
-	end
-	end
+\begin{lstlisting}[language=Elixir, caption={\texttt{lib/hiwi\_web/plugs/require\_auth.ex}}]
+defmodule HiwiWeb.Plugs.RequireAuth do
+  import Plug.Conn
+  import Phoenix.Controller
+
+  def init(_params) do
+  end
+
+  def call(conn, _params) do
+    if conn.assigns[:user] do
+      conn
+    else
+      conn
+      |> put_flash(:error, "You haven't signed in.")
+      |> redirect(to: "/")
+      |> halt()
+    end
+  end
+end
 \end{lstlisting}
 
-Penjelasan dari setiap bagian kode di atas adalah sebagai berikut:
+Modul \texttt{RequireAuth} berada dalam namespace \texttt{HiwiWeb.Plugs}. Modul ini mengimpor fungsi dari \texttt{Plug.Conn} untuk menambah pesan flash, menghentikan alur permintaan, dan melakukan manipulasi koneksi lainnya. Selain itu, \texttt{Phoenix.Controller} diimpor untuk menyediakan fungsi \texttt{redirect/2}. Fungsi \texttt{init/1} tidak memerlukan konfigurasi dan dibiarkan kosong.
 
-\begin{itemize}
-	\item \textbf{Modul dan Impor:}
-	\begin{itemize}
-		\item \texttt{defmodule HelloWeb.Plugs.RequireAuth} mendefinisikan modul \texttt{RequireAuth} sebagai plug di dalam namespace \texttt{HelloWeb.Plugs}.
-		\item \texttt{import Plug.Conn} mengimpor fungsi-fungsi dari modul \texttt{Plug.Conn}, seperti \texttt{put\_flash}, \texttt{redirect}, dan \texttt{halt}, yang digunakan untuk manipulasi koneksi (conn).
-		\item \texttt{import Phoenix.Controller} mengimpor fungsi \texttt{redirect}, yang diperlukan untuk mengarahkan pengguna ke halaman tertentu.
-	\end{itemize}
-	
-	\item \textbf{Fungsi \texttt{init/1}:} Fungsi ini digunakan untuk inisialisasi parameter plug, tetapi dalam kasus ini, tidak ada parameter yang diperlukan sehingga fungsi hanya mengembalikan \texttt{nil}.
-	
-	\item \textbf{Fungsi \texttt{call/2}:}
-	\begin{itemize}
-		\item Fungsi \texttt{call} adalah fungsi utama dalam plug ini yang menerima \texttt{conn} dan \texttt{\_params} sebagai argumen. Fungsi ini menentukan apakah permintaan dapat dilanjutkan atau harus diarahkan ke halaman utama.
-		\item Pada \texttt{if conn.assigns[:user]}, plug mengecek apakah pengguna telah ditetapkan dalam \texttt{conn.assigns}. Jika pengguna ditemukan, maka plug mengembalikan \texttt{conn} tanpa perubahan, memungkinkan permintaan untuk diteruskan.
-		\item Jika pengguna tidak ditemukan, plug menampilkan pesan error dan mengarahkan permintaan ke halaman utama dengan cara:
-		\begin{itemize}
-			\item \texttt{put\_flash(:error, "Anda belum masuk.")} menambahkan pesan error ke \texttt{conn}, yang akan muncul di halaman utama setelah pengalihan.
-			\item \texttt{redirect(to: "/")} mengarahkan koneksi ke halaman utama.
-			\item \texttt{halt()} menghentikan eksekusi lebih lanjut, memastikan bahwa permintaan tidak akan diproses lebih lanjut.
-		\end{itemize}
-	\end{itemize}
-\end{itemize}
+Fungsi utama plug ini adalah \texttt{call/2}. Fungsi ini memeriksa apakah nilai pengguna telah tersedia dalam \texttt{conn.assigns}. Jika pengguna ditemukan, permintaan dilanjutkan sebagaimana mestinya. Jika tidak ada pengguna, plug menambahkan pesan kesalahan, mengarahkan koneksi ke halaman utama, dan menghentikan pemrosesan lebih lanjut menggunakan \texttt{halt/1}. Dengan alur ini, hanya permintaan dari pengguna terautentikasi yang dapat diteruskan ke tindakan atau controller yang memerlukan autentikasi.
 
 \subsubsection{Fungsi Utama Plug \texttt{RequireAuth}}
-Plug \texttt{RequireAuth} berfungsi sebagai mekanisme keamanan untuk mencegah akses ke halaman atau tindakan yang memerlukan autentikasi pengguna. Dengan memverifikasi keberadaan pengguna di \texttt{conn.assigns}, plug ini memastikan bahwa setiap permintaan ke halaman atau tindakan sensitif diproses hanya jika pengguna telah terautentikasi. Jika tidak ada pengguna, plug ini menghentikan permintaan dan mengarahkan kembali ke halaman utama dengan pesan yang sesuai.
+Plug \texttt{RequireAuth} berfungsi sebagai mekanisme pengaman yang memblokir akses ke halaman atau tindakan yang memerlukan autentikasi. Plug ini memanfaatkan informasi pengguna yang telah dimuat sebelumnya, memastikan bahwa permintaan hanya diproses jika pengguna valid tersedia dalam \texttt{conn.assigns}. Jika tidak ada pengguna, aplikasi menghentikan proses dan mengalihkan pengguna ke halaman utama.
 
 \subsubsection{Manfaat Menggunakan Plug \texttt{RequireAuth}}
-Penggunaan \texttt{RequireAuth} memberikan beberapa manfaat berikut:
-\begin{itemize}
-	\item \textbf{Keamanan}: Menghindari akses ke tindakan yang sensitif tanpa autentikasi, melindungi data dan fungsi dari akses yang tidak sah.
-	\item \textbf{Pengalaman Pengguna}: Dengan memberikan pesan flash ketika pengguna tidak terautentikasi, plug ini membantu memberikan informasi yang jelas tentang status autentikasi.
-	\item \textbf{Manajemen Akses yang Mudah}: Plug dapat diterapkan ke berbagai aksi atau controller tanpa perlu menulis ulang kode otorisasi.
-\end{itemize}
+Menggunakan plug \texttt{RequireAuth} memberikan beberapa keuntungan penting. Pertama, tingkat keamanan aplikasi meningkat karena tindakan yang sensitif hanya dapat diakses oleh pengguna yang telah login. Kedua, pengguna mendapatkan pengalaman yang lebih baik melalui pesan flash yang memberi tahu mengapa akses ditolak. Ketiga, mekanisme akses menjadi lebih mudah dikelola karena plug dapat diterapkan pada berbagai rute atau aksi tanpa perlu menulis ulang logika otorisasi.
+
 
 
 \section{Alur Autentikasi dalam Aplikasi}
 
 \subsection{Penyesuaian Layout Berdasarkan Status Autentikasi}
-Untuk memberikan pengalaman yang lebih personal dalam aplikasi, tampilan dapat dikondisikan untuk menampilkan tautan \texttt{Masuk} atau \texttt{Keluar} berdasarkan status autentikasi pengguna.
+Tampilan aplikasi dapat disesuaikan berdasarkan status autentikasi pengguna agar pengalaman yang diberikan lebih relevan. Salah satu bentuk penyesuaian tersebut adalah menampilkan tautan \texttt{Signout} ketika pengguna sudah login, atau menampilkan tautan \texttt{Login with GitHub} ketika tidak ada pengguna yang terautentikasi. Pemeriksaan dilakukan menggunakan nilai \texttt{@user} yang sebelumnya ditetapkan oleh plug autentikasi seperti \texttt{SetUser}.
 
-\begin{lstlisting}[language=html, caption={\texttt{lib/hello\_web/components/layouts/app.html.heex}}]
-	<%= if @conn.assigns[:user] do %>
-	<a href={~p"/auth/signout"} class="hover:text-zinc-700">
-	Signout
-	</a> 
-	<% else %>
-	<a href={~p"/auth/github"} class="hover:text-zinc-700">
-	Masuk dengan GitHub
-	</a>
-	<% end %>
+\begin{lstlisting}[language=html, caption={\texttt{lib/hiwi\_web/components/layouts.ex}}]
+  ...
+  <li>
+    <%= if @user do %>
+      <a href={~p"/auth/signout"} class="btn btn-ghost">Signout</a>
+    <% else %>
+      <a href={~p"/auth/github"} class="btn btn-ghost">Login with GitHub</a>
+    <% end %>
+  </li>
+  <li>
+    <a href="https://phoenixframework.org/" class="btn btn-ghost">Website</a>
+  </li>
+  ...
 \end{lstlisting}
 
-Kode di atas menyesuaikan tampilan tautan di layout utama dengan memeriksa apakah pengguna saat ini terautentikasi atau tidak. Penjelasan setiap bagian adalah sebagai berikut:
-
-\begin{itemize}
-	\item \texttt{@conn.assigns[:user]} adalah pemeriksaan terhadap objek \texttt{user} yang terdapat dalam \texttt{conn.assigns}. Jika \texttt{user} ada, maka berarti sesi autentikasi pengguna telah aktif.
-	\item \texttt{<a href={~p"/auth/signout"}>Signout</a>} - Jika pengguna telah terautentikasi, tautan ini akan muncul sebagai \texttt{Signout}. Tautan ini mengarahkan koneksi ke rute \texttt{/auth/signout}, yang digunakan untuk keluar dari aplikasi dan mengakhiri sesi.
-	\item \texttt{<a href={~p"/auth/github"}>Masuk dengan GitHub</a>} - Jika tidak ada pengguna yang terautentikasi, tautan \texttt{Masuk dengan GitHub} akan ditampilkan. Tautan ini mengarahkan ke proses autentikasi melalui GitHub.
-\end{itemize}
+Pada kode tersebut, penyesuaian dilakukan dengan memeriksa \texttt{@user}. Nilai ini berasal dari \texttt{conn.assigns[:user]} yang telah diisi sebelumnya oleh plug. Jika nilai tersebut ada, berarti pengguna sedang login dan tautan yang ditampilkan adalah \texttt{Signout}, yang mengarah ke rute \texttt{/auth/signout}. Sebaliknya, jika tidak ada pengguna pada sesi, tampilan menunjukkan tautan \texttt{Login with GitHub} yang memulai proses autentikasi melalui GitHub. Dengan cara ini, navigasi tetap konsisten dengan status autentikasi pengguna, dan antarmuka memberikan petunjuk yang tepat mengenai tindakan yang dapat dilakukan.
 
 \subsubsection{Manfaat Penyesuaian Layout Berdasarkan Status Autentikasi}
-Pengondisian layout berdasarkan status autentikasi memiliki beberapa manfaat berikut:
-\begin{itemize}
-	\item \textbf{Pengalaman Pengguna yang Lebih Baik}: Menghadirkan informasi autentikasi yang sesuai pada tampilan aplikasi meningkatkan navigasi dan memberi kejelasan tentang status masuk.
-	\item \textbf{Keamanan dan Kejelasan Akses}: Menampilkan tautan yang relevan dengan status autentikasi pengguna mengurangi kemungkinan kesalahan atau kebingungan mengenai akses masuk atau keluar.
-	\item \textbf{Interaksi yang Lebih Efisien}: Tautan disesuaikan berdasarkan status autentikasi, mengurangi tindakan yang tidak perlu dan menjaga alur interaksi yang tepat dalam aplikasi.
-\end{itemize}
+Penyesuaian layout berdasarkan status autentikasi memberikan beberapa keuntungan langsung. Pengguna memperoleh pengalaman yang lebih jelas karena antarmuka menunjukkan apakah mereka sedang login atau tidak. Tindakan yang ditampilkan menjadi lebih aman dan tidak membingungkan, sebab pengguna hanya melihat tautan yang relevan bagi kondisi mereka. Selain itu, alur interaksi menjadi lebih efisien karena aplikasi menyediakan pilihan yang sesuai tanpa memerlukan langkah tambahan dari pengguna.
 
 
 \subsection{Pengaturan Rute untuk Autentikasi}
-File \texttt{router.ex} mengatur permintaan autentikasi dengan menyediakan rute untuk login dan logout. Rute-rute ini memastikan bahwa permintaan autentikasi diproses dengan benar melalui controller yang sesuai.
+File \texttt{router.ex} mengatur alur permintaan autentikasi dengan menambahkan plug \texttt{SetUser} pada pipeline \texttt{:browser} dan mendefinisikan rute untuk proses login dan logout. Dengan konfigurasi ini, setiap permintaan yang melewati pipeline \texttt{:browser} akan terlebih dahulu mencoba memuat pengguna yang sedang login, sehingga informasi tersebut dapat digunakan oleh controller maupun layout.
 
-\begin{lstlisting}[language=Elixir, caption={\texttt{lib/hello\_web/router.ex}}]
-	scope "/auth", HelloWeb do
-	pipe_through :browser
-	get "/signout", AuthController, :signout
-	get "/:provider", AuthController, :request
-	get "/:provider/callback", AuthController, :callback
-	end
+\begin{lstlisting}[language=Elixir, caption={\texttt{lib/hiwi\_web/router.ex}}]
+  ...
+  pipeline :browser do
+    plug :accepts, ["html"]
+    ...
+    plug HiwiWeb.Plugs.SetUser
+  end
+  ...
+  scope "/auth", HiwiWeb do
+    pipe_through :browser
+
+    get "/signout", AuthController, :signout
+    get "/:provider", AuthController, :request
+    get "/:provider/callback", AuthController, :callback
+  end
+  ...
 \end{lstlisting}
 
-Penjelasan dari setiap bagian dalam \texttt{router.ex} adalah sebagai berikut:
+Pada bagian pipeline \texttt{:browser}, \texttt{HiwiWeb.Plugs.SetUser} dipanggil agar setiap permintaan yang menggunakan pipeline ini memiliki informasi pengguna di dalam \texttt{conn.assigns}. Hal ini membuat nilai \texttt{@user} tersedia di layout dan controller tanpa perlu memuat ulang data pengguna secara manual.
 
-\begin{itemize}
-	\item \texttt{scope "/auth", HelloWeb do} - Menetapkan namespace \texttt{/auth} untuk semua rute autentikasi, sehingga setiap rute dalam ruang lingkup ini dapat diakses melalui prefiks \texttt{/auth}.
-	\item \texttt{pipe\_through :browser} - Mengarahkan permintaan melalui pipeline \texttt{:browser}, yang menyediakan dukungan untuk sesi, flash, dan fitur lain yang sesuai untuk interaksi browser.
-	\item \texttt{get "/signout", AuthController, :signout} - Mendefinisikan rute untuk logout dengan mengarahkan permintaan \texttt{/auth/signout} ke fungsi \texttt{signout} dalam \texttt{AuthController}. Rute ini sangat penting karena menangani proses mengakhiri sesi autentikasi.
-	\begin{itemize}
-		\item Saat pengguna mengakses rute ini, \texttt{signout} akan menghapus informasi sesi yang ada, yang menandakan bahwa sesi autentikasi telah selesai.
-		\item Rute ini juga menampilkan pesan konfirmasi bahwa proses keluar telah berhasil.
-	\end{itemize}
-	\item \texttt{get "/:provider", AuthController, :request} - Rute ini menangani permintaan autentikasi awal untuk penyedia (provider) autentikasi pihak ketiga, seperti GitHub atau Google.
-	\item \texttt{get "/:provider/callback", AuthController, :callback} - Rute ini mengelola tanggapan dari penyedia autentikasi pihak ketiga setelah pengguna memberikan izin. Tanggapan ini berisi informasi yang dibutuhkan untuk mengidentifikasi pengguna dan membuat sesi autentikasi.
-\end{itemize}
+Blok \texttt{scope "/auth", HiwiWeb} mendefinisikan sekumpulan rute yang berada di bawah prefiks \texttt{/auth}. Semua rute di dalamnya menggunakan \texttt{pipe\_through :browser}, sehingga mendapatkan dukungan sesi, flash, dan plug \texttt{SetUser}. Rute \texttt{get "/signout", AuthController, :signout} menangani proses keluar (logout). Ketika rute ini diakses, \texttt{AuthController.signout/2} akan menghapus informasi sesi yang terkait dengan pengguna dan biasanya memberikan pesan konfirmasi bahwa proses keluar telah berhasil.
+
+Rute \texttt{get "/:provider", AuthController, :request} digunakan untuk memulai proses autentikasi dengan penyedia pihak ketiga, misalnya GitHub. Setelah pengguna memberikan izin pada penyedia tersebut, respons akan dikirim kembali ke rute \texttt{get "/:provider/callback", AuthController, :callback}. Di titik inilah aplikasi membaca data yang diberikan oleh penyedia, mengidentifikasi pengguna, dan membuat sesi autentikasi baru.
 
 \subsubsection{Peran Utama Rute \texttt{signout}}
-Rute \texttt{signout} memiliki peran kunci dalam sistem autentikasi dengan memberikan kemampuan kepada pengguna untuk mengakhiri sesi dengan aman. Berikut adalah manfaat utama dari rute ini:
-\begin{itemize}
-	\item \textbf{Keamanan Sesi}: Dengan memastikan bahwa sesi autentikasi dapat diakhiri dengan rute \texttt{signout}, aplikasi meminimalkan risiko akses tidak sah yang mungkin timbul dari sesi yang tidak ditutup.
-	\item \textbf{Pengalaman Pengguna yang Jelas}: Tindakan \texttt{signout} memberikan cara yang jelas bagi pengguna untuk mengelola status autentikasinya. Setelah berhasil keluar, pengguna mendapatkan konfirmasi bahwa sesi telah ditutup, yang juga membantu mencegah kebingungan mengenai status masuk saat ini.
-	\item \textbf{Manajemen Sesi yang Efektif}: Dengan merutekan tindakan keluar secara khusus melalui \texttt{AuthController}, aplikasi dapat menerapkan prosedur yang konsisten untuk penanganan sesi di seluruh sistem.
-\end{itemize}
+Rute \texttt{/auth/signout} memiliki peran penting dalam pengelolaan sesi autentikasi. Melalui rute ini, pengguna dapat mengakhiri sesi login secara eksplisit dan aman. Setelah fungsi \texttt{signout} dijalankan, data sesi yang berkaitan dengan autentikasi dihapus sehingga permintaan berikutnya tidak lagi dianggap berasal dari pengguna yang sudah login. Praktik ini membantu mencegah akses tidak sah akibat sesi yang dibiarkan terbuka, sekaligus memberikan kejelasan kepada pengguna mengenai status autentikasi mereka. Dengan menempatkan logika keluar di dalam \texttt{AuthController}, aplikasi juga mendapatkan konsistensi dalam cara menangani sesi di seluruh bagian sistem.
 
 
 \subsection{Menangani Signout dalam \texttt{AuthController}}
-Fungsi \texttt{signout} dalam \texttt{AuthController} bertanggung jawab untuk membersihkan sesi autentikasi pengguna dan mengarahkan ulang permintaan ke halaman utama. Fungsi ini penting untuk menjaga keamanan dan memastikan sesi yang sedang berjalan ditutup dengan benar.
+Fungsi \texttt{signout} dalam \texttt{AuthController} bertugas membersihkan sesi autentikasi pengguna dan mengarahkan ulang ke halaman utama. Langkah ini penting untuk memastikan bahwa sesi yang berjalan ditutup dengan benar dan tidak dapat digunakan lagi untuk mengakses halaman yang memerlukan autentikasi.
 
-\begin{lstlisting}[language=Elixir, caption={\texttt{lib/hello\_web/controllers/auth\_controller.ex}}]
-	def signout(conn, _params) do
-	conn
-	|> configure_session(drop: true)
-	|> put_flash(:info, "Anda telah berhasil keluar.")
-	|> redirect(to: "/")
-	end
+\begin{lstlisting}[language=Elixir, caption={\texttt{lib/hiwi\_web/controllers/auth\_controller.ex}}]
+  ...
+  def signout(conn, _params) do
+    conn
+    |> configure_session(drop: true)
+    |> put_flash(:info, "Signout has been successful.")
+    |> redirect(to: "/")
+  end
+  ...
 \end{lstlisting}
 
-Berikut adalah penjelasan rinci dari setiap langkah dalam fungsi \texttt{signout}:
-
-\begin{itemize}
-	\item \texttt{configure\_session(drop: true)} - Bagian ini berfungsi untuk menghapus sesi yang sedang aktif. 
-	\begin{itemize}
-		\item Opsi \texttt{drop: true} menunjukkan bahwa semua data yang tersimpan dalam sesi, termasuk data autentikasi, akan dihapus. Ini memastikan bahwa informasi sesi yang sensitif, seperti \texttt{user\_id}, tidak lagi tersedia setelah pengguna keluar.
-		\item Pembersihan sesi ini sangat penting dalam mengakhiri autentikasi, karena menghindari kemungkinan akses tidak sah setelah pengguna keluar.
-	\end{itemize}
-	
-	\item \texttt{put\_flash(:info, "Anda telah berhasil keluar.")} - Bagian ini menambahkan pesan flash \texttt{info} yang akan ditampilkan pada halaman yang dituju setelah pengguna diarahkan kembali.
-	\begin{itemize}
-		\item Pesan ini bertujuan untuk memberikan konfirmasi bahwa proses \texttt{signout} telah berhasil. 
-		\item Flash message akan ditampilkan di halaman utama atau halaman mana pun yang menerima pengalihan, dan membantu memberikan umpan balik kepada pengguna bahwa sesi telah ditutup.
-	\end{itemize}
-	
-	\item \texttt{redirect(to: "/")} - Langkah terakhir adalah mengarahkan permintaan ke halaman utama aplikasi.
-	\begin{itemize}
-		\item \texttt{redirect} berfungsi untuk mengalihkan koneksi (\texttt{conn}) ke URL yang ditentukan, dalam hal ini halaman utama \texttt{/}.
-		\item Setelah sesi dihapus, pengguna akan diarahkan kembali ke halaman utama, memastikan bahwa sesi kosong atau non-autentikasi tidak memberikan akses ke halaman lain yang mungkin sensitif.
-	\end{itemize}
-\end{itemize}
+Pada fungsi di atas, \texttt{configure\_session(drop: true)} digunakan untuk menghapus seluruh data sesi yang sedang aktif, termasuk informasi autentikasi seperti \texttt{user\_id}. Setelah sesi dibersihkan, \texttt{put\_flash/3} menambahkan pesan informasi \texttt{"Signout has been successful."} yang akan ditampilkan pada halaman berikutnya sebagai konfirmasi bahwa proses keluar telah berhasil. Langkah terakhir, \texttt{redirect(to: "/")}, mengarahkan pengguna kembali ke halaman utama aplikasi dalam keadaan sudah tidak lagi terautentikasi.
 
 \subsubsection{Peran Penting Fungsi \texttt{signout}}
-Fungsi \texttt{signout} berperan penting dalam sistem autentikasi aplikasi dengan memberikan cara untuk mengakhiri sesi autentikasi dengan aman. Beberapa manfaat utama dari implementasi ini adalah sebagai berikut:
-
-\begin{itemize}
-	\item \textbf{Keamanan Sesi yang Ditingkatkan}: Dengan membersihkan sesi secara menyeluruh, fungsi \texttt{signout} memastikan bahwa semua data autentikasi terhapus. Ini mencegah akses yang tidak sah ke data atau fitur yang mungkin masih terbuka dalam sesi.
-	\item \textbf{Pengalaman Pengguna yang Lebih Baik}: Pesan flash memberikan informasi yang jelas bahwa pengguna telah berhasil keluar, yang memperbaiki pengalaman dalam mengelola status autentikasi.
-	\item \textbf{Manajemen Sesi yang Konsisten}: Menggunakan fungsi \texttt{signout} terpusat ini memastikan bahwa prosedur yang sama diterapkan untuk setiap permintaan keluar, menciptakan manajemen sesi yang konsisten dan dapat diandalkan di seluruh aplikasi.
-\end{itemize}
-
-Fungsi \texttt{signout} ini, selain menjadi bagian dari autentikasi yang aman, juga penting dalam memastikan bahwa setiap permintaan keluar diproses dengan benar sesuai prosedur keamanan yang telah ditetapkan.
+Fungsi \texttt{signout} memegang peran penting dalam menjaga keamanan dan konsistensi manajemen sesi. Dengan menghapus sesi secara menyeluruh, aplikasi mencegah kemungkinan akses tidak sah yang berasal dari sesi yang dibiarkan terbuka. Pesan flash yang ditampilkan setelah pengalihan juga membantu memberikan kejelasan kepada pengguna bahwa mereka telah benar-benar keluar dari sistem. Pendekatan terpusat melalui satu fungsi ini memastikan bahwa seluruh proses keluar mengikuti prosedur yang sama di seluruh aplikasi.
 
 
-\section{Membangun Asosiasi Database dengan Ecto}
-Untuk menghubungkan tabel pengguna dengan antrean (\texttt{queues}), diperlukan asosiasi antara skema \texttt{User} dan \texttt{Queue}. Hal ini memungkinkan setiap pengguna memiliki antrean yang terhubung secara langsung, yang berguna dalam membangun fitur yang bergantung pada kepemilikan data.
-
-\subsection{Membuat Migrasi untuk Menambahkan \texttt{user\_id} ke Tabel Queue}
-Langkah pertama adalah membuat migrasi untuk menambahkan kolom \texttt{user\_id} sebagai kunci asing di tabel \texttt{queues}. Kunci asing ini menjadi referensi ke tabel \texttt{users} dan menunjukkan pemilik dari antrean tersebut.
-
-\begin{lstlisting}[language=Elixir, caption={\texttt{ecto mix.gen.migration add\_user\_id\_to\_queues}}]
-	defmodule Hello.Repo.Migrations.AddUserIdToQueues do
-	use Ecto.Migration
-	
-	def change do
-	alter table(:queues) do
-	add :user_id, references(:users)
-	end
-	end
-	end
-\end{lstlisting}
-
-Penjelasan dari setiap bagian migrasi ini adalah sebagai berikut:
-\begin{itemize}
-	\item \texttt{use Ecto.Migration} - Menandakan bahwa modul ini adalah modul migrasi, yang memungkinkan akses ke fungsi-fungsi migrasi yang tersedia dalam Ecto.
-	\item \texttt{alter table(:queues)} - Mendefinisikan perubahan yang akan dilakukan pada tabel \texttt{queues}. 
-	\item \texttt{add :user\_id, references(:users)} - Menambahkan kolom \texttt{user\_id} ke dalam tabel \texttt{queues}, dengan tipe data referensi ke tabel \texttt{users}. Kolom ini berfungsi sebagai kunci asing yang menghubungkan antrean dengan pengguna yang memilikinya.
-\end{itemize}
-
-Setelah migrasi ini dijalankan, tabel \texttt{queues} akan memiliki kolom \texttt{user\_id}, yang secara otomatis menghubungkan setiap antrean dengan pengguna tertentu di tabel \texttt{users}.
-
-\subsection{Memodifikasi Skema \texttt{User}}
-Skema \texttt{User} diperbarui untuk menyertakan asosiasi one-to-many dengan \texttt{Queue}. Dengan menambahkan hubungan ini, skema \texttt{User} dapat mengakses antrean yang dimiliki oleh setiap pengguna.
-
-\begin{lstlisting}[language=Elixir, caption={\texttt{lib/hello/user.ex}}]
-	schema "users" do
-	field :email, :string
-	field :provider, :string
-	field :token, :string
-	has_many :queues, Hello.Queue
-	timestamps(type: :utc_datetime)
-	end
-\end{lstlisting}
-
-Penjelasan mengenai modifikasi ini adalah sebagai berikut:
-\begin{itemize}
-	\item \texttt{schema "users"} - Mendefinisikan skema untuk tabel \texttt{users}.
-	\item \texttt{has\_many :queues, Hello.Queue} - Menambahkan hubungan one-to-many antara \texttt{User} dan \texttt{Queue}. Hal ini memungkinkan akses ke semua antrean yang dimiliki oleh pengguna tertentu melalui atribut \texttt{queues}.
-\end{itemize}
-
-Dengan asosiasi ini, \texttt{User} memiliki akses langsung ke koleksi \texttt{queues} yang dimiliki.
-
-\subsection{Memodifikasi Skema \texttt{Queue}}
-Skema \texttt{Queue} juga diperbarui untuk mencakup referensi kunci asing ke skema \texttt{User}. Asosiasi ini menentukan bahwa setiap antrean dimiliki oleh satu pengguna tertentu.
-
-\begin{lstlisting}[language=Elixir, caption={\texttt{lib/hello/queue.ex}}]
-	schema "queues" do
-	field :name, :string
-	field :status, :string
-	field :description, :string
-	belongs_to :user, Hello.User
-	timestamps(type: :utc_datetime)
-	end
-\end{lstlisting}
-
-Penjelasan modifikasi skema \texttt{Queue} adalah sebagai berikut:
-\begin{itemize}
-	\item \texttt{schema "queues"} - Mendefinisikan skema untuk tabel \texttt{queues}.
-	\item \texttt{belongs\_to :user, Hello.User} - Menambahkan hubungan many-to-one, yang menghubungkan setiap antrean dengan satu pengguna di tabel \texttt{users}. Ini menunjukkan bahwa setiap antrean dimiliki oleh satu pengguna, dan \texttt{user\_id} dalam tabel \texttt{queues} berfungsi sebagai referensi kunci asing untuk pengguna tersebut.
-\end{itemize}
-
-\subsubsection{Keuntungan dari Asosiasi One-to-Many antara \texttt{User} dan \texttt{Queue}}
-Dengan membangun asosiasi one-to-many antara skema \texttt{User} dan \texttt{Queue}, terdapat beberapa keuntungan yang dapat diperoleh:
-\begin{itemize}
-	\item \textbf{Kemudahan Akses Data}: Setiap pengguna dapat dengan mudah mengakses antrean yang dimiliki melalui skema \texttt{User}, sehingga memudahkan pengelolaan data terkait.
-	\item \textbf{Integritas Data yang Terjamin}: Dengan menggunakan referensi kunci asing, hubungan antara \texttt{User} dan \texttt{Queue} menjadi lebih terstruktur, memastikan integritas data yang konsisten di database.
-	\item \textbf{Penghematan Waktu dalam Query}: Karena asosiasi ini terdefinisi dalam skema, query untuk mendapatkan antrean yang dimiliki oleh pengguna tertentu dapat dilakukan dengan efisien tanpa harus membuat relasi secara manual.
-\end{itemize}
-
-Asosiasi ini menjadi dasar bagi fitur-fitur aplikasi yang membutuhkan pengelolaan antrean oleh pengguna, memastikan bahwa setiap antrean terhubung dengan pemilik yang tepat.
 
 
 \section{Menerapkan Otorisasi dalam Controller}
 
 \subsection{Mengamankan Aksi dalam \texttt{QueueController}}
-\texttt{QueueController} dikonfigurasi untuk memastikan bahwa tindakan tertentu hanya dapat diakses oleh pengguna yang memiliki hak autentikasi dan otorisasi yang tepat. Dengan konfigurasi ini, tindakan-tindakan sensitif seperti \texttt{create} dan \texttt{delete} dilindungi dari akses yang tidak sah.
+\texttt{QueueController} dikonfigurasi untuk memastikan bahwa hanya pengguna yang telah terautentikasi dan memiliki hak akses yang benar yang dapat melakukan tindakan tertentu. Pengaturan ini melibatkan penggunaan plug \texttt{RequireAuth} untuk autentikasi dan plug \texttt{:check\_queue\_owner} untuk memverifikasi kepemilikan antrean sebelum tindakan sensitif dijalankan.
 
-\begin{lstlisting}[language=Elixir, caption={\texttt{lib/hello\_web/controllers/queue\_controller.ex}}]
-	plug HelloWeb.Plugs.RequireAuth when action in [:new, :create, :update, :edit, :delete]
-	plug :check_queue_owner when action in [:update, :edit, :delete]
-	
-	def create(conn, params) do
-	%{"queue" => queue_params} = params
-	
-	changeset =
-	conn.assigns.user
-	|> Ecto.build_assoc(:queues)
-	|> Queue.changeset(queue_params)
-	
-	case Repo.insert(changeset) do
-	{:ok, _queue} ->
-	conn
-	|> put_flash(:info, "Queue berhasil dibuat.")
-	|> redirect(to: "/")
-	
-	{:error, changeset} ->
-	render(conn, :new, changeset: changeset)
-	end
-	end
+\begin{lstlisting}[language=Elixir, caption={\texttt{lib/hiwi\_web/controllers/queue\_controller.ex}}]
+  ...
+  plug HiwiWeb.Plugs.RequireAuth when action in [:new, :create, :update, :edit, :delete]
+  plug :check_queue_owner when action in [:update, :edit, :delete]
+  ...
+  def create(conn, params) do
+    %{"queue" => queue_params} = params
+
+    changeset =
+      conn.assigns.user
+      |> Ecto.build_assoc(:queues)
+      |> Queue.changeset(queue_params)
+    
+    case Repo.insert(changeset) do
+      {:ok, _queue} ->
+        conn
+        |> put_flash(:info, "Queue created successfully.")
+        |> redirect(to: "/")
+      {:error, changeset} ->
+        IO.inspect(changeset)
+        render(conn, :new, changeset: changeset)
+    end
+  end
+  ...
 \end{lstlisting}
 
-Penjelasan dari konfigurasi keamanan ini adalah sebagai berikut:
-
-\begin{itemize}
-	\item \texttt{plug HelloWeb.Plugs.RequireAuth when action in [:new, :create, :update, :edit, :delete]} - Bagian ini menggunakan plug \texttt{RequireAuth} untuk memastikan bahwa hanya pengguna yang telah terautentikasi yang dapat mengakses tindakan-tindakan tertentu. Dengan kata lain, tindakan \texttt{new}, \texttt{create}, \texttt{update}, \texttt{edit}, dan \texttt{delete} memerlukan autentikasi. Jika tidak ada autentikasi yang terdeteksi, permintaan akan diarahkan ulang dan ditolak.
-	
-	\item \texttt{plug :check\_queue\_owner when action in [:update, :edit, :delete]} - Bagian ini menggunakan plug \texttt{check\_queue\_owner} untuk memverifikasi bahwa pengguna yang sedang melakukan permintaan adalah pemilik dari \texttt{queue} yang dimaksud sebelum mengizinkan tindakan seperti \texttt{update}, \texttt{edit}, atau \texttt{delete}. Verifikasi ini memberikan perlindungan tambahan untuk memastikan bahwa hanya pemilik antrean yang sah yang dapat memodifikasi atau menghapus antrean tersebut.
-\end{itemize}
+Pada baris pertama, plug \texttt{RequireAuth} memastikan bahwa tindakan seperti \texttt{new}, \texttt{create}, \texttt{update}, \texttt{edit}, dan \texttt{delete} hanya dapat diakses oleh pengguna yang telah login. Jika pengguna belum terautentikasi, permintaan dialihkan sebelum controller mengeksekusi tindakan tersebut. Plug kedua, yaitu \texttt{:check\_queue\_owner}, digunakan untuk memverifikasi bahwa pengguna yang sedang login adalah pemilik antrean sebelum melakukan \texttt{update}, \texttt{edit}, atau \texttt{delete}. Dengan verifikasi ini, hanya pemilik antrean yang dapat memodifikasinya.
 
 \subsubsection{Implementasi Fungsi \texttt{create} dengan Otorisasi}
-Fungsi \texttt{create} dalam \texttt{QueueController} bertanggung jawab untuk membuat antrean baru. Fungsi ini menggunakan informasi dari \texttt{conn.assigns.user} untuk menetapkan pemilik antrean saat antrean dibuat.
+Fungsi \texttt{create} bertanggung jawab membuat antrean baru, sekaligus memastikan antrean tersebut terhubung dengan pengguna yang sedang login. Parameter permintaan dipetakan ke dalam \texttt{queue\_params}, kemudian asosiasi antara pengguna dan antrean baru dibentuk menggunakan \texttt{Ecto.build\_assoc}. Setelah itu, \texttt{Queue.changeset} digunakan untuk mempersiapkan data antrean sebelum disimpan ke database.
 
-\begin{itemize}
-	\item \texttt{\%{"queue" => queue\_params} = params} - Mendeklarasikan \texttt{queue\_params} sebagai data yang berisi informasi antrean baru dari parameter permintaan.
-	\item \texttt{conn.assigns.user |> Ecto.build\_assoc(:queues) |> Queue.changeset(queue\_params)} - Langkah ini menggunakan \texttt{Ecto.build\_assoc} untuk membangun asosiasi antara pengguna yang sedang masuk (\texttt{conn.assigns.user}) dan antrean baru yang akan dibuat. \texttt{Queue.changeset} kemudian digunakan untuk menghasilkan perubahan (changeset) yang akan disimpan dalam database.
-	\item \texttt{case Repo.insert(changeset)} - Memasukkan perubahan ke dalam database melalui \texttt{Repo.insert}. 
-	\begin{itemize}
-		\item \texttt{{:ok, \_queue} ->} - Jika perubahan berhasil disimpan, \texttt{put\_flash(:info, "Queue berhasil dibuat.")} menampilkan pesan konfirmasi, dan \texttt{redirect(to: "/")} mengarahkan ulang pengguna ke halaman utama.
-		\item \texttt{{:error, changeset} ->} - Jika ada kesalahan dalam penyimpanan, tampilan untuk membuat antrean baru akan dimuat ulang dengan menampilkan pesan kesalahan.
-	\end{itemize}
-\end{itemize}
+Kueri \texttt{Repo.insert} digunakan untuk menyimpan data. Jika proses penyimpanan berhasil, pengguna diarahkan kembali ke halaman utama dengan pesan keberhasilan. Jika terjadi kesalahan, tampilan formulir pembuatan antrean ditampilkan kembali dengan informasi error dari changeset.
 
 \subsubsection{Keuntungan dari Konfigurasi Otorisasi dalam \texttt{QueueController}}
-Penerapan konfigurasi keamanan ini membawa beberapa keuntungan:
-
-\begin{itemize}
-	\item \textbf{Perlindungan Data yang Lebih Baik}: Penggunaan \texttt{RequireAuth} memastikan bahwa hanya pengguna terautentikasi yang dapat mengakses tindakan sensitif, mengurangi risiko akses tidak sah.
-	\item \textbf{Kontrol Kepemilikan Data}: Dengan plug \texttt{check\_queue\_owner}, hanya pemilik yang sah yang diizinkan untuk memodifikasi atau menghapus antrean, menjaga integritas data sesuai dengan kepemilikan yang benar.
-	\item \textbf{Pengalaman Pengguna yang Terstruktur}: Pesan konfirmasi dan pengalihan yang tepat memberikan informasi yang jelas kepada pengguna, menciptakan pengalaman yang lebih baik saat mengelola antrean.
-\end{itemize}
-
-Dengan penerapan autentikasi dan otorisasi di \texttt{QueueController}, aplikasi dapat menjamin bahwa hanya pengguna dengan hak akses yang tepat yang dapat melakukan tindakan tertentu, memberikan keamanan tambahan untuk data antrean.
-
-
-\subsection{Mengecek Kepemilikan Queue}
-Fungsi \texttt{check\_queue\_owner} dirancang untuk memastikan bahwa hanya pemilik sah dari antrean yang dapat melakukan tindakan seperti \texttt{edit} atau \texttt{delete}. Dengan memastikan kepemilikan ini, fungsi tersebut memberikan lapisan keamanan tambahan, mencegah akses atau perubahan yang tidak sah pada data antrean.
-
-\begin{lstlisting}[language=Elixir, caption={\texttt{lib/hello\_web/controllers/queue\_controller.ex}}]
-	def check_queue_owner(conn, _params) do
-	%{params: %{"id" => queue_id}} = conn
-	
-	if Repo.get(Queue, queue_id) do
-	conn
-	else
-	conn
-	|> put_flash(:error, "Dokumen ini tidak dapat diedit.")
-	|> halt()
-	end
-	end
-\end{lstlisting}
-
-Penjelasan rinci mengenai setiap bagian dari fungsi \texttt{check\_queue\_owner} adalah sebagai berikut:
-
-\begin{itemize}
-	\item \texttt{\%{params: \{"id" => queue\_id\}} = conn} - Langkah ini mengekstrak parameter \texttt{id} dari \texttt{conn.params}, yang berfungsi sebagai pengenal unik dari antrean yang ingin diakses. Nilai ini disimpan dalam variabel \texttt{queue\_id} untuk diproses lebih lanjut.
-	
-	\item \texttt{if Repo.get(Queue, queue\_id)} - Pernyataan kondisional ini mencoba mengambil antrean dari database berdasarkan \texttt{queue\_id}. 
-	\begin{itemize}
-		\item Jika antrean ditemukan, berarti pengguna memiliki hak untuk mengakses atau memodifikasi antrean tersebut, dan \texttt{conn} dikembalikan tanpa perubahan, memungkinkan tindakan untuk dilanjutkan.
-		\item Jika antrean tidak ditemukan atau pengguna tidak memiliki hak akses yang sesuai, maka koneksi akan melalui blok \texttt{else}, yang menangani kasus ketika pengguna tidak sah atau antrean tidak ada.
-	\end{itemize}
-	
-	\item \texttt{put\_flash(:error, "Dokumen ini tidak dapat diedit.")} - Menampilkan pesan error kepada pengguna yang menunjukkan bahwa dokumen atau antrean tidak dapat diakses atau dimodifikasi. Pesan ini disimpan dalam flash message yang ditampilkan pada halaman berikutnya yang diarahkan.
-	
-	\item \texttt{halt()} - Menghentikan eksekusi lebih lanjut dalam siklus permintaan, memastikan bahwa tindakan tambahan tidak dilakukan pada antrean yang tidak memiliki izin akses. Fungsi ini memastikan bahwa permintaan dihentikan dan pengguna tidak diarahkan ke halaman lain atau melanjutkan eksekusi lebih lanjut.
-\end{itemize}
-
-\subsubsection{Manfaat Fungsi \texttt{check\_queue\_owner}}
-Dengan menerapkan \texttt{check\_queue\_owner}, terdapat beberapa manfaat penting dalam menjaga keamanan dan integritas data:
-
-\begin{itemize}
-	\item \textbf{Perlindungan Data}: Hanya pemilik yang sah yang diizinkan untuk mengedit atau menghapus antrean, sehingga mengurangi risiko modifikasi data oleh pengguna yang tidak berwenang.
-	\item \textbf{Pengalaman Pengguna yang Lebih Terstruktur}: Dengan menampilkan pesan error yang jelas ketika pengguna tidak memiliki hak akses, pengguna mendapatkan informasi yang sesuai tanpa melanjutkan tindakan yang tidak diizinkan.
-	\item \textbf{Penerapan Hak Akses yang Efektif}: Fungsi ini memberikan kendali yang lebih baik atas hak akses pada data antrean, menghindari akses yang tidak sah dan menjaga agar setiap antrean hanya dimodifikasi oleh pemilik yang sesuai.
-\end{itemize}
-
-Secara keseluruhan, \texttt{check\_queue\_owner} membantu memastikan bahwa data yang sensitif dikelola dan diakses hanya oleh pihak yang berwenang, meningkatkan keamanan dan kontrol terhadap sumber daya aplikasi.
+Konfigurasi ini memberikan perlindungan yang kuat terhadap tindakan sensitif dalam controller. Autentikasi memastikan bahwa tindakan yang penting hanya dapat dilakukan oleh pengguna yang login, sementara verifikasi kepemilikan memberi jaminan bahwa antrean hanya dapat dimodifikasi oleh pemiliknya. Selain meningkatkan keamanan, proses ini juga meningkatkan pengalaman pengguna dengan memberikan pesan flash yang jelas dan alur kerja yang konsisten saat mengelola antrean. Dengan demikian, controller dapat menjaga integritas data sekaligus memberikan pengalaman yang informatif dan terstruktur.
 
 
 \subsection{Menampilkan Tautan Edit dan Delete Berdasarkan Kepemilikan Queue}
-Dalam komponen tampilan \texttt{index.html.heex}, kita ingin memastikan bahwa hanya pengguna yang memiliki queue tersebut yang dapat melihat dan mengakses tautan \texttt{Edit} dan \texttt{Delete}. Untuk itu, kita menggunakan kondisi untuk memeriksa apakah pengguna yang terotentikasi saat ini adalah pemilik dari queue yang ditampilkan.
+Pada tampilan \texttt{index.html.heex}, ditambahkan kondisi untuk menampilkan tautan \texttt{Edit} dan \texttt{Delete} hanya kepada pengguna yang memiliki antrean tersebut. Pemeriksaan dilakukan dengan membandingkan \texttt{@user.id} dengan \texttt{q.user\_id}. Jika kedua nilai cocok, maka pengguna dianggap sebagai pemilik antrean dan dapat melihat serta mengakses tindakan pengeditan atau penghapusan.
 
-\begin{lstlisting}[language=HTML, caption={\texttt{lib/hello\_web/controllers/queue\_html/index.html.heex}}]
-	<%= if @conn.assigns.user && @conn.assigns.user.id == queue.user_id do %>
-	<div>
-	|
-	<.link href={~p"/queues/#{queue.id}/edit"}>Edit</.link>
-	|
-	<.link href={~p"/queues/#{queue.id}/delete"} method="delete">Delete</.link>
-	|
-	</div>
-	<% end %>
+\begin{lstlisting}[language=HTML, caption={\texttt{lib/hiwi\_web/controllers/queue\_html/index.html.heex}}]
+<Layouts.app flash={@flash} user={@user}>
+  ...
+  <div class="join">
+    <.link navigate={~p"/queues/#{q.id}"} class="btn btn-ghost btn-xs join-item">View</.link>
+
+    <%= if @user && @user.id == q.user_id do %>
+      <.link navigate={~p"/queues/edit/#{q.id}"} class="btn btn-ghost btn-xs join-item">Edit</.link>
+      <.link href={~p"/queues/delete/#{q.id}"} method="delete"
+             data-confirm="Delete this queue?"
+             class="btn btn-ghost btn-xs text-error join-item">
+        Delete
+      </.link>
+    <% end %>
+  </div>
+  ...
+</Layouts.app>
 \end{lstlisting}
 
-Pada cuplikan kode di atas, terdapat beberapa poin yang penting untuk dipahami:
-
-\begin{itemize}
-	\item \texttt{@conn.assigns.user} memastikan bahwa ada pengguna yang saat ini sedang terautentikasi. Jika \texttt{user} bernilai \texttt{nil}, maka kode di dalam blok kondisi tidak akan dieksekusi.
-	\item \texttt{@conn.assigns.user.id == queue.user\_id} adalah kondisi yang mengecek apakah \texttt{id} pengguna yang terotentikasi sama dengan \texttt{user\_id} dari \texttt{queue}. Jika cocok, maka pengguna tersebut dianggap sebagai pemilik dari queue tersebut.
-	\item Jika kondisi terpenuhi, div dengan tautan \texttt{Edit} dan \texttt{Delete} akan ditampilkan, memungkinkan pemilik untuk mengedit atau menghapus queue.
-\end{itemize}
+Pada cuplikan tersebut, nilai \texttt{@user} berasal dari \texttt{conn.assigns.user} yang telah ditetapkan oleh plug autentikasi. Jika nilai tersebut \texttt{nil}, tautan \texttt{Edit} dan \texttt{Delete} tidak akan muncul. Jika ada pengguna yang sedang login, aplikasi memeriksa apakah \texttt{@user.id} sama dengan \texttt{q.user\_id}. Kondisi ini memastikan bahwa hanya pemilik antrean yang dapat melihat tindakan pengeditan dan penghapusan.
 
 \subsubsection{Penjelasan Tautan Edit dan Delete}
-\begin{itemize}
-	\item \texttt{<.link href={~p"/queues/\#\{queue.id\}/edit"}>Edit</.link>} - Tautan ini mengarahkan pengguna ke halaman pengeditan queue berdasarkan \texttt{id} queue yang dimiliki. Pengguna hanya dapat mengakses tautan ini jika mereka adalah pemilik dari queue tersebut.
-	\item \texttt{<.link href={~p"/queues/\#\{queue.id\}/delete"} method="delete">Delete</.link>} - Tautan ini memungkinkan pengguna untuk menghapus queue yang mereka miliki. Tautan ini menggunakan metode \texttt{delete} untuk memastikan bahwa operasi yang dijalankan adalah penghapusan data.
-\end{itemize}
+Tautan \texttt{Edit} menggunakan \texttt{navigate} untuk membawa pengguna ke halaman pengeditan antrean berdasarkan \texttt{id} antrean. Tautan \texttt{Delete} menggunakan atribut \texttt{method="delete"} untuk mengirim permintaan penghapusan dan dilengkapi dengan konfirmasi sehingga pengguna tidak menghapus antrean secara tidak sengaja. Kedua tautan ini hanya muncul ketika kondisi kepemilikan terpenuhi.
 
 \subsubsection{Menambahkan Kondisi untuk Keamanan}
-Kondisi ini penting karena menjaga agar pengguna lain tidak dapat melihat atau mengakses tindakan \texttt{Edit} dan \texttt{Delete} pada queue yang bukan milik mereka. Dengan cara ini, kita memastikan keamanan aplikasi dan menjaga data tetap sesuai dengan hak akses pengguna.
+Kondisi ini memberikan lapisan keamanan tambahan dengan memastikan bahwa tindakan sensitif seperti mengubah atau menghapus antrean hanya dapat dilakukan oleh pemiliknya. Pendekatan ini membantu menjaga integritas data dan menghindari akses yang tidak sesuai, karena pengguna lain tidak dapat melihat atau mengakses tautan untuk tindakan tersebut.
+
+
 
 \section{Kesimpulan}
-Dengan menambahkan pengecekan kepemilikan ini pada komponen tampilan, kita memastikan bahwa hanya pengguna yang berhak dapat mengelola data queue mereka. Hal ini merupakan praktik terbaik dalam aplikasi web untuk memastikan hak akses sesuai dengan peran dan kepemilikan data. Pada akhirnya, penggunaan plugs dan pengecekan kepemilikan di sisi tampilan ini memberikan keamanan tambahan pada aplikasi Phoenix.
+Penambahan pengecekan kepemilikan pada komponen tampilan memastikan bahwa hanya pengguna yang benar-benar memiliki antrean yang dapat melakukan tindakan seperti mengedit atau menghapus. Pendekatan ini selaras dengan praktik terbaik dalam pengembangan aplikasi web, di mana hak akses harus sesuai dengan peran serta kepemilikan data. Dengan memadukan penggunaan plugs untuk autentikasi dan otorisasi di sisi server, serta pengecekan kepemilikan di sisi tampilan, aplikasi Phoenix memperoleh lapisan keamanan tambahan yang menjaga integritas data dan mencegah tindakan yang tidak sah.
+

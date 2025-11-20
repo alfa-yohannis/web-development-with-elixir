@@ -1,21 +1,30 @@
 \documentclass[aspectratio=169, table]{beamer}
 
 \usepackage[utf8]{inputenc}
-\usepackage{listings}
+\usepackage{listings} 
+
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, calc}
 
 \usetheme{Pradita}
 
 \subtitle{IF140303-Web Application Development}
 
-\title{Session-11:\\\LARGE{Session and Authentication using\\Plugs in Phoenix Framework}}
+\title{Session-11:\\
+\Huge{
+Plugs: Authentication \\ and Authorization\\
+\vspace{-20pt}
+}
+}
 \date[Serial]{\scriptsize{PRU/SPMI/FR-BM-18/0222}}
 \author[Pradita]{\small{\textbf{Alfa Yohannis}}}
 
-\lstdefinelanguage{Elixir}{
-	keywords={def, defmodule, do, end, for, if, else, true, false, use, alias, plug},
+\lstdefinelanguage{Elixir} {
+	keywords={def, defmodule, do, end, for, if, else, true, false, scope},
+	language=ruby,
 	basicstyle=\ttfamily\small,
 	keywordstyle=\color{blue}\bfseries,
-	ndkeywords={@moduledoc, iex, Enum, @doc},
+	ndkeywords={@spec, @moduledoc, iex, Enum, @doc, add, alter, field, has_many, timestamps},
 	ndkeywordstyle=\color{purple}\bfseries,
 	sensitive=true,
 	commentstyle=\color{gray},
@@ -33,265 +42,437 @@
 	showstringspaces=false
 }
 
+
+\lstdefinelanguage{bash} {
+	keywords={},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={iex},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	showstringspaces=false
+}
+
+\lstdefinelanguage{html} {
+	keywords={h1, b, a, href, class},
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={p, else, if, do, end},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	morecomment=[s]{<!--}{-->},
+	string=[s]{'}{'},
+	morestring=[s]{"}{"},
+	tabsize=2
+}
+
+
 \begin{document}
 	
 	\frame{\titlepage}
 	
-	\begin{frame}
-		\frametitle{Introduction to GitHub OAuth Authentication}
-		\begin{itemize}
-			\item We'll implement OAuth authentication using GitHub.
-			\item OAuth flow:
-			\begin{enumerate}
-				\item User clicks "Login with GitHub" on the web page.
-				\item Redirect to GitHub.com for authorization.
-				\item After authorization, GitHub redirects back with an authorization code.
-				\item Use the authorization code to retrieve user details.
-				\item Create a new user record and log the user in.
-			\end{enumerate}
-		\end{itemize}
+		\begin{frame}[fragile]
+		\frametitle{Contents}
+		\vspace{20pt}
+		\begin{columns}[t]
+			\column{0.5\textwidth}
+			\tableofcontents[sections={1-6}]
+			
+			\column{0.5\textwidth}
+			\tableofcontents[sections={7-99}]
+		\end{columns}
 	\end{frame}
-	
-	\begin{frame}
-		\frametitle{Using the \shortstack{Ueberauth Helper \\ Library for OAuth}}
-		\begin{itemize}
-			\item We'll use the \texttt{Ueberauth} library to handle the OAuth process.
-			\item Create a new controller to manage OAuth flows.
-			\item When the user clicks "Login with GitHub":
-			\begin{enumerate}
-				\item The controller triggers \texttt{Ueberauth} to start the OAuth flow.
-				\item Redirect to GitHub for authentication.
-				\item Handle GitHub's response with a callback function in the controller.
-			\end{enumerate}
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Installing Dependencies}
-		\begin{itemize}
-			\item Open \texttt{mix.exs} to add dependencies:
-			\begin{lstlisting}[language=Elixir]
-				defp deps do
-				[{..., :ueberauth, "~> 0.3"},
-				{:ueberauth_github, "~> 0.4"}]
-				end
-				def application do
-				[extra_applications: [...,:ueberauth, :ueberauth_github]]
-				end
-			\end{lstlisting}
-			\item Run \texttt{mix deps.get} to install dependencies.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}
-		\frametitle{Generating GitHub API Key}
-		\begin{itemize}
-			\item Go to GitHub to generate an API key for OAuth.
-			\begin{enumerate}
-				\item Navigate to Profile > Settings > Developer Settings.
-				\item Click on \texttt{OAuth applications} and register a new application.
-				\item Fill out the form, including the Authorization Callback URL.
-				\item Generate the Client ID and Client Secret.
-			\end{enumerate}
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{\shortstack{Including the API Key in \\ Configuration Files}}
-		\begin{itemize}
-			\item Add the API key to \texttt{config.exs}:
-			\begin{lstlisting}[language=Elixir]
-				config :ueberauth, Ueberauth,
-				providers: [
-				github: {Ueberauth.Strategy.Github, []}]
-				config :ueberauth, Ueberauth.Strategy.Github.OAuth,
-				client_id: "your_generated_client_id",
-				client_secret: "your_generated_secret_id"
-			\end{lstlisting}
-			\item This configuration links Ueberauth with GitHub OAuth.
-			\item It's recommended to hide the API key if uploading to a public repository.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Creating the \shortstack{Authentication Controller}}
-		\begin{itemize}
-			\item Create a new controller at \texttt{web > controllers > auth\_controller.ex}:
-			\begin{lstlisting}[language=Elixir]
-				defmodule Discuss.AuthController do
-				use Discuss.Web, :controller
-				plug Ueberauth
-				def callback(conn, params) do
-				IO.inspect(conn.assigns)
-				IO.inspect(params)
-				end
-				end
-			\end{lstlisting}
-			\item \texttt{conn.assigns} returns user data (email, username, etc.).
-			\item \texttt{params} returns the authorization code and provider.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Updating the Router}
-		\begin{itemize}
-			\item Open \texttt{router.ex} and update it to include the auth routes:
-			\begin{lstlisting}[language=Elixir]
-				scope "/", Discuss do
-				pipe_through :browser
-				resources "/", TopicController
-				end
-				
-				scope "/auth", Discuss do
-				pipe_through :browser
-				get "/:provider", AuthController, :request
-				get "/:provider/callback", AuthController, :callback
-				end
-			\end{lstlisting}
-			\item \texttt{pipe\_through} specifies the pipeline to use.
-			\item The \texttt{scope "/auth"} block defines routes for OAuth-related actions.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{\shortstack{Generating Migration \\ for Users Table}}
-		\begin{itemize}
-			\item Generate a migration file with:
-			\texttt{mix ecto.gen.migration add\_users}
-			\item In the migration file:
-			\begin{lstlisting}[language=Elixir]
-				defmodule Discuss.Repo.Migrations.AddUsers do
-				use Ecto.Migration
-				
-				def change do
-				create table(:users) do
-				add :email, :string
-				add :provider, :string
-				add :token, :string
-				timestamps()
-				end
-				end
-				end
-			\end{lstlisting}
-			\item This creates a \texttt{users} table with \texttt{email}, \texttt{provider}, \texttt{token}, and timestamps.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Creating the \shortstack{User Model}}
-		\begin{itemize}
-			\item Create a user model in \texttt{web > models > user.ex}:
-			\begin{lstlisting}[language=Elixir]
-				defmodule Discuss.User do
-				use Discuss.Web, :model
-				
-				schema "users" do
-				field :email, :string
-				field :provider, :string
-				field :token, :string
-				timestamps()
-				end
-				
-				def changeset(struct, params \\ %{}) do
-				struct
-				|> cast(params, [:email, :provider, :token])
-				|> validate_required([:email, :provider, :token])
-				end
-				end
-			\end{lstlisting}
-			\item This defines the structure and validations for the \texttt{users} table.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Updating the \shortstack{Auth Controller}}
-		\begin{itemize}
-			\item Update \texttt{auth\_controller.ex} to handle user authentication:
-			\begin{lstlisting}[language=Elixir]
-				defmodule Discuss.AuthController do
-				use Discuss.Web, :controller
-				plug Ueberauth
-				
-				alias Discuss.User
-				
-				def callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
-				user_params = %{token: auth.credentials.token,
-					email: auth.info.email,
-					provider: "github"}
-				changeset = User.changeset(%User{}, user_params)
-				insert_or_update_user(changeset)
-				end
-				
-				defp insert_or_update_user(changeset) do
-				case Repo.get_by(User, email: changeset.changes.email) do
-				nil -> Repo.insert(changeset)
-				user -> {:ok, user}
-				end
-				end
-				end
-			\end{lstlisting}
-			\item \texttt{callback/2} processes GitHub's OAuth response.
-			\item \texttt{insert\_or\_update\_user/1} inserts a new user or updates an existing one.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}
-		\frametitle{Short Explanation of Cookies}
-		\begin{itemize}
-			\item Cookies store user data on the client side, enabling session persistence.
-			\item In our flow:
-			\begin{enumerate}
-				\item After successful OAuth, the user's ID is stored in a cookie.
-				\item On subsequent requests, the server checks the cookie to retrieve the user ID.
-				\item If the user exists, they're automatically signed in.
-			\end{enumerate}
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Adding the \shortstack{Sign-In Functionality}}
-		\begin{itemize}
-			\item Update \texttt{auth\_controller.ex} to include sign-in:
-			\begin{lstlisting}[language=Elixir]
-				defmodule Discuss.AuthController do
-				use Discuss.Web, :controller
-				plug Ueberauth
-				
-				alias Discuss.User
-				
-				def callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
-				user_params = %{token: auth.credentials.token,
-					email: auth.info.email,
-					provider: "github"}
-				changeset = User.changeset(%User{}, user_params)
-				signin(conn, changeset)
-				end
-				
-				defp signin(conn, changeset) do
-				case insert_or_update_user(changeset) do
-				{:ok, user} ->
-				conn
-				|> put_flash(:info, "Welcome back!")
-				|> put_session(:user_id, user.id)
-				|> redirect(to: topic_path(conn, :index))
-				{:error, _reason} ->
-				conn
-				|> put_flash(:error, "Error signing in")
-				|> redirect(to: topic_path(conn, :index))
-				end
-				end
-				
-				defp insert_or_update_user(changeset) do
-				case Repo.get_by(User, email: changeset.changes.email) do
-				nil -> Repo.insert(changeset)
-				user -> {:ok, user}
-				end
-				end
-				end
-			\end{lstlisting}
-			\item \texttt{signin/2} manages the sign-in process, storing the user's ID in a session.
-			\item This ensures users are recognized upon returning to the application.
-		\end{itemize}
-	\end{frame}
-	
+
+\section{Migrations}
+
+\begin{frame}[fragile]{Migration: link \texttt{queues} to \texttt{users}}
+\vspace{20px}
+
+\small
+We generate and run a migration that adds a \texttt{user\_id} foreign key to the \texttt{queues} table.
+
+\begin{lstlisting}[language=bash]
+mix ecto.gen.migration add_user_id_to_queues
+\end{lstlisting}
+
+\begin{lstlisting}[language=Elixir]
+defmodule Hiwi.Repo.Migrations.AddUserIdToQueues do
+  use Ecto.Migration
+
+  def change do
+    alter table(:queues) do
+      add :user_id, references(:users)
+    end
+  end
+end
+\end{lstlisting}
+
+\begin{lstlisting}[language=bash]
+mix ecto.migrate
+\end{lstlisting}
+
+\end{frame}
+
+\section{Models}
+
+\begin{frame}[fragile]{Updating the \texttt{User} Schema}
+\vspace{20px}
+
+\small
+To link users with their queues, we add a one-to-many association in the \texttt{User} schema.  
+This enables loading all queues owned by a user without manual joins.
+
+\begin{lstlisting}[language=Elixir]
+schema "users" do
+  field :email, :string
+  ...
+  has_many :queues, Hiwi.Queue
+  ...
+end
+\end{lstlisting}
+
+The field \texttt{has\_many} instructs Ecto that each user may own multiple queues,  
+mapped through the \texttt{user\_id} foreign key inside the \texttt{queues} table.
+
+\end{frame}
+
+
+
+\begin{frame}[fragile]{Updating the \texttt{Queue} Schema}
+\vspace{20px}
+
+\small
+Each queue must reference its owner. We add a \texttt{belongs\_to} relation so queues  
+link back to the \texttt{User} schema.
+
+\begin{lstlisting}[language=Elixir]
+schema "queues" do
+  field :name, :string
+  ...
+  belongs_to :user, Hiwi.User
+  ...
+end
+\end{lstlisting}
+
+This association ensures data integrity and allows efficient queries when determining  
+who owns a queue. It provides the basis for authorization logic in controllers.
+
+\end{frame}
+
+\section{Plugs}
+
+\begin{frame}[fragile]{SetUser Plug (Code)}
+\vspace{30px}
+
+\small
+The \texttt{SetUser} plug loads the logged-in user from the session  
+and assigns it to \texttt{conn.assigns}. This allows controllers  
+and views to access \texttt{@user} without re-querying the database.
+
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\scriptsize]
+defmodule HiwiWeb.Plugs.SetUser do
+  import Plug.Conn
+  alias Hiwi.Repo
+  alias Hiwi.User
+
+  def init(_params), do: nil
+
+  def call(conn, _params) do
+    user_id = get_session(conn, :user_id)
+
+    cond do
+      user = user_id && Repo.get(User, user_id) ->
+        assign(conn, :user, user)
+      true ->
+        assign(conn, :user, nil)
+    end
+  end
+end
+\end{lstlisting}
+
+\end{frame}
+
+
+
+\begin{frame}[fragile]{SetUser Plug (Benefits)}
+\vspace{20px}
+
+\small
+The plug ensures user information is consistently available for  
+authorization and UI customization. It simplifies access to  
+\texttt{@user} and avoids repeated database queries.
+
+\begin{itemize}
+  \item \textbf{Efficiency}: User data is fetched once per request.
+  \item \textbf{Easy Access}: Controllers and components use \texttt{@user}.
+  \item \textbf{Security}: Ensures only authenticated users produce valid data.
+\end{itemize}
+
+\end{frame}
+
+
+
+\begin{frame}[fragile]{RequireAuth Plug (Code)}
+\vspace{20px}
+
+\small
+The \texttt{RequireAuth} plug blocks access to pages that require authentication.  
+It checks whether \texttt{@user} exists in \texttt{conn.assigns}; if not,  
+the request is redirected and halted.
+
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\scriptsize]
+defmodule HiwiWeb.Plugs.RequireAuth do
+  import Plug.Conn
+  import Phoenix.Controller
+
+  def init(_params), do: nil
+
+  def call(conn, _params) do
+    if conn.assigns[:user] do
+      conn
+    else
+      conn
+      |> put_flash(:error, "You haven't signed in.")
+      |> redirect(to: "/")
+      |> halt()
+    end
+  end
+end
+\end{lstlisting}
+
+\end{frame}
+
+
+
+\begin{frame}[fragile]{RequireAuth Plug (Purpose \& Benefits)}
+\vspace{20px}
+
+\small
+The plug ensures that only authenticated users can access  
+sensitive actions. It relies on \texttt{SetUser} to load the user.
+
+\begin{itemize}
+  \item Ensures restricted pages are protected.
+  \item Redirects unauthenticated users with a clear message.
+  \item Centralizes authorization checks for multiple routes.
+\end{itemize}
+
+\end{frame}
+
+\section{Signin/Signout Button}
+
+
+\begin{frame}[fragile]{Layout Adjustment Based on Authentication}
+\vspace{20px}
+
+\small
+The layout displays different links depending on whether \texttt{@user} is present.  
+If a user is logged in, the Signout link appears; otherwise, the GitHub login link is shown.
+
+\begin{lstlisting}[language=html, basicstyle=\ttfamily\scriptsize]
+<li>
+  <%= if @user do %>
+    <a href={~p"/auth/signout"} class="btn btn-ghost">Signout</a>
+  <% else %>
+    <a href={~p"/auth/github"} class="btn btn-ghost">
+      Login with GitHub
+    </a>
+  <% end %>
+</li>
+<li>
+  <a href="https://phoenixframework.org/" class="btn btn-ghost">
+    Website
+  </a>
+</li>
+\end{lstlisting}
+
+\small
+This ensures navigation reflects authentication state, improving clarity and user experience.
+
+\end{frame}
+
+
+\section{Routes}
+
+
+\begin{frame}[fragile]{Authentication Routes in \texttt{router.ex}}
+\vspace{20px}
+
+\small
+The router loads the current user through the \texttt{SetUser} plug in  
+the \texttt{:browser} pipeline and defines authentication routes  
+for login providers and signout handling.
+
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\scriptsize]
+pipeline :browser do
+  plug :accepts, ["html"]
+  ...
+  plug HiwiWeb.Plugs.SetUser
+end
+
+scope "/auth", HiwiWeb do
+  pipe_through :browser
+  get "/signout", AuthController, :signout
+  get "/:provider", AuthController, :request
+  get "/:provider/callback", AuthController, :callback
+end
+\end{lstlisting}
+
+\small
+The \texttt{signout} route clears the session safely, while  
+provider routes handle external authentication flows.
+
+\end{frame}
+
+
+\section{AuthController}
+
+\begin{frame}[fragile]{Handling Signout in \texttt{AuthController}}
+\vspace{20px}
+
+\small
+The \texttt{signout} function clears the session and redirects  
+the user to the homepage, ensuring the authentication state  
+is fully reset.
+
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\scriptsize]
+def signout(conn, _params) do
+  conn
+  |> configure_session(drop: true)
+  |> put_flash(:info, "Signout has been successful.")
+  |> redirect(to: "/")
+end
+\end{lstlisting}
+
+\small
+Clearing the session prevents unauthorized reuse, while the  
+flash message confirms that signout was successful.
+
+\end{frame}
+
+\section{Authentication in QueueController}
+
+
+\begin{frame}[fragile]{Authorization in \texttt{QueueController}}
+\vspace{20px}
+
+\small
+The controller restricts sensitive actions using \texttt{RequireAuth}  
+and validates ownership with \texttt{:check\_queue\_owner}. Only logged-in  
+users—and only the queue owner—may modify or delete queues.
+
+\begin{lstlisting}[language=Elixir, basicstyle=\ttfamily\scriptsize]
+...
+plug HiwiWeb.Plugs.RequireAuth
+  when action in [:new, :create, :update, :edit, :delete]
+
+plug :check_queue_owner
+  when action in [:update, :edit, :delete]
+...
+def create(conn, %{"queue" => queue_params}) do
+  changeset =
+    conn.assigns.user
+    |> Ecto.build_assoc(:queues)
+    |> Queue.changeset(queue_params)
+  ...
+end
+\end{lstlisting}
+
+\end{frame}
+
+
+
+\begin{frame}[fragile]{Create Action with Authorization}
+\vspace{20px}
+
+\small
+The \texttt{create} action attaches the new queue to the logged-in user  
+via \texttt{Ecto.build\_assoc}. Successful inserts redirect with a flash  
+message; errors re-render the form. This ensures new queues always have  
+a valid owner and integrates cleanly with later authorization checks.
+
+\smallskip
+\textbf{Benefits:}
+\begin{itemize}
+  \item Strong protection for sensitive actions.
+  \item Ensures only owners modify their queues.
+  \item Clear feedback through consistent flash messages.
+\end{itemize}
+
+\end{frame}
+
+\section{Edit \& Delete Buttons}
+
+
+\begin{frame}[fragile]{Showing Edit/Delete Links Only to Owners}
+\vspace{20px}
+
+\small
+The view displays \texttt{Edit} and \texttt{Delete} links only when  
+the logged-in user owns the queue. This is checked by comparing  
+\texttt{@user.id} with \texttt{q.user\_id}.
+
+\begin{lstlisting}[language=HTML, basicstyle=\ttfamily\scriptsize]
+<div class="join">
+  <.link navigate={~p"/queues/#{q.id}"} 
+         class="btn btn-ghost btn-xs join-item">View</.link>
+
+  <%= if @user && @user.id == q.user_id do %>
+    <.link navigate={~p"/queues/edit/#{q.id}"} 
+           class="btn btn-ghost btn-xs join-item">Edit</.link>
+    <.link href={~p"/queues/delete/#{q.id}"} method="delete"
+           data-confirm="Delete this queue?"
+           class="btn btn-ghost btn-xs text-error join-item">
+      Delete
+    </.link>
+  <% end %>
+</div>
+\end{lstlisting}
+
+\small
+This prevents unauthorized users from seeing or triggering sensitive actions.
+
+\end{frame}
+
+
+\section{Summary}
+
+\begin{frame}[fragile]{Summary: Authentication \& Authorization}
+\vspace{20px}
+
+\small
+\begin{itemize}
+  \item Phoenix plugs process requests and enable authentication/authorization.
+  \item Ecto associations (\texttt{User}–\texttt{Queue}) establish data ownership.
+  \item \texttt{SetUser} loads the logged-in user into \texttt{conn.assigns}.
+  \item \texttt{RequireAuth} restricts actions to authenticated users.
+  \item Controllers verify queue ownership before sensitive actions.
+  \item Views conditionally display edit/delete actions only for owners.
+  \item Combined logic ensures data integrity and enforces secure access control.
+\end{itemize}
+
+\end{frame}
+
+
 \end{document}

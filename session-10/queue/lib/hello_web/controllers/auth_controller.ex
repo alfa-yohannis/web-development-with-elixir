@@ -17,7 +17,7 @@ defmodule HelloWeb.AuthController do
       provider: provider
     }
 
-    O.puts("user_params = " <> Kernel.inspect(user_params))
+    IO.puts("user_params = " <> Kernel.inspect(user_params))
 
     changeset = User.changeset(%User{}, user_params)
 
