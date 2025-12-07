@@ -1,0 +1,453 @@
+\documentclass[aspectratio=169, table]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage{listings} 
+
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, calc}
+
+\usetheme{Pradita}
+
+\subtitle{IF140303-Web Application Development}
+
+\title{Session-13:\\
+\Huge{
+WebSocket and \\ Publish-Subscribe 2\\
+\vspace{-15pt}
+}
+}
+\date[Serial]{\scriptsize{PRU/SPMI/FR-BM-18/0222}}
+\author[Pradita]{\small{\textbf{Alfa Yohannis}}}
+
+\lstdefinelanguage{Elixir} {
+	keywords={def, defmodule, do, end, for, if, else, true, false, scope},
+	language=ruby,
+	basicstyle=\ttfamily\scriptsize,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={@spec, @moduledoc, iex, Enum, @doc, add, alter, field, has_many, timestamps},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	showstringspaces=false
+}
+
+
+\lstdefinelanguage{bash} {
+	keywords={},
+	basicstyle=\ttfamily\scriptsize,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={iex},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	showstringspaces=false
+}
+
+\lstdefinelanguage{html} {
+	keywords={h1, b, a, href, class},
+	basicstyle=\ttfamily\scriptsize,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={p, else, if, do, end},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	morecomment=[s]{<!--}{-->},
+	string=[s]{'}{'},
+	morestring=[s]{"}{"},
+	tabsize=2
+}
+
+
+\begin{document}
+	
+	\frame{\titlepage}
+	
+		\begin{frame}[fragile]
+		\frametitle{Contents}
+		\vspace{20pt}
+		\begin{columns}[t]
+			\column{0.5\textwidth}
+			\tableofcontents[sections={1-9}]
+			
+			\column{0.5\textwidth}
+			\tableofcontents[sections={10-99}]
+		\end{columns}
+	\end{frame}
+
+
+\section{Introduction}
+
+\begin{frame}[fragile]{Introduction}
+  \vspace{20pt}
+  \begin{itemize}
+    \item \textbf{Context.}  
+    In the previous session, WebSocket and the Publish--Subscribe communication model were introduced. Phoenix provides \texttt{Phoenix.PubSub} for event broadcasting and \texttt{LiveView} for building real-time user interfaces.
+
+    \item \textbf{Problem Statement.}  
+    A digital queue system requires multiple clients to observe the same queue number consistently for each service queue, including control panels and passive displays.
+
+    \item \textbf{Main Objective.}  
+    This session focuses on using a dedicated \texttt{GenServer} \emph{per queue} as a single source of truth, with each queue mapped to its own PubSub topic.
+
+    \item \textbf{Core Components.}  
+    The system consists of per-queue Counter GenServers, PubSub channels, a Control LiveView, and a Display-Only LiveView module.
+
+    \item \textbf{Learning Outcomes.}  
+    To understand real-time multi-client synchronization using per-queue GenServers and the GenServer--PubSub--LiveView pipeline.
+  \end{itemize}
+\end{frame}
+
+
+
+
+
+\section{Publish-Subscribe Broker}
+
+\begin{frame}[fragile]{Queue Counter: Initialization}
+\vspace{20pt}
+
+\begin{lstlisting}[language=Elixir]
+defmodule Hiwi.QueueCounter do
+  use GenServer alias Phoenix.PubSub
+
+  # Start the GenServer with an empty map
+  def start_link(_) do
+    start_link_initial_map_state = %{}
+    IO.puts("## start_link_initial_map_state")
+    IO.inspect(start_link_initial_map_state)
+    GenServer.start_link(__MODULE__, start_link_initial_map_state, name: __MODULE__)
+  end
+
+  # Initialize with an empty map to store queue numbers
+  def init(initial_map_state) do
+    {:ok, initial_map_state}
+  end
+  ...
+\end{lstlisting}
+
+This step initializes the Queue Counter process with an empty in-memory state.
+
+\end{frame}
+
+
+\begin{frame}[fragile]{Queue Counter: Update \& Broadcast Changes}
+\vspace{20pt}
+
+\begin{lstlisting}[language=Elixir]
+  # Public API to set the current number for a specific queue_id
+  def set_current_number(queue_id, new_number) do
+    GenServer.cast(__MODULE__, {:set_current_number, queue_id, new_number})
+  end
+
+  # Handle setting the current number for a queue_id and broadcasting the update
+  def handle_cast({:set_current_number, queue_id, new_number}, current_map_state) do
+    updated_map_state = Map.put(current_map_state, queue_id, new_number)
+
+    PubSub.broadcast(Hiwi.PubSub, "queue_counter:updates:#{queue_id}", {:number_update, queue_id, new_number})
+
+    {:noreply, updated_map_state}
+  end
+\end{lstlisting}
+
+This updates the internal GenServer state asynchronously using \texttt{cast}.  
+Each update is immediately broadcasted to all clients subscribed to the queue topic.
+
+\end{frame}
+
+
+\begin{frame}[fragile]{Queue Counter: Responding to Requests}
+\vspace{10pt}
+
+\begin{lstlisting}[language=Elixir]
+  ...
+  # Public API to get the current number for a specific queue_id
+  def get_current_number(queue_id) do
+    GenServer.call(__MODULE__, {:get_current_number, queue_id})
+  end
+
+  # Handle getting the current number for a queue_id
+  def handle_call({:get_current_number, queue_id}, _from, current_map_state) do
+
+    # Default to 0 if queue_id is not found
+    current_number = Map.get(current_map_state, queue_id, 0)
+    {:reply, current_number, current_map_state}
+  end
+  ...
+\end{lstlisting}
+
+\begin{itemize}
+  \item This function provides synchronous access to the queue counter.
+  \item The caller waits until the GenServer returns the current value.
+  \item The internal state remains unchanged after the request.
+\end{itemize}
+
+\end{frame}
+
+
+\section{Display Control Module}
+
+\begin{frame}[fragile]{Display Control Module}
+\vspace{10pt}
+
+\begin{lstlisting}[language=Elixir]
+defmodule HiwiWeb.ModifiableLive do
+  use HiwiWeb, :live_view
+  alias Hiwi.QueueCounter
+  alias Hiwi.Queue
+  alias Hiwi.User
+  alias Hiwi.Repo
+  ...
+end
+\end{lstlisting}
+
+\begin{itemize}
+  \item This LiveView module acts as the main control interface.
+  \item It allows authorized users to modify the queue state.
+  \item Database access is handled through the Repo and schemas.
+  \item It communicates with the QueueCounter for real-time updates.
+\end{itemize}
+
+\end{frame}
+
+
+\begin{frame}[fragile]{Control Module: Initialization}
+\vspace{25pt}
+
+\begin{lstlisting}[language=Elixir]
+  def mount(params, session, socket) do
+    %{"id" => queue_id} = params
+    case session do
+      %{"user_id" => user_id} ->
+        # Subscribe to updates from the QueueCounter
+        :ok = Phoenix.PubSub.subscribe(Hiwi.PubSub, "queue_counter:updates:#{queue_id}")
+        # Get the current number from counter, queue and user from database
+        current_number = QueueCounter.get_current_number(queue_id)
+        queue = Repo.get!(Queue, queue_id)
+        user = Repo.get(User, user_id)
+        # set values to socket
+        socket = socket
+          |> assign(:current_number, current_number)
+          |> assign(:queue_id, queue_id)
+          |> assign(:user_id, user_id)
+          |> assign(:user, user)
+          |> assign(:queue, queue)
+        # return the socket with layout for live
+        {:ok, socket, layout: {HiwiWeb.Layouts, :live}}
+      _ ->
+        ...
+\end{lstlisting}
+
+\end{frame}
+
+\begin{frame}[fragile]{Control Module: Initialization}
+\vspace{10pt}
+
+\begin{lstlisting}[language=Elixir]
+   ...
+        {:ok, socket, layout: {HiwiWeb.Layouts, :live}}
+      _ ->
+        socket =
+          socket
+          |> put_flash(:error, "You haven't signed in.")
+        {:ok, push_navigate(socket, to: "/")}
+    end
+  end
+\end{lstlisting}
+
+\begin{itemize}
+  \item This logic separates authenticated and unauthenticated users.
+  \item Authenticated users proceed to the LiveView with the proper layout.
+  \item Unauthorized access is blocked with a flash error message.
+  \item The user is redirected back to the main entry point securely.
+\end{itemize}
+
+\end{frame}
+
+
+
+\begin{frame}[fragile]{Control Module: Update Database \& Counter}
+\vspace{20pt}
+
+\begin{lstlisting}[language=Elixir]
+  def handle_event("increment_number", _params, socket) do
+    # increment the counter in database
+    queue_id = socket.assigns.queue_id
+    old_queue = Repo.get!(Queue, socket.assigns.queue_id)
+    new_state = %{"current_number" => old_queue.current_number + 1}
+    changeset = Queue.changeset(old_queue, new_state)
+    Repo.update(changeset)
+    # get the current number again from the database
+    current_queue = Repo.get!(Queue, socket.assigns.queue_id)
+    new_number = current_queue.current_number
+    # Update QueueCounter with the new number
+    QueueCounter.set_current_number(queue_id, new_number)
+    # Update the socket state with the new number
+    socket = socket
+      |> assign(:current_number, new_number)
+      |> assign(:queue_id, queue_id)
+    # return socket
+    {:noreply,socket}
+  end
+\end{lstlisting}
+
+\end{frame}
+
+\begin{frame}[fragile]{Control Module: Handling Updates}
+\vspace{10pt}
+
+\begin{lstlisting}[language=Elixir]
+  def handle_info({:number_update, queue_id, new_number}, socket) do
+    # Update the socket state when a new number is broadcasted
+    socket =
+      socket
+      |> assign(:current_number, new_number)
+      |> assign(:queue_id, queue_id)
+    {:noreply,socket}
+  end
+\end{lstlisting}
+
+\begin{itemize}
+  \item This callback reacts to updates broadcasted by the QueueCounter.
+  \item It ensures the control interface stays synchronized in real time.
+  \item The socket assigns are updated without reloading the page.
+  \item The UI immediately reflects the latest queue number.
+\end{itemize}
+
+\end{frame}
+
+
+\section{Display-Only Module}
+
+\begin{frame}[fragile]{Display-Only Module}
+\vspace{10pt}
+
+\begin{lstlisting}[language=Elixir]
+defmodule HiwiWeb.DisplayOnlyLive do
+  use HiwiWeb, :live_view
+  alias Hiwi.QueueCounter
+  alias Hiwi.Queue
+  alias Hiwi.Repo
+  ...
+end
+\end{lstlisting}
+
+\begin{itemize}
+  \item This LiveView module is dedicated to passive real-time display.
+  \item It subscribes to PubSub updates without modifying server state.
+  \item Queue data is fetched from the database for initial rendering.
+  \item All updates are driven by broadcasted events from the counter.
+\end{itemize}
+
+\end{frame}
+
+
+\begin{frame}[fragile]{Display-Only Module: Initialization}
+\vspace{20pt}
+
+\begin{lstlisting}[language=Elixir]
+  def mount(params, _session, socket) do
+    #get queue)_id
+    %{"id" => queue_id} = params
+    # Subscribe to updates from the QueueCounter
+    :ok = Phoenix.PubSub.subscribe(Hiwi.PubSub, "queue_counter:updates:#{queue_id}")
+    # Get the initial current number of cases handled from QueueCounter
+    current_number = QueueCounter.get_current_number(queue_id)
+	# get queue from database
+    queue = Repo.get!(Queue, queue_id)
+	# add values to socket
+    socket = socket
+      |> assign(:current_number, current_number)
+      |> assign(:queue_name, queue.name)
+      |> assign(:queue_prefix, queue.prefix)
+      |> assign(:queue_id, queue_id)
+	# the return response
+    {:ok, socket, layout: false}
+  end
+\end{lstlisting}
+
+\end{frame}
+
+\begin{frame}[fragile]{Display-Only Module: Handling Updates}
+\vspace{10pt}
+
+\begin{lstlisting}[language=Elixir]
+  ...
+  def handle_info({:number_update, queue_id, new_number}, socket) do
+    # Update the socket state when a new number is broadcasted
+    socket =
+      socket
+      |> assign(:current_number, new_number)
+      |> assign(:queue_id, queue_id)
+    {:noreply,socket}
+  end
+end
+\end{lstlisting}
+
+\begin{itemize}
+  \item This callback is triggered when a PubSub message is received.
+  \item The incoming pattern must match the broadcasted event structure.
+  \item The socket state is updated using \texttt{assign/3}.
+  \item \texttt{:noreply} triggers a real-time UI re-render without reload.
+\end{itemize}
+
+\end{frame}
+
+
+
+\section{Summary}
+
+\begin{frame}[fragile]{Summary}
+  \vspace{20pt}
+  \begin{itemize}
+    \item \textbf{Architecture Overview.}  
+    The system applies a per-queue \texttt{GenServer} as a counter, combined with topic-based \texttt{Phoenix.PubSub} for real-time event broadcasting.
+
+    \item \textbf{Real-Time Synchronization.}  
+    Control and display clients are synchronized through PubSub topics, ensuring consistent queue numbers across connected clients.
+
+    \item \textbf{Separation of Concerns.}  
+    The Control LiveView is responsible for updating database and counters, while the Display-Only LiveView reacts passively to broadcasted updates.
+
+    \item \textbf{Scalability and Isolation.}  
+    Using per-queue processes and PubSub communication improves fault isolation and supports scalable multi-queue systems.
+
+    \item \textbf{Key Takeaway.}  
+    Combining \texttt{GenServer}, \texttt{Phoenix.PubSub}, and \texttt{LiveView} enables real-time, multi-client web applications.
+  \end{itemize}
+\end{frame}
+
+
+
+\end{document}
+
+

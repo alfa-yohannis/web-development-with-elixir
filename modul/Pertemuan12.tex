@@ -73,6 +73,8 @@ LiveView mendukung manajemen sesi dengan meneruskan data sesi ke callback `mount
 \subsection{Perlindungan Cross-Site Request Forgery (CSRF)}
 LiveView terintegrasi dengan perlindungan CSRF Phoenix untuk mencegah tindakan tidak sah atas nama pengguna. Fitur ini memastikan bahwa semua pengiriman form dan interaksi diamankan, melindungi dari ancaman keamanan potensial.
 
+
+
 \section{Keunggulan dan Keterbatasan Phoenix LiveView}
 LiveView menawarkan pendekatan yang kuat untuk aplikasi real-time tetapi mungkin tidak cocok untuk setiap kasus penggunaan. Pemahaman mengenai kekuatan dan keterbatasannya penting untuk menentukan penggunaannya yang efektif.
 
@@ -135,7 +137,7 @@ Bagian ini membahas penambahan rute untuk \texttt{LiveView} di dalam file \textt
 Berikut adalah potongan kode \texttt{router.ex}:
 
 \begin{lstlisting}[language=Elixir]
-	scope "/", HelloWeb do
+	scope "/", HiwiWeb do
 	pipe_through :browser
 	
 	get "/", QueueController, :index
@@ -262,8 +264,8 @@ Berikut adalah potongan kode di \texttt{thermostat\_live.ex} dan \texttt{thermos
 \begin{lstlisting}[language=Elixir]
 	# lib/hello_web/live/thermostat_live.ex
 	
-	defmodule HelloWeb.ThermostatLive do
-	use HelloWeb, :live_view
+	defmodule HiwiWeb.ThermostatLive do
+	use HiwiWeb, :live_view
 	
 	def render(assigns) do
 	~H"""
@@ -293,7 +295,7 @@ Berikut adalah potongan kode di \texttt{thermostat\_live.ex} dan \texttt{thermos
 Modul \texttt{ThermostatLive} menggunakan LiveView untuk mengelola dan menampilkan suhu secara dinamis. Berikut ini adalah penjelasan masing-masing fungsi dalam modul ini:
 
 \begin{itemize}
-	\item \textbf{\texttt{use HelloWeb, :live\_view}}: Mengaktifkan fungsionalitas LiveView pada modul ini, memungkinkan render dinamis dan pengelolaan event di sisi server.
+	\item \textbf{\texttt{use HiwiWeb, :live\_view}}: Mengaktifkan fungsionalitas LiveView pada modul ini, memungkinkan render dinamis dan pengelolaan event di sisi server.
 	
 	\item \textbf{\texttt{render/1}}: Fungsi ini bertanggung jawab untuk merender tampilan suhu saat ini. Template HTML yang didefinisikan di dalam \texttt{~H"""} menampilkan suhu dalam variabel \texttt{@temperature} dan menyediakan tombol dengan atribut \texttt{phx-click} yang terhubung dengan event \texttt{"inc\_temperature"}. Setiap kali tombol \texttt{"+"} diklik, event ini akan terpicu, yang memungkinkan perubahan nilai suhu secara real-time.
 	
@@ -315,12 +317,12 @@ Kode di atas memperlihatkan penggunaan LiveView untuk mengelola tampilan interak
 
 \section{Implementasi \texttt{GenServer} pada Modul \texttt{QueueCounter}}
 
-Modul \texttt{Hello.QueueCounter} menggunakan \texttt{GenServer} untuk mengelola jumlah kasus yang ditangani dalam aplikasi secara real-time. Modul ini menyimpan dan memperbarui data kasus, serta menyiarkan pembaruan menggunakan \texttt{Phoenix.PubSub} sehingga perubahan dapat disinkronkan ke seluruh komponen lain yang berlangganan.
+Modul \texttt{Hiwi.QueueCounter} menggunakan \texttt{GenServer} untuk mengelola jumlah kasus yang ditangani dalam aplikasi secara real-time. Modul ini menyimpan dan memperbarui data kasus, serta menyiarkan pembaruan menggunakan \texttt{Phoenix.PubSub} sehingga perubahan dapat disinkronkan ke seluruh komponen lain yang berlangganan.
 
 Berikut adalah kode lengkap dari \texttt{queue\_counter.ex}:
 
 \begin{lstlisting}[language=Elixir]
-	defmodule Hello.QueueCounter do
+	defmodule Hiwi.QueueCounter do
 	use GenServer
 	
 	alias Phoenix.PubSub
@@ -352,14 +354,14 @@ Berikut adalah kode lengkap dari \texttt{queue\_counter.ex}:
 	
 	# Handle setting the current number and broadcasting the update
 	def handle_cast({:set_current_number, new_number}, _current_number) do
-	PubSub.broadcast(Hello.PubSub, "queue_counter:updates", {:number_update, new_number})
+	PubSub.broadcast(Hiwi.PubSub, "queue_counter:updates", {:number_update, new_number})
 	{:noreply, new_number}
 	end
 	end
 \end{lstlisting}
 
 \subsection{Penjelasan Kode}
-Modul \texttt{Hello.QueueCounter} ini memiliki beberapa fungsi yang masing-masing berperan dalam mengelola dan menyiarkan jumlah kasus yang ditangani. Berikut penjelasan dari fungsi-fungsi tersebut:
+Modul \texttt{Hiwi.QueueCounter} ini memiliki beberapa fungsi yang masing-masing berperan dalam mengelola dan menyiarkan jumlah kasus yang ditangani. Berikut penjelasan dari fungsi-fungsi tersebut:
 
 \begin{itemize}
 	\item \textbf{\texttt{init/1}}: Fungsi \texttt{init/1} menerima \texttt{initial\_number} sebagai parameter, yang akan menjadi nilai awal jumlah kasus yang ditangani oleh aplikasi. Fungsi ini mengembalikan tuple \texttt{\{:ok, initial\_number\}}, yang akan diatur sebagai state awal dari \texttt{GenServer} ini.
@@ -385,75 +387,75 @@ Dengan mengintegrasikan \texttt{Phoenix.PubSub}, modul ini menyiarkan pembaruan 
 \subsection{Manfaat Menggunakan \texttt{GenServer} pada \texttt{QueueCounter}}
 Penggunaan \texttt{GenServer} dalam modul ini memungkinkan manajemen state secara aman dan efisien, sekaligus menyediakan API publik untuk mengambil dan memperbarui jumlah kasus yang ditangani. Dengan pendekatan ini, data yang sering diperbarui seperti jumlah kasus dapat diakses dan dikelola secara terpusat, yang memperkuat kontrol dan efisiensi pengelolaan state dalam aplikasi.
 
-Modul \texttt{Hello.QueueCounter} merupakan bagian penting dari sistem yang membutuhkan pengelolaan state secara global dan penyiaran pembaruan ke berbagai komponen, memastikan bahwa semua pengguna dapat melihat perubahan secara langsung dan konsisten.
+Modul \texttt{Hiwi.QueueCounter} merupakan bagian penting dari sistem yang membutuhkan pengelolaan state secara global dan penyiaran pembaruan ke berbagai komponen, memastikan bahwa semua pengguna dapat melihat perubahan secara langsung dan konsisten.
 
-\section{Konfigurasi \texttt{Application} untuk Memulai \texttt{Hello.QueueCounter}}
+\section{Konfigurasi \texttt{Application} untuk Memulai \texttt{Hiwi.QueueCounter}}
 
-Pada file \texttt{application.ex}, modul \texttt{Hello.Application} dikonfigurasi untuk memulai berbagai komponen utama aplikasi, termasuk GenServer \texttt{Hello.QueueCounter}. Penambahan \texttt{Hello.QueueCounter} sebagai child dalam aplikasi memastikan bahwa modul ini akan berjalan saat aplikasi dimulai, memberikan pengelolaan jumlah kasus yang ditangani secara real-time di seluruh sesi aplikasi.
+Pada file \texttt{application.ex}, modul \texttt{Hiwi.Application} dikonfigurasi untuk memulai berbagai komponen utama aplikasi, termasuk GenServer \texttt{Hiwi.QueueCounter}. Penambahan \texttt{Hiwi.QueueCounter} sebagai child dalam aplikasi memastikan bahwa modul ini akan berjalan saat aplikasi dimulai, memberikan pengelolaan jumlah kasus yang ditangani secara real-time di seluruh sesi aplikasi.
 
 Berikut adalah potongan kode dalam \texttt{application.ex}:
 
 \begin{lstlisting}[language=Elixir]
 	def start(_type, _args) do
 	children = [
-	HelloWeb.Telemetry,
-	Hello.Repo,
+	HiwiWeb.Telemetry,
+	Hiwi.Repo,
 	{DNSCluster, query: Application.get_env(:hello, :dns_cluster_query) || :ignore},
-	{Phoenix.PubSub, name: Hello.PubSub},
+	{Phoenix.PubSub, name: Hiwi.PubSub},
 	# Start the QueueCounter GenServer
-	Hello.QueueCounter,
+	Hiwi.QueueCounter,
 	# Start the Finch HTTP client for sending emails
-	{Finch, name: Hello.Finch},
-	# Start a worker by calling: Hello.Worker.start_link(arg)
-	# {Hello.Worker, arg},
+	{Finch, name: Hiwi.Finch},
+	# Start a worker by calling: Hiwi.Worker.start_link(arg)
+	# {Hiwi.Worker, arg},
 	# Start to serve requests, typically the last entry
-	HelloWeb.Endpoint
+	HiwiWeb.Endpoint
 	]
 \end{lstlisting}
 
-\subsection{Penjelasan Komponen \texttt{Hello.QueueCounter} sebagai Child}
-\texttt{Hello.QueueCounter} ditambahkan ke daftar \texttt{children}, sehingga GenServer ini akan diinisialisasi dan dijalankan saat aplikasi \texttt{Hello} dimulai. Fungsi \texttt{start\_link} dari modul \texttt{Hello.QueueCounter} akan secara otomatis dipanggil untuk menginisialisasi state awal, memungkinkan aplikasi untuk memantau jumlah kasus yang ditangani sejak awal aplikasi berjalan.
+\subsection{Penjelasan Komponen \texttt{Hiwi.QueueCounter} sebagai Child}
+\texttt{Hiwi.QueueCounter} ditambahkan ke daftar \texttt{children}, sehingga GenServer ini akan diinisialisasi dan dijalankan saat aplikasi \texttt{Hiwi} dimulai. Fungsi \texttt{start\_link} dari modul \texttt{Hiwi.QueueCounter} akan secara otomatis dipanggil untuk menginisialisasi state awal, memungkinkan aplikasi untuk memantau jumlah kasus yang ditangani sejak awal aplikasi berjalan.
 
-\subsection{Peran \texttt{Hello.QueueCounter} dalam Struktur Aplikasi}
-Dengan menambahkan \texttt{Hello.QueueCounter} ke dalam daftar child, aplikasi mendapatkan akses langsung ke pengelolaan jumlah kasus melalui GenServer ini. Komponen \texttt{Hello.QueueCounter} akan tetap berjalan secara independen selama siklus hidup aplikasi, menyediakan API publik untuk mengakses dan memperbarui data kasus. Pengelolaan state di dalam \texttt{QueueCounter} terintegrasi dengan \texttt{Phoenix.PubSub}, memungkinkan pembaruan data disiarkan ke berbagai komponen dan sesi pengguna.
+\subsection{Peran \texttt{Hiwi.QueueCounter} dalam Struktur Aplikasi}
+Dengan menambahkan \texttt{Hiwi.QueueCounter} ke dalam daftar child, aplikasi mendapatkan akses langsung ke pengelolaan jumlah kasus melalui GenServer ini. Komponen \texttt{Hiwi.QueueCounter} akan tetap berjalan secara independen selama siklus hidup aplikasi, menyediakan API publik untuk mengakses dan memperbarui data kasus. Pengelolaan state di dalam \texttt{QueueCounter} terintegrasi dengan \texttt{Phoenix.PubSub}, memungkinkan pembaruan data disiarkan ke berbagai komponen dan sesi pengguna.
 
 \subsection{Deskripsi Komponen Lain pada \texttt{Application}}
-Selain \texttt{Hello.QueueCounter}, beberapa komponen lain yang disertakan dalam daftar \texttt{children} adalah sebagai berikut:
+Selain \texttt{Hiwi.QueueCounter}, beberapa komponen lain yang disertakan dalam daftar \texttt{children} adalah sebagai berikut:
 
 \begin{itemize}
-	\item \textbf{\texttt{HelloWeb.Telemetry}}: Memulai layanan telemetry untuk pemantauan performa aplikasi.
-	\item \textbf{\texttt{Hello.Repo}}: Menghubungkan aplikasi ke database menggunakan \texttt{Ecto.Repo}.
+	\item \textbf{\texttt{HiwiWeb.Telemetry}}: Memulai layanan telemetry untuk pemantauan performa aplikasi.
+	\item \textbf{\texttt{Hiwi.Repo}}: Menghubungkan aplikasi ke database menggunakan \texttt{Ecto.Repo}.
 	\item \textbf{\texttt{DNSCluster}}: Mengatur konfigurasi untuk pengelolaan cluster DNS.
 	\item \textbf{\texttt{Phoenix.PubSub}}: Menyediakan PubSub untuk siaran pesan antar komponen dan mendukung real-time komunikasi dalam aplikasi.
-	\item \textbf{\texttt{Hello.Finch}}: Memulai client HTTP \texttt{Finch} yang dapat digunakan untuk mengirim email atau request HTTP lainnya.
-	\item \textbf{\texttt{HelloWeb.Endpoint}}: Memulai \texttt{Endpoint} sebagai entry terakhir untuk menangani permintaan HTTP dan WebSocket, yang biasanya menjadi komponen terakhir dalam daftar \texttt{children}.
+	\item \textbf{\texttt{Hiwi.Finch}}: Memulai client HTTP \texttt{Finch} yang dapat digunakan untuk mengirim email atau request HTTP lainnya.
+	\item \textbf{\texttt{HiwiWeb.Endpoint}}: Memulai \texttt{Endpoint} sebagai entry terakhir untuk menangani permintaan HTTP dan WebSocket, yang biasanya menjadi komponen terakhir dalam daftar \texttt{children}.
 \end{itemize}
 
-\subsection{Pentingnya \texttt{Hello.QueueCounter} dalam Daftar Child}
-Dengan mengonfigurasi \texttt{Hello.QueueCounter} sebagai bagian dari struktur aplikasi, aplikasi memiliki kontrol yang kuat dan konsisten terhadap pengelolaan jumlah kasus yang ditangani. Selain itu, integrasi \texttt{QueueCounter} dengan \texttt{Phoenix.PubSub} memungkinkan sinkronisasi data secara real-time di seluruh komponen aplikasi. Hal ini memberikan fleksibilitas dalam penanganan data real-time dan meningkatkan performa serta konsistensi data pada aplikasi berbasis Phoenix Framework ini.
+\subsection{Pentingnya \texttt{Hiwi.QueueCounter} dalam Daftar Child}
+Dengan mengonfigurasi \texttt{Hiwi.QueueCounter} sebagai bagian dari struktur aplikasi, aplikasi memiliki kontrol yang kuat dan konsisten terhadap pengelolaan jumlah kasus yang ditangani. Selain itu, integrasi \texttt{QueueCounter} dengan \texttt{Phoenix.PubSub} memungkinkan sinkronisasi data secara real-time di seluruh komponen aplikasi. Hal ini memberikan fleksibilitas dalam penanganan data real-time dan meningkatkan performa serta konsistensi data pada aplikasi berbasis Phoenix Framework ini.
 
-Kode di atas menunjukkan bagaimana setiap komponen diatur untuk bekerja secara harmonis dalam aplikasi, dengan \texttt{Hello.QueueCounter} sebagai elemen penting untuk pengelolaan state dan sinkronisasi data.
+Kode di atas menunjukkan bagaimana setiap komponen diatur untuk bekerja secara harmonis dalam aplikasi, dengan \texttt{Hiwi.QueueCounter} sebagai elemen penting untuk pengelolaan state dan sinkronisasi data.
 
 
 \section{Implementasi Modul \texttt{ModifiableLive} untuk Pengelolaan Kasus dengan \texttt{LiveView}}
 
-Modul \texttt{HelloWeb.ModifiableLive} menggunakan \texttt{Phoenix LiveView} untuk menampilkan dan mengelola kasus secara real-time. Modul ini berinteraksi dengan \texttt{QueueCounter} sebagai GenServer untuk mengelola jumlah kasus yang ditangani, dan memanfaatkan \texttt{Phoenix.PubSub} untuk memperbarui data secara sinkron pada tampilan pengguna. 
+Modul \texttt{HiwiWeb.ModifiableLive} menggunakan \texttt{Phoenix LiveView} untuk menampilkan dan mengelola kasus secara real-time. Modul ini berinteraksi dengan \texttt{QueueCounter} sebagai GenServer untuk mengelola jumlah kasus yang ditangani, dan memanfaatkan \texttt{Phoenix.PubSub} untuk memperbarui data secara sinkron pada tampilan pengguna. 
 
 Berikut adalah kode \texttt{modifiable\_live.ex}:
 
 \begin{lstlisting}[language=Elixir]
-	defmodule HelloWeb.ModifiableLive do
-	use HelloWeb, :live_view
-	alias Hello.QueueCounter
-	alias Hello.Queue
-	alias Hello.Repo
+	defmodule HiwiWeb.ModifiableLive do
+	use HiwiWeb, :live_view
+	alias Hiwi.QueueCounter
+	alias Hiwi.Queue
+	alias Hiwi.Repo
 	
 	def mount(params, session, socket) do
 	%{"id" => queue_id} = params
 	
 	case session do
 	%{"user_id" => user_id} ->
-	:ok = Phoenix.PubSub.subscribe(Hello.PubSub, "queue_counter:updates")
+	:ok = Phoenix.PubSub.subscribe(Hiwi.PubSub, "queue_counter:updates")
 	current_number = QueueCounter.get_current_number()
 	queue = Repo.get!(Queue, queue_id)
 	
@@ -464,7 +466,7 @@ Berikut adalah kode \texttt{modifiable\_live.ex}:
 	|> assign(:user_id, user_id)
 	|> assign(:queue, queue)
 	
-	{:ok, socket, layout: {HelloWeb.Layouts, :live}}
+	{:ok, socket, layout: {HiwiWeb.Layouts, :live}}
 	
 	_ ->
 	socket =
@@ -522,8 +524,8 @@ Fungsi \texttt{handle\_info/2} menangani pesan yang disiarkan oleh \texttt{Queue
 	\item Penggunaan fungsi ini memungkinkan LiveView untuk menerima pembaruan dari \texttt{QueueCounter} dan menampilkan data yang sinkron di seluruh tampilan pengguna secara real-time.
 \end{itemize}
 
-\subsection{Pentingnya Interaksi dengan \texttt{Hello.QueueCounter}}
-Interaksi modul \texttt{ModifiableLive} dengan \texttt{Hello.QueueCounter} memastikan bahwa setiap pembaruan jumlah kasus dapat diakses oleh seluruh pengguna yang melihat data ini. Penggunaan PubSub memungkinkan sinkronisasi antar komponen dan halaman secara real-time, memberikan pengalaman pengguna yang lebih responsif dan konsisten tanpa perlu penyegaran halaman.
+\subsection{Pentingnya Interaksi dengan \texttt{Hiwi.QueueCounter}}
+Interaksi modul \texttt{ModifiableLive} dengan \texttt{Hiwi.QueueCounter} memastikan bahwa setiap pembaruan jumlah kasus dapat diakses oleh seluruh pengguna yang melihat data ini. Penggunaan PubSub memungkinkan sinkronisasi antar komponen dan halaman secara real-time, memberikan pengalaman pengguna yang lebih responsif dan konsisten tanpa perlu penyegaran halaman.
 
 Kode ini menciptakan alur kerja real-time yang optimal untuk aplikasi yang membutuhkan pembaruan data secara konstan dan konsisten antar pengguna atau sesi.
 
@@ -584,22 +586,22 @@ Desain antarmuka ini memastikan bahwa pengguna dapat mengakses informasi penting
 
 \section{Implementasi Modul \texttt{DisplayOnlyLive} untuk Tampilan Nomor Antrian}
 
-Modul \texttt{HelloWeb.DisplayOnlyLive} digunakan untuk menampilkan nomor antrian secara real-time tanpa kemampuan modifikasi. Modul ini berlangganan ke pembaruan dari \texttt{QueueCounter} dan hanya menampilkan data nomor antrian aktif dan detail antrian terkait. Tujuan utama modul ini adalah untuk menyediakan tampilan read-only yang diperbarui secara langsung dengan menggunakan \texttt{Phoenix LiveView}.
+Modul \texttt{HiwiWeb.DisplayOnlyLive} digunakan untuk menampilkan nomor antrian secara real-time tanpa kemampuan modifikasi. Modul ini berlangganan ke pembaruan dari \texttt{QueueCounter} dan hanya menampilkan data nomor antrian aktif dan detail antrian terkait. Tujuan utama modul ini adalah untuk menyediakan tampilan read-only yang diperbarui secara langsung dengan menggunakan \texttt{Phoenix LiveView}.
 
 Berikut adalah kode dari \texttt{display\_only\_live.ex}:
 
 \begin{lstlisting}[language=Elixir]
-	defmodule HelloWeb.DisplayOnlyLive do
-	use HelloWeb, :live_view
-	alias Hello.QueueCounter
-	alias Hello.Queue
-	alias Hello.Repo
+	defmodule HiwiWeb.DisplayOnlyLive do
+	use HiwiWeb, :live_view
+	alias Hiwi.QueueCounter
+	alias Hiwi.Queue
+	alias Hiwi.Repo
 	
 	def mount(params, _session, socket) do
 	%{"id" => queue_id} = params
 	
 	# Subscribe to updates from the QueueCounter
-	:ok = Phoenix.PubSub.subscribe(Hello.PubSub, "queue_counter:updates")
+	:ok = Phoenix.PubSub.subscribe(Hiwi.PubSub, "queue_counter:updates")
 	
 	# Get the initial current number of cases handled from QueueCounter
 	current_number = QueueCounter.get_current_number()
@@ -626,7 +628,7 @@ Berikut adalah kode dari \texttt{display\_only\_live.ex}:
 Fungsi \texttt{mount/3} bertugas untuk menginisialisasi state pada \texttt{socket} saat LiveView pertama kali dimuat, serta menetapkan data awal untuk tampilan nomor antrian. Proses yang dilakukan oleh fungsi ini antara lain:
 \begin{itemize}
 	\item Menangkap \texttt{queue\_id} dari \texttt{params} untuk mendapatkan data antrian terkait dari database.
-	\item Berlangganan ke topik \texttt{"queue\_counter:updates"} di \texttt{Hello.PubSub}, memungkinkan tampilan untuk menerima pembaruan nomor antrian secara real-time dari \texttt{QueueCounter}.
+	\item Berlangganan ke topik \texttt{"queue\_counter:updates"} di \texttt{Hiwi.PubSub}, memungkinkan tampilan untuk menerima pembaruan nomor antrian secara real-time dari \texttt{QueueCounter}.
 	\item Mendapatkan \texttt{current\_number} dari \texttt{QueueCounter} melalui \texttt{QueueCounter.get\_current\_number()} untuk diassign ke \texttt{socket}.
 	\item Mengassign data tambahan seperti \texttt{queue\_name} dan \texttt{queue\_prefix} ke dalam \texttt{socket} untuk digunakan dalam tampilan.
 \end{itemize}
@@ -651,12 +653,12 @@ Desain ini memudahkan pengguna untuk memantau nomor antrian secara real-time dal
 
 \section{Implementasi \texttt{QueueCounterComponent} sebagai \texttt{LiveComponent} untuk Menampilkan Nomor Antrian}
 
-Modul \texttt{HelloWeb.QueueCounterComponent} adalah sebuah \texttt{LiveComponent} yang digunakan untuk menampilkan nomor antrian dengan prefix tertentu. Dengan menggunakan \texttt{Phoenix.LiveComponent}, modul ini memungkinkan tampilan yang dapat diperbarui secara dinamis, dan memungkinkan penggunaan kembali komponen ini di berbagai modul LiveView lainnya.
+Modul \texttt{HiwiWeb.QueueCounterComponent} adalah sebuah \texttt{LiveComponent} yang digunakan untuk menampilkan nomor antrian dengan prefix tertentu. Dengan menggunakan \texttt{Phoenix.LiveComponent}, modul ini memungkinkan tampilan yang dapat diperbarui secara dinamis, dan memungkinkan penggunaan kembali komponen ini di berbagai modul LiveView lainnya.
 
 Berikut adalah kode dari \texttt{counter\_component.ex}:
 
 \begin{lstlisting}[language=Elixir]
-	defmodule HelloWeb.QueueCounterComponent do
+	defmodule HiwiWeb.QueueCounterComponent do
 	use Phoenix.LiveComponent
 	
 	def render(assigns) do
@@ -710,7 +712,7 @@ Berikut adalah kode dari \texttt{display\_only\_live.html.heex}:
 	<div class="flex-grow flex items-center justify-center -mt-24">
 	<div class="text-[16rem] font-bold text-center">
 	<.live_component
-	module={HelloWeb.QueueCounterComponent}
+	module={HiwiWeb.QueueCounterComponent}
 	id="queue_counter"
 	queue_prefix={@queue_prefix}
 	current_number={@current_number}
@@ -733,7 +735,7 @@ Berikut adalah kode dari \texttt{display\_only\_live.html.heex}:
 	\item \textbf{Nomor Antrian di Bagian Tengah}: 
 	\begin{itemize}
 		\item \texttt{<div class="text-[16rem] font-bold text-center">}: Nomor antrian ditampilkan di tengah layar dengan ukuran teks sangat besar (\texttt{text-[16rem]}) agar mudah terlihat. Pengaturan ini memastikan visibilitas yang tinggi bagi pengguna yang hanya ingin melihat nomor antrian saat ini.
-		\item \texttt{<.live\_component module={HelloWeb.QueueCounterComponent} ...>}: Kode tersebut meng-\textit{embed} Komponen \texttt{QueueCounterComponent} ke dalam tampilan tsb. Komponen ini menerima atribut \texttt{queue\_prefix} dan \texttt{current\_number} yang diassign dari variabel \texttt{@queue\_prefix} dan \texttt{@current\_number}, sehingga nomor antrian dapat dirender secara real-time. Dengan \texttt{id="queue\_counter"}, komponen ini memiliki identitas unik dalam tampilan LiveView.
+		\item \texttt{<.live\_component module={HiwiWeb.QueueCounterComponent} ...>}: Kode tersebut meng-\textit{embed} Komponen \texttt{QueueCounterComponent} ke dalam tampilan tsb. Komponen ini menerima atribut \texttt{queue\_prefix} dan \texttt{current\_number} yang diassign dari variabel \texttt{@queue\_prefix} dan \texttt{@current\_number}, sehingga nomor antrian dapat dirender secara real-time. Dengan \texttt{id="queue\_counter"}, komponen ini memiliki identitas unik dalam tampilan LiveView.
 	\end{itemize}
 \end{itemize}
 
@@ -748,4 +750,8 @@ Dengan mengintegrasikan \texttt{QueueCounterComponent} di dalam \texttt{DisplayO
 
 Desain ini cocok untuk skenario di mana nomor antrian perlu ditampilkan secara besar dan mudah dilihat, seperti pada layar publik di pusat layanan atau loket.
 
+\section{Ringkasan}
+Bab ini memperkenalkan Phoenix LiveView sebagai pendekatan server-rendered yang mampu menghadirkan antarmuka web real-time tanpa ketergantungan pada framework JavaScript di sisi klien. Dengan memanfaatkan proses ringan Elixir dan konkurensi BEAM, LiveView mengelola siklus hidup tampilan melalui callback seperti \texttt{mount/3}, \texttt{render/1}, dan mekanisme diff tracking untuk hanya mengirim perubahan HTML yang diperlukan. Manajemen state terpusat di \texttt{socket.assigns}, mendukung pembedaan antara state persisten dan ephemeral, sementara penanganan event \texttt{handle\_event/3}, integrasi PubSub, manajemen sesi, dan perlindungan CSRF memastikan interaktivitas yang aman, konsisten, dan efisien. Bab ini juga menyoroti keunggulan dan keterbatasan LiveView, termasuk kesederhanaan pengembangan, efisiensi server-side rendering, kebutuhan WebSocket, serta potensi beban server pada aplikasi dengan lalu lintas tinggi.
+
+Bagian praktik menunjukkan bagaimana konsep tersebut diterapkan dalam studi kasus antrian dan termostat. Contoh \texttt{ThermostatLive} menggambarkan alur dasar \texttt{mount/3}, \texttt{render/1}, dan \texttt{handle\_event/3} untuk pembaruan suhu secara real-time. Untuk skenario antrian, bab ini menghubungkan rute LiveView di \texttt{router.ex}, kontrol akses berbasis pengguna di \texttt{index.html.heex}, serta penggunaan \texttt{Hiwi.QueueCounter} sebagai \texttt{GenServer} yang disiarkan melalui \texttt{Phoenix.PubSub}. Modul \texttt{ModifiableLive} dan \texttt{DisplayOnlyLive} menunjukkan bagaimana pembaruan nomor antrian dapat dimodifikasi dan ditampilkan secara sinkron, sementara \texttt{QueueCounterComponent} dan \texttt{display\_only\_live.html.heex} menjelaskan desain antarmuka read-only berukuran besar untuk layar publik. Secara keseluruhan, bab ini menggabungkan konsep arsitektural dan contoh kode konkret untuk membangun aplikasi antrian real-time berbasis Phoenix LiveView.
 

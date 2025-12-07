@@ -3,20 +3,28 @@
 \usepackage[utf8]{inputenc}
 \usepackage{listings} 
 
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, calc}
+
 \usetheme{Pradita}
 
 \subtitle{IF140303-Web Application Development}
 
-\title{Session-12:\\\LARGE{WebSocket and PubSubs\\
-using Phoenix's LiveView}}
-\date[Serial]{\scriptsize {PRU/SPMI/FR-BM-18/0222}}
+\title{Session-12:\\
+\Huge{
+WebSocket and \\ Publish-Subscribe 1\\
+\vspace{-15pt}
+}
+}
+\date[Serial]{\scriptsize{PRU/SPMI/FR-BM-18/0222}}
 \author[Pradita]{\small{\textbf{Alfa Yohannis}}}
 
 \lstdefinelanguage{Elixir} {
-	keywords={def, defmodule, do, end, for, if, else, true, false},
-	basicstyle=\ttfamily\small,
+	keywords={def, defmodule, do, end, for, if, else, true, false, scope},
+	language=ruby,
+	basicstyle=\ttfamily\scriptsize,
 	keywordstyle=\color{blue}\bfseries,
-	ndkeywords={@moduledoc, iex, Enum, @doc},
+	ndkeywords={@spec, @moduledoc, iex, Enum, @doc, add, alter, field, has_many, timestamps},
 	ndkeywordstyle=\color{purple}\bfseries,
 	sensitive=true,
 	commentstyle=\color{gray},
@@ -34,475 +42,1305 @@ using Phoenix's LiveView}}
 	showstringspaces=false
 }
 
+
+\lstdefinelanguage{bash} {
+	keywords={},
+	basicstyle=\ttfamily\scriptsize,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={iex},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	tabsize=2,
+	comment=[l]{\#},
+	morecomment=[s]{/*}{*/},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	showstringspaces=false
+}
+
+\lstdefinelanguage{html} {
+	keywords={h1, b, a, href, class},
+	basicstyle=\ttfamily\scriptsize,
+	keywordstyle=\color{blue}\bfseries,
+	ndkeywords={p, else, if, do, end},
+	ndkeywordstyle=\color{purple}\bfseries,
+	sensitive=true,
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{lightgray!10},
+	commentstyle=\color{gray}\ttfamily,
+	stringstyle=\color{purple}\ttfamily,
+	morecomment=[s]{<!--}{-->},
+	string=[s]{'}{'},
+	morestring=[s]{"}{"},
+	tabsize=2
+}
+
+
 \begin{document}
 	
 	\frame{\titlepage}
 	
-	\begin{frame}
-		\frametitle{\shortstack{Introduction to \\ Plugs in Elixir}}
-		\begin{itemize}
-			\item A plug is a specification for composing web applications.
-			\item Plugs are the building blocks of Elixir web applications like Phoenix.
-			\item There are two types of plugs: 
-			\begin{itemize}
-				\item \textbf{Function Plug}: A simple plug, defined as a function.
-				\item \textbf{Module Plug}: A more complex plug, defined as a module.
-			\end{itemize}
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}
-		\frametitle{\shortstack{Creating a Module Plug \\ for Authentication}}
-		\begin{itemize}
-			\item We will create a module plug to check if a user is logged in.
-			\item This plug checks if a user ID is assigned in the connection object.
-			\item If the user ID exists, it fetches the user from the database and assigns it to the connection object.
-			\item The plug consists of two main functions:
-			\begin{itemize}
-				\item \texttt{init/1}: Used for setup, called once.
-				\item \texttt{call/2}: Called with the connection and returns a connection.
-			\end{itemize}
-			\item The \texttt{assign/3} function is used to store a value in the connection's assigns.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Creating the Plug Module}
-		\begin{lstlisting}[language=Elixir]
-			defmodule Discuss.Plugs.SetUser do
-			import Plug.Conn
-			import Phoenix.Controller
+		\begin{frame}[fragile]
+		\frametitle{Contents}
+		\vspace{20pt}
+		\begin{columns}[t]
+			\column{0.5\textwidth}
+			\tableofcontents[sections={1-9}]
 			
-			alias Discuss.Repo
-			alias Discuss.User
-			alias Discuss.Router.Helpers
-			
-			def init(\_params) do
-			end
-		\end{lstlisting}
+			\column{0.5\textwidth}
+			\tableofcontents[sections={10-99}]
+		\end{columns}
 	\end{frame}
+
+
+\section{Introduction}
+
+\begin{frame}[fragile]{Introduction}
+\vspace{20pt}
+
+\begin{itemize}
+    \item \textbf{Real-Time UI:} LiveView enables interactive user interfaces without requiring client-side JavaScript frameworks.
+    \item \textbf{Server-Driven Architecture:} Most logic runs on the server, simplifying development and reducing front-end complexity.
+    \item \textbf{Efficient Updates:} Only minimal diffs are sent over a WebSocket connection to update the UI.
+    \item \textbf{BEAM Concurrency:} Elixir processes allow scalable handling of many simultaneous client sessions.
+    \item \textbf{Ideal Use Cases:} Applications needing responsiveness, synchronized state, and simplified maintenance.
+\end{itemize}
+
+\end{frame}
+
+
+
+\section{LiveView Lifecycle and Architecture}
+
+\begin{frame}[fragile]{Core Concepts}
+\vspace{20pt}
+
+\begin{itemize}
+    \item \textbf{Server-Rendered HTML:} The server generates all DOM output and controls UI behavior.
+    \item \textbf{Persistent WebSocket:} LiveView maintains a continuous connection for real-time updates.
+    \item \textbf{Diff Tracking:} Only changed HTML fragments are sent to the client, improving efficiency.
+    \item \textbf{Minimal JavaScript:} Most interactions require no custom JavaScript, reducing complexity.
+    \item \textbf{Strong Synchronization:} Server-managed state ensures consistent data across users and sessions.
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]{LiveView Lifecycle}
+\vspace{20pt}
+
+\begin{itemize}
+    \item \textbf{Mounting Phase:} \texttt{mount/3} initializes assigns, session information, and the initial socket state.
+    \item \textbf{Rendering Phase:} \texttt{render/1} generates dynamic HTML based on the current assigns.
+    \item \textbf{Diff Algorithm:} LiveView identifies minimal changes and sends efficient DOM updates.
+    \item \textbf{Event-Driven Updates:} User actions trigger state changes and selective re-rendering.
+    \item \textbf{Termination Phase:} When the connection ends, LiveView cleans resources and stops the process.
+\end{itemize}
+
+\end{frame}
+
+
+
+\section{State Management in LiveView}
+
+\begin{frame}[fragile]{State Management \& Events}
+\vspace{20pt}
+
+\begin{itemize}
+    \item \textbf{Socket Assigns:} All renderable data lives in the LiveView socket and drives the UI.
+    \item \textbf{Persistent vs Ephemeral:} Long-lived state coexists with short-lived values for interactions.
+    \item \textbf{assign/3:} State updates are performed with \texttt{assign/3}, ensuring UI consistency.
+    \item \textbf{Event Types:} Clicks, form submissions, and keyboard actions are handled naturally.
+    \item \textbf{handle\_event/3:} Processes events, updates state, and triggers HTML diff rendering.
+\end{itemize}
+
+\end{frame}
+
+
+
+\section{Synchronizing LiveView with Phoenix PubSub}
+
+\begin{frame}[fragile]{PubSub, Security, Pros \& Cons}
+\vspace{20pt}
+
+\begin{itemize}
+    \item \textbf{PubSub Sync:} LiveViews can subscribe to topics for real-time shared state updates.
+    \item \textbf{Collaborative Use:} Suitable for notifications, dashboards, and interactive multi-user tools.
+    \item \textbf{Session Security:} Sensitive user data can be safely accessed in \texttt{mount/3}.
+    \item \textbf{CSRF Protection:} Phoenix provides strong CSRF safeguards for secure interactions.
+    \item \textbf{Strengths \& Limits:} Simplifies development but adds server load and requires WebSocket support.
+\end{itemize}
+
+\end{frame}
+
+
+\section{Building User-Based Access Control in LiveView}
+
+\begin{frame}[fragile]{Goal: User-Based Access Control}
+\vspace{20pt}
+
+\begin{columns}[T,onlytextwidth]
+
+\begin{column}{0.45\textwidth}
+\textbf{Overview}  
+\begin{itemize}
+    \item \textbf{Context:} The \texttt{index.html.heex} template renders a queue list.
+    \item \textbf{Requirement:} Only the queue owner may see control links.
+    \item \textbf{File:} \texttt{lib/hello\_web/controllers/queue\_html/index.html.heex}.
+    \item \textbf{Approach:} Check the logged-in user against \texttt{queue.user\_id}.
+    \item \textbf{Result:} Unauthorized users cannot see \texttt{Control}, \texttt{Display}, \texttt{Edit}, \texttt{Delete}.
+\end{itemize}
+\end{column}
+
+\begin{column}{0.50\textwidth}
+\textbf{Key Idea}  
+\begin{itemize}
+    \item Wrap all action links inside a conditional \texttt{if}.
+    \item Condition uses \texttt{@conn.assigns.user} and \texttt{queue.user\_id}.
+    \item Links are rendered only when the user owns the queue.
+\end{itemize}
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+
+
+\begin{frame}[fragile]{Access-Controlled Queue Links (Code)}
+\vspace{20pt}
+
+\begin{columns}[T,onlytextwidth]
+
+\begin{column}{0.25\textwidth}
+
+\begin{itemize}
+    \item Checks whether a user is logged in.
+    \item Compares \texttt{user.id} with \texttt{queue.user\_id}.
+    \item Renders action links only for the owner.
+    \item Protects queue operations from other users.
+\end{itemize}
+\end{column}
+
+\begin{column}{0.7\textwidth}
+\begin{lstlisting}[language=Elixir]
+<%= if @conn.assigns.user &&
+      @conn.assigns.user.id == queue.user_id do %>
+  <div>
+    |
+    <.link href={~p"/queues/#{queue.id}/control"}> Control </.link>
+    |
+    <.link href={~p"/queues/#{queue.id}/display"}> Display </.link>
+    |
+    <.link href={~p"/queues/#{queue.id}/edit"}> Edit </.link>
+    |
+    <.link href={~p"/queues/#{queue.id}/delete"} method="delete"> Delete </.link>
+    |
+  </div>
+<% end %>
+\end{lstlisting}
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+
+
+\begin{frame}[fragile]{How the Access Control Works}
+\vspace{20pt}
+
+\textbf{Explanation}  
+\begin{itemize}
+    \item \textbf{Condition:} The first line ensures \texttt{@conn.assigns.user} exists and its \texttt{id} matches \texttt{queue.user\_id}.
+    \item \textbf{Owner-Only Actions:} Only the owner can control, display, edit, or delete the queue.
+    \item \textbf{Dynamic URLs:} Each link uses \texttt{\string~p"/queues/\#{queue.id}/[action]"} to generate a URL for the current queue.
+    \item \textbf{Security:} Prevents unauthorized users from seeing or manipulating other users’ queues.
+    \item \textbf{Reusability:} The same pattern can be applied to other secured resources.
+\end{itemize}
+
+\end{frame}
+
+\section{Adding LiveView Routes in \texttt{router.ex}}
+
+% ---------- FRAME 1 ----------
+\begin{frame}[fragile]{Standard Controller Routes}
+\vspace{20pt}
+
+\begin{columns}[T,onlytextwidth]
+
+\begin{column}{0.43\textwidth}
+
+\begin{itemize}
+    \item \textbf{File:} \texttt{lib/hello\_web/router.ex}.
+    \item \textbf{Scope:} Routes under \texttt{"/"} use the \texttt{:browser} pipeline.
+    \item \textbf{Controllers:} Handle classic HTTP requests and responses.
+    \item \textbf{Queue Routes:} Support listing, creating, editing, and deleting queues.
+    \item \textbf{About Page:} Simple static page served by \texttt{PageController}.
+\end{itemize}
+\end{column}
+
+\begin{column}{0.52\textwidth}
+\begin{lstlisting}[language=Elixir]
+scope "/", HiwiWeb do
+  pipe_through :browser
+
+  get "/", QueueController, :index
+  get "/about", PageController, :about
+  get "/queues/new", QueueController, :new
+  post "/queues", QueueController, :create
+  get "/queues/:id/edit",
+      QueueController, :edit
+  put "/queues/:id",
+      QueueController, :update
+  delete "/queues/:id/delete",
+         QueueController, :delete
+end
+\end{lstlisting}
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+
+
+% ---------- FRAME 2 ----------
+\begin{frame}[fragile]{Defining LiveView Routes}
+\vspace{20pt}
+
+\begin{columns}[T,onlytextwidth]
+
+\begin{column}{0.55\textwidth}
+
+\begin{itemize}
+    \item \textbf{\texttt{live "/queues/:id/control"}}:  
+          Real-time control page for a specific queue using \texttt{ModifiableLive}.
+    \item \textbf{\texttt{live "/queues/:id/display"}}:  
+          Read-only, real-time display page using \texttt{DisplayOnlyLive}.
+    \item \textbf{\texttt{live "/queues/thermostat"}}:  
+          Real-time temperature monitor using \texttt{ThermostatLive}.
+    \item \textbf{Behavior:} All use WebSockets to push updates without full reloads.
+\end{itemize}
+\end{column}
+
+\begin{column}{0.4\textwidth}
+\begin{lstlisting}[language=Elixir]
+scope "/", HiwiWeb do
+  pipe_through :browser
+
+  live "/queues/:id/control",
+       ModifiableLive
+
+  live "/queues/:id/display",
+       DisplayOnlyLive
+
+  live "/queues/thermostat",
+       ThermostatLive
+end
+\end{lstlisting}
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+
+
+% ---------- FRAME 3 ----------
+\begin{frame}[fragile]{Why Use LiveView Routes?}
+\vspace{20pt}
+
+\begin{columns}[T,onlytextwidth]
+
+\begin{column}{0.45\textwidth}
+
+\begin{itemize}
+    \item \textbf{Real-Time UI:} Pages update instantly when server state changes.
+    \item \textbf{No Full Refresh:} Only diffs are sent over the WebSocket.
+    \item \textbf{Interactive Screens:} Perfect for control panels and dashboards.
+    \item \textbf{Consistent Paths:} Defined just like regular controller routes.
+    \item \textbf{Separation of Concerns:} HTTP routing in \texttt{router.ex}, live logic in LiveView modules.
+\end{itemize}
+\end{column}
+
+\begin{column}{0.5\textwidth}
+
+
+\begin{lstlisting}[language=Elixir]
+scope "/", HiwiWeb do
+  pipe_through :browser
+
+  # Controller route
+  get "/queues", QueueController, :index
+
+  # LiveView route
+  live "/queues/:id/control",
+       ModifiableLive
+end
+\end{lstlisting}
+
+\begin{itemize}
+    \item Use \texttt{live} routes whenever the page must stay open
+          and continuously reflect server-side changes.
+\end{itemize}
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+
+\section{Configuring \texttt{if-else} Components in \texttt{live.html.heex}}
+
+% ---------- FRAME 1 ----------
+\begin{frame}[fragile]{Header Authentication Logic}
+\vspace{20pt}
+
+\begin{columns}[T,onlytextwidth]
+
+% LEFT COLUMN
+\begin{column}{0.5\textwidth}
+\textbf{Overview}
+\begin{itemize}
+    \item Conditional rendering controls navigation visibility.
+    \item \texttt{@user\_id} determines whether the user is logged in.
+    \item Shows \texttt{Signout} when authenticated.
+    \item Shows \texttt{Login with GitHub} when not authenticated.
+    \item Implemented entirely in \texttt{live.html.heex}.
+\end{itemize}
+\end{column}
+
+% RIGHT COLUMN
+\begin{column}{0.44\textwidth}
+\begin{lstlisting}[language=Elixir]
+<%= if @user_id do %>
+  <a href={~p"/auth/signout"}
+     class="hover:text-zinc-700">
+    Signout
+  </a>
+<% else %>
+  <a href={~p"/auth/github"}
+     class="hover:text-zinc-700">
+    Login with GitHub
+  </a>
+<% end %>
+\end{lstlisting}
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+
+
+% ---------- FRAME 2 ----------
+\begin{frame}[fragile]{Full Header Structure}
+\vspace{20pt}
+
+\begin{columns}[T,onlytextwidth]
+
+% LEFT
+\begin{column}{0.4\textwidth}
+\begin{itemize}
+    \item Header includes logo, Phoenix version, and navigation links.
+    \item Auth section conditionally shows login/logout options.
+    \item Static links include Twitter, GitHub, and Phoenix docs.
+    \item \texttt{@inner\_content} renders the main LiveView body.
+    \item \texttt{flash\_group} is used for notifications.
+\end{itemize}
+\end{column}
+
+% RIGHT
+\begin{column}{0.55\textwidth}
+\begin{lstlisting}[language=HTML]
+<header class="px-4 sm:px-6 lg:px-8">
+	...
+	<!-- Auth links rendered above -->
+	<a href="https://twitter.com/elixirphoenix">elixirphoenix</a>
+	<a href="https://github.com/phoenixframework/phoenix">GitHub</a>
+	...
+</header>
+<main class="px-4 py-20 sm:px-6 lg:px-8">
+	<div class="mx-auto max-w-2xl">
+		<.flash_group flash={@flash} />
+		<%= @inner_content %>
+	</div>
+</main>
+\end{lstlisting}
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+
+
+% ---------- FRAME 3 ----------
+\begin{frame}[fragile]{How the \texttt{if-else} Logic Shapes the UI}
+\vspace{20pt}
+
+\begin{columns}[T,onlytextwidth]
+
+% LEFT
+\begin{column}{0.4\textwidth}
+\begin{itemize}
+    \item \textbf{if}: User is logged in $\rightarrow$ show \texttt{Signout}.
+    \item \textbf{else}: User is not logged in $\rightarrow$ show GitHub login.
+    \item Ensures correct access and smooth UX.
+    \item Frequently used pattern for authenticated layouts.
+    \item Can be extended to role-based navigation.
+\end{itemize}
+\end{column}
+
+% RIGHT
+\begin{column}{0.55\textwidth}
+\begin{lstlisting}[language=Elixir]
+<%= if @user_id do %>
+  <!-- Logged-in: show logout -->
+  <a href={~p"/auth/signout"}>Signout</a>
+<% else %>
+  <!-- Guest: show GitHub login -->
+  <a href={~p"/auth/github"}>
+    Login with GitHub
+  </a>
+<% end %>
+\end{lstlisting}
+
+\begin{itemize}
+    \item Conditional rendering is essential for secure,
+          user-specific navigation.
+    \item LiveView templates make this pattern clean and reactive.
+\end{itemize}
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+\section{Implementing LiveView in \texttt{ThermostatLive}}
+
+% ---------- FRAME 1 ----------
+\begin{frame}[fragile]{ThermostatLive: Module and Rendering Logic}
+\vspace{20pt}
+
+\begin{columns}[T,onlytextwidth]
+
+% LEFT
+\begin{column}{0.35\textwidth}
+\begin{itemize}
+    \item Implements a real-time temperature display.
+    \item Uses \texttt{mount/3} to set initial state (30°C).
+    \item \texttt{render/1} shows temperature + button.
+    \item \texttt{phx-click} triggers server-side event handling.
+    \item Demonstrates minimal but complete LiveView interaction.
+\end{itemize}
+\end{column}
+
+% RIGHT
+\begin{column}{0.6\textwidth}
+\begin{lstlisting}[language=Elixir]
+defmodule HiwiWeb.ThermostatLive do
+  use HiwiWeb, :live_view
+
+  def mount(_, _, socket) do
+    {:ok, assign(socket, :temperature, 30)}
+  end
+
+  def render(assigns) do
+    ~H"""Current temperature: <%= @temperature %>°C <button phx-click="inc_temperature">+</button>"""
+  end
+
+  def handle_event("inc_temperature", _params, socket) do
+  	{:noreply, update(socket, :temperature, &(&1 + 1))}
+  end
+end
+\end{lstlisting}
+
+
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+
+
+% ---------- FRAME 2 ----------
+\begin{frame}[fragile]{Event Handling and Real-Time Updates}
+\vspace{20pt}
+
+\begin{columns}[T,onlytextwidth]
+
+% LEFT
+\begin{column}{0.37\textwidth}
+\begin{itemize}
+    \item \texttt{handle\_event/3} processes \texttt{"inc\_temperature"}.
+    \item \texttt{update/3} increments temperature by 1.
+    \item State changes trigger automatic re-render.
+    \item No page reload required thanks to WebSocket connection.
+    \item Ideal example of interactive server-driven UI.
+\end{itemize}
+\end{column}
+
+% RIGHT
+\begin{column}{0.58\textwidth}
+\begin{lstlisting}[language=HTML]
+<!-- thermostat_live.html.heex -->
+Current temperature: <%= @temperature %>°C
+<button phx-click="inc_temperature">+</button>
+\end{lstlisting}
+
+\textbf{Execution Steps}
+\begin{itemize}
+    \item User clicks "+", LiveView receives event.
+    \item Temperature state increases by 1.
+    \item LiveView sends HTML diff to client.
+    \item UI updates instantly without reload.
+\end{itemize}
+
+\textbf{Takeaway}  
+Real-time UI updates with minimal client code—  
+a core strength of Phoenix LiveView.
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+
+\section{Implementing \texttt{GenServer} in \texttt{QueueCounter}}
+
+% ---------- FRAME 1 ----------
+\begin{frame}[fragile]{QueueCounter GenServer: Initialization}
+\vspace{20pt}
+
+\begin{columns}[T,onlytextwidth]
+
+\begin{column}{0.4\textwidth}
+
+\begin{itemize}
+    \item \textbf{Goal:} Track number of handled cases globally.
+    \item \textbf{Process:} \texttt{Hiwi.QueueCounter} runs as a GenServer.
+    \item \textbf{State:} Holds the current case count as an integer.
+    \item \textbf{Initialization:} Starts with \texttt{0} cases handled.
+    \item \textbf{Name:} Registered as \texttt{\_\_MODULE\_\_} for easy access.
+\end{itemize}
+\end{column}
+
+\begin{column}{0.55\textwidth}
+\begin{lstlisting}[language=Elixir]
+defmodule Hiwi.QueueCounter do
+  use GenServer
+
+  alias Phoenix.PubSub
+
+  # Initialize with the starting number
+  def init(initial_number) do
+    {:ok, initial_number}
+  end
+
+  # Start the GenServer with 0 cases handled
+  def start_link(_) do
+    GenServer.start_link(
+      __MODULE__, 0, name: __MODULE__
+    )
+  end
+  ...
+end
+\end{lstlisting}
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+
+
+% ---------- FRAME 2 ----------
+\begin{frame}[fragile]{Public API: Getting and Setting the Counter}
+\vspace{20pt}
+
+\begin{columns}[T,onlytextwidth]
+
+\begin{column}{0.4\textwidth}
+\textbf{Public API}
+\begin{itemize}
+    \item \textbf{\texttt{get\_current\_number/0}:}  
+          Reads the current case count.
+    \item \textbf{\texttt{set\_current\_number/1}:}  
+          Updates the current case count.
+    \item Uses \texttt{GenServer.call/2} for synchronous reads.
+    \item Uses \texttt{GenServer.cast/2} for async updates.
+    \item Hides GenServer details behind a simple interface.
+\end{itemize}
+\end{column}
+
+\begin{column}{0.55\textwidth}
+\begin{lstlisting}[language=Elixir]
+defmodule Hiwi.QueueCounter do
+  use GenServer
+  ...
+  # Public API to get the current number
+  def get_current_number do
+    GenServer.call(__MODULE__, :get_current_number)
+  end
+
+  # Public API to set the current number
+  def set_current_number(new_number) do
+    GenServer.cast(__MODULE__, {:set_current_number, new_number})
+  end
+  ...
+end
+\end{lstlisting}
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+
+
+% ---------- FRAME 3 ----------
+\begin{frame}[fragile]{\LARGE{Handling Calls and Casts with PubSub Broadcast}}
+\vspace{20pt}
+
+\begin{columns}[T,onlytextwidth]
+
+\begin{column}{0.45\textwidth}
+\textbf{Internal Callbacks}
+\begin{itemize}
+    \item \textbf{\texttt{handle\_call/3}:}  
+          Returns current counter value to the caller.
+    \item \textbf{\texttt{handle\_cast/2}:}  
+          Updates state and broadcasts new value.
+    \item \textbf{Broadcast Topic:}  
+          \texttt{"queue\_counter:updates"}.
+    \item \textbf{Message:}  
+          \texttt{\{:number\_update, new\_number\}}.
+    \item Other components subscribe to receive real-time updates.
+\end{itemize}
+\end{column}
+
+\begin{column}{0.5\textwidth}
+\begin{lstlisting}[language=Elixir]
+	...
+	def handle_call(:get_current_number, _from, current_number) do
+	  {:reply, current_number, current_number}
+	end
 	
-	\begin{frame}[fragile]
-		\frametitle{Creating the Plug Module}
-		\begin{lstlisting}[language=Elixir]
-			def call(conn, \_params) do
-			user\_id = get\_session(conn, :user\_id)
-			cond do
-			user = user\_id \&\& Repo.get(User, user\_id) ->
-			assign(conn, :user, user)
-			true ->
-			assign(conn, :user, nil)
-			end
-			end
-			end
-		\end{lstlisting}
-		\begin{itemize}
-			\item \texttt{init/1}: Placeholder function for initialization.
-			\item \texttt{call/2}: Checks session for \texttt{user\_id}, assigns user if found.
-			\item \texttt{assign/3} stores user data in \texttt{conn.assigns} for later use.
-		\end{itemize}
-	\end{frame}
+	def handle_cast({:set_current_number, new_number}, _current_number) do
+	  PubSub.broadcast(Hiwi.PubSub,
+      "queue_counter:updates", 
+      {:number_update, new_number})
+	  {:noreply, new_number}
+	end
+	...
+\end{lstlisting}
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+
+
+% ---------- FRAME 4 ----------
+\begin{frame}[fragile]{Why Use \texttt{GenServer} + \texttt{Phoenix.PubSub}?}
+\vspace{20pt}
+
+\begin{columns}[T,onlytextwidth]
+
+\begin{column}{0.45\textwidth}
+\begin{itemize}
+    \item \textbf{Centralized State:}  
+          One process owns the case counter.
+    \item \textbf{Safe Concurrency:}  
+          GenServer serializes access to the state.
+    \item \textbf{Real-Time Sync:}  
+          PubSub pushes updates to all subscribers.
+    \item \textbf{Loose Coupling:}  
+          Producers and consumers communicate via topics.
+    \item \textbf{Reusable Pattern:}  
+          Can be applied for other global counters or metrics.
+\end{itemize}
+\end{column}
+
+\begin{column}{0.5\textwidth}
+\textbf{Subscriber Example (LiveView)}
+\begin{lstlisting}[language=Elixir]
+	...
+	def mount(_p, _s, socket) do
+	  Phoenix.PubSub.subscribe(Hiwi.PubSub, "queue_counter:updates")
+	  {:ok, assign(socket,current_number, Hiwi.QueueCounter.get_current_number())}
+	end
 	
-	\begin{frame}[fragile]
-		\frametitle{\shortstack{Using the Plug \\ in the Router}}
-		\begin{itemize}
-			\item The created plug should be added to the router's pipeline.
-			\item Modify \texttt{router.ex} to include the plug in the browser pipeline.
-		\end{itemize}
-		\begin{lstlisting}[language=Elixir]
-			pipeline :browser do
-			plug Discuss.Plugs.SetUser
-			end
-		\end{lstlisting}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{\shortstack{Adding a Login Button \\ to the Header}}
-		\begin{lstlisting}[language=Elixir]
-			<body>
-			<nav class="light-blue">
-			<div class="nav-wrapper container">
-			<a href="/" class="brand-logo">Logo</a>
-			<ul class="right">
-			<\%= if @conn.assigns[:user] do \%>
-			<li>
-			<\%= link "Logout", to: session_path(@conn, :signout) \%>
-			</li>
-		\end{lstlisting}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{\shortstack{Adding a Login Button \\ to the Header}}
-		\begin{itemize}
-			\item We add a login button to the application header.
-			\item The button checks if a user is logged in and displays the appropriate option.
-			\item If the user is logged in, a logout button is shown; otherwise, a login button appears.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{\shortstack{Adding a Login Button \\ to the Header}}
-		\begin{lstlisting}[language=Elixir]
-			<\% else \%>
-			<li>
-			<\%= link "Sign in with Github", to: session_path(@conn, :request, "github") \%>
-			</li>
-			<\% end \%>
-			</ul>
-			</div>
-			</nav>
-		\end{lstlisting}
-		\begin{itemize}
-			\item \texttt{@conn.assigns[:user]} is checked to see if a user is logged in.
-			\item The \texttt{link/2} function creates the login/logout link.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{\shortstack{Updating the Router \\ for Signout}}
-		\begin{itemize}
-			\item We add a signout route to the router.
-			\item This allows users to log out of the application.
-		\end{itemize}
-		\begin{lstlisting}[language=Elixir]
-			scope "/auth", Discuss do
-			pipe\_through :browser
-			get "/signout", AuthController, :signout
-			get "/:provider", AuthController, :request
-			get "/:provider/callback", AuthController, :request
-			end
-		\end{lstlisting}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{\shortstack{Updating the AuthController \\ for Signout}}
-		\begin{itemize}
-			\item We add a \texttt{signout} function to the \texttt{AuthController}.
-			\item This function clears the session and redirects the user to the home page.
-		\end{itemize}
-		\begin{lstlisting}[language=Elixir]
-			...
-			def signout(conn, \_params) do
-			conn
-			|> configure\_session(drop: true)
-			|> redirect(to: topic\_path(conn, :index))
-			end
-			...
-		\end{lstlisting}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{\shortstack{Adding a Logout Button \\ to the Header}}
-		\begin{itemize}
-			\item The logout button is dynamically displayed in the header.
-			\item When clicked, it triggers the signout route and logs the user out.
-		\end{itemize}
-		\begin{lstlisting}[language=Elixir]
-			<body>
-			<nav class="light-blue">
-			<div class="nav-wrapper container">
-			<a href="/" class="brand-logo">Logo</a>
-			<ul class="right">
-			<\%= if @conn.assigns[:user] do \%>
-			<li>
-			<\%= link "Logout", to: session_path(@conn, :signout) \%>
-			</li>
-		\end{lstlisting}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{\shortstack{Adding a Logout Button \\ to the Header}}
-		\begin{lstlisting}[language=Elixir]
-			<\% else \%>
-			<li>
-			<\%= link "Sign in with Github", to: session_path(@conn, :request, "github") \%>
-			</li>
-			<\% end \%>
-			</ul>
-			</div>
-			</nav>
-		\end{lstlisting}
-		\begin{itemize}
-			\item \texttt{link/2} creates a hyperlink to the logout route.
-			\item The button is displayed based on the user's login status.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}{\shortstack{Adding Authorization: Restricting \\Actions Based on User Authentication}}
-		\begin{itemize}
-			\item We need to ensure only signed-in users can post, edit, or delete topics.
-			\item To enforce this, we'll create a new plug in `Web > controllers > plug > require\_auth.ex`.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]{Creating the `RequireAuth` Plug}
-		\begin{lstlisting}[language=Elixir]
-			defmodule Discuss.Plugs.RequireAuth do
-			use Plug.Conn
-			use Phoenix.Controller
-			
-			alias Discuss.Router.Helpers
-			
-			def init(_params) do
-			end
-			
-			def call(conn, _params) do
-			if conn.assigns[:user] do
-			conn
-		\end{lstlisting}
-	\end{frame}
-	
-	\begin{frame}[fragile]{Creating the `RequireAuth` Plug}
-		\begin{lstlisting}[language=Elixir]
-			else
-			conn
-			|> put_flash(:error, "You must be logged in.")
-			|> redirect(to: Helpers.topic_path(conn, :index))
-			|> halt()
-			end
-			end
-			end
-		\end{lstlisting}
-		\begin{itemize}
-			\item \texttt{halt/0} stops the connection processing immediately.
-			\item This ensures that unauthorized users are redirected before further actions.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}
-		\frametitle{\shortstack{Updating `TopicController` \\ with `RequireAuth` Plug}}
-		\begin{itemize}
-			\item We will update the `TopicController` to restrict specific actions to signed-in users.
-			\item The plug is applied conditionally using `when` with the `action` keyword.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{\shortstack{Updated `TopicController` \\ with `RequireAuth` Plug}}
-		\begin{lstlisting}[language=Elixir]
-			defmodule Discuss.TopicController do
-			use Discuss.Web, :controller
-			
-			alias Discuss.Topic
-			
-			plug Discuss.Plugs.RequireAuth when action in [:new, :create, :edit, :update, :delete]
-			...
-		\end{lstlisting}
-		\begin{itemize}
-			\item Only the specified actions (new, create, edit, update, delete) will trigger the `RequireAuth` plug.
-			\item This ensures non-logged-in users cannot access these actions.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}{Associating Users with Topics}
-		\begin{itemize}
-			\item We'll associate users with topics using a foreign key relationship.
-			\item This involves adding a `user\_id` column to the `topics` table.
-			\item Migration will alter the existing table, leaving the `user\_id` empty for previously created topics.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{\shortstack{Migration: Adding `user\_id` \\to Topics}}
-		\begin{lstlisting}[language=Elixir]
-			defmodule Discuss.Repo.Migrations.AddUserIdToTopics do
-			use Ecto.Migration
-			
-			def change do
-			alter table(:topics) do
-			add :user_id, references(:users)
-			end
-			end
-			end
-		\end{lstlisting}
-		\begin{itemize}
-			\item \texttt{references(:users)} establishes the foreign key relationship.
-			\item Migrate the database with `mix ecto.migrate`.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}{Updating Models for Association}
-		\begin{itemize}
-			\item Now, we need to associate the `User` model with the `Topic` model.
-			\item This is done by adding the appropriate associations in both models.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{\shortstack{User Model: Adding\\  `has\_many` Association}}
-		\begin{lstlisting}[language=Elixir]
-			defmodule Discuss.User do
-			use Discuss.Web, :model
-			
-			schema "users" do
-			field :email, :string
-			field :provider, :string
-			field :token, :string
-			has_many :topics, Discuss.Topic
-			timestamps()
-			end
-		\end{lstlisting}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{\shortstack{User Model: Adding\\  `has\_many` Association}}
-		\begin{lstlisting}[language=Elixir]
-			def changeset(struct, params \\ %{}) do
-			struct
-			|> cast(params, [:email, :provider, :token])
-			|> validate_required([:email, :provider, :token])
-			end
-			end
-		\end{lstlisting}
-		\begin{itemize}
-			\item \texttt{has\_many :topics} sets up the one-to-many relationship.
-			\item A user can have multiple topics.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{\shortstack{Topic Model: Adding \\`belongs\_to` Association}}
-		\begin{lstlisting}[language=Elixir]
-			defmodule Discuss.Topic do
-			use Discuss.Web, :model
-			
-			schema "topics" do
-			field :title, :string
-			belongs_to :user, Discuss.User
-			end
-		\end{lstlisting}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{\shortstack{Topic Model: Adding \\`belongs\_to` Association}}
-		\begin{lstlisting}[language=Elixir]
-			def changeset(struct, params \\ %{}) do
-			struct
-			|> cast(params, [:title])
-			|> validate_required([:title])
-			end
-			end
-		\end{lstlisting}
-		\begin{itemize}
-			\item \texttt{belongs\_to :user} establishes the reverse relationship.
-			\item Each topic is associated with a specific user.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}
-		\frametitle{\shortstack{Updating `TopicController` to \\Associate Topics with Users}}
-		\begin{itemize}
-			\item We need to update the `create` function to associate a new topic with the current user.
-			\item This involves using `build\_assoc/2`.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Updating the `create` Function}
-		\begin{lstlisting}[language=Elixir]
-			def create(conn, %{"topic" => topic}) do
-			changeset = conn.assigns.user
-			|> build_assoc(:topics)
-			|> Topic.changeset(topic)
-			
-			case Repo.insert(changeset) do
-			{:ok, _topic} -> 
-			conn
-			|> put_flash(:info, "Topic Created")
-			|> redirect(to: topic_path(conn, :index))
-		\end{lstlisting}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{Updating the `create` Function}
-		\begin{lstlisting}[language=Elixir]
-			{:error, changeset} -> 
-			render conn, "new.html", changeset: changeset
-			end
-			end
-		\end{lstlisting}
-		\begin{itemize}
-			\item \texttt{build\_assoc/2} automatically associates the new topic with the current user.
-			\item This ensures that the `user\_id` field in the `topics` table is populated.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}
-		\frametitle{\shortstack{Restricting Edit/Delete Buttons Based on Ownership}}
-		\begin{itemize}
-			\item We will update the `index.html.eex` template to ensure only the topic owner can see edit/delete buttons.
-			\item This is done using an `if` statement.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]{Updating `index.html.eex` Template}
-		\begin{lstlisting}[language=Elixir]
-			<ul class = "collection">
-			<%= for topic <- @topics do %>
-			<li class="collection-item"> 
-			<%= topic.title %>
-			
-			<%= if @conn.assigns.user.id == topic.user_id do %>
-			<div class="right">
-			<%= link "Edit", to: topic_path(@conn, :edit, topic) %>
-			<%= link "Delete", to: topic_path(@conn, :delete , topic), method: :delete %>
-			</div>
-			<% end %>
-		\end{lstlisting}
-	\end{frame}
-	
-	\begin{frame}[fragile]{Updating `index.html.eex` Template}
-		\begin{lstlisting}[language=Elixir]
-			</li>
-			<%end%>
-			</ul>
-		\end{lstlisting}
-		\begin{itemize}
-			\item The `if` statement ensures that only the topic owner sees the edit/delete options.
-			\item This provides a basic level of authorization on the front-end.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}{\shortstack{Adding a Plug to Refuse \\Unauthorized Actions}}
-		\begin{itemize}
-			\item Even though unauthorized users cannot see the buttons, they might still access actions via URL.
-			\item We'll create a plug to refuse unauthorized actions.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{\shortstack{Adding a Plug to Refuse \\Unauthorized Actions}}
-		\begin{lstlisting}[language=Elixir]
-			def check_topic_owner(conn, _params) do
-			%{params: %{"id" => topic_id}} = conn
-			if Repo.get(Topic, topic_id).user_id == conn.assigns.user.id do
-			conn
-			else
-		\end{lstlisting}
-	\end{frame}
-	
-	\begin{frame}[fragile]
-		\frametitle{\shortstack{Adding a Plug to Refuse \\Unauthorized Actions}}
-		\begin{lstlisting}[language=Elixir]
-			conn
-			|> put_flash(:error, "You cannot edit that")
-			|> redirect(to: topic_path(conn, :index))
-			|> halt()
-			end
-			end
-		\end{lstlisting}
-		\begin{itemize}
-			\item We compare the `user\_id` of the topic with the `id` of the logged-in user.
-			\item If they don't match, we refuse the action.
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}{Conclusion}
-		\begin{itemize}
-			\item We implemented authorization to restrict actions based on user authentication.
-			\item Users are now associated with their topics.
-			\item These steps ensure better security and user management within our Discuss application.
-		\end{itemize}
-	\end{frame}
-	
+	def handle_info({:number_update, new_number}, socket) do
+	  {:noreply,assign(socket, :current_number, new_number)}
+	end
+	...
+\end{lstlisting}
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+
+\section{Configuring \texttt{Application} to Start \texttt{Hiwi.QueueCounter}}
+
+% ---------- FRAME 1 ----------
+\begin{frame}[fragile]{\LARGE{Adding \texttt{Hiwi.QueueCounter} as an Application Child}}
+\vspace{20pt}
+
+\begin{columns}[T,onlytextwidth]
+
+% LEFT -------------------------------------
+\begin{column}{0.42\textwidth}
+
+\begin{itemize}
+    \item GenServer \texttt{Hiwi.QueueCounter} must start with the application.
+    \item Added to the supervision tree inside \texttt{application.ex}.
+    \item Ensures the counter is globally available across all sessions.
+    \item Initializes its internal state using \texttt{start\_link/1}.
+    \item Works together with PubSub for real-time broadcast.
+\end{itemize}
+\end{column}
+
+% RIGHT -------------------------------------
+\begin{column}{0.55\textwidth}
+\begin{lstlisting}[language=Elixir]
+def start(_type, _args) do
+  children = [
+    HiwiWeb.Telemetry,
+    Hiwi.Repo,
+    {DNSCluster,
+      query: Application.get_env(
+        :hello, :dns_cluster_query
+      ) || :ignore},
+    {Phoenix.PubSub, name: Hiwi.PubSub},
+
+    # Start the QueueCounter GenServer
+    Hiwi.QueueCounter,
+
+    {Finch, name: Hiwi.Finch},
+    HiwiWeb.Endpoint
+  ]
+end
+\end{lstlisting}
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+
+
+% ---------- FRAME 2 ----------
+\begin{frame}[fragile]{\Large{Why \texttt{Hiwi.QueueCounter} Must Run in the Supervision Tree}}
+\vspace{20pt}
+
+\begin{itemize}
+    \item \textbf{Global State Holder:}  
+          Tracks case counts for the whole system.
+    \item \textbf{Persistent Process:}  
+          Runs independently for the entire application lifecycle.
+    \item \textbf{API Access:}  
+          Other modules call \texttt{get\_current\_number/0} and  
+          \texttt{set\_current\_number/1}.
+    \item \textbf{Real-Time Sync:}  
+          Publishes updates via \texttt{Phoenix.PubSub}.
+    \item \textbf{Supervised Reliability:}  
+          Automatically restarted if it crashes.
+    \item Running \texttt{QueueCounter} as a child ensures  
+          consistent, centralized, and real-time state  
+          management across the application.
+\end{itemize}
+
+
+\end{frame}
+
+\section{Implementing the \texttt{ModifiableLive} Module for Case Management with \texttt{LiveView}}
+
+
+% ---------- FRAME 1 ----------
+\begin{frame}[fragile]{Mounting and Initial State Setup}
+\vspace{20pt}
+
+\begin{columns}[T,onlytextwidth]
+
+% LEFT COLUMN
+\begin{column}{0.27\textwidth}
+\small
+\textbf{mount/3 Overview} \\
+The function extracts \texttt{queue\_id} from \texttt{params} and checks \texttt{user\_id} in the session. If the user is signed in, it subscribes to PubSub, retrieves the current count and queue data, and assigns them to the \texttt{socket}. If the user is not signed in, it shows an error flash and redirects to \texttt{"/"}.
+\end{column}
+
+
+
+% RIGHT COLUMN
+\begin{column}{0.68\textwidth}
+\begin{lstlisting}[language=Elixir]
+def mount(params, session, socket) do
+  %{"id" => queue_id} = params
+
+  case session do
+    %{"user_id" => user_id} ->
+      :ok = Phoenix.PubSub.subscribe(Hiwi.PubSub, "queue_counter:updates")
+      current_number = QueueCounter.get_current_number()
+      queue = Repo.get!(Queue, queue_id)
+      socket = socket
+        |> assign(:current_number, current_number)
+        |> assign(:queue_id, queue_id)
+        |> assign(:user_id, user_id)
+        |> assign(:queue, queue)
+      {:ok, socket, layout: {HiwiWeb.Layouts, :live}}
+    _ -> socket = socket
+        |> put_flash(:error, "You haven't signed in.")
+      {:ok, push_navigate(socket, to: "/")}
+  end
+end
+\end{lstlisting}
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+
+
+% ---------- FRAME 2 ----------
+\begin{frame}[fragile]{Handling the \texttt{"increment\_number"} Event}
+\vspace{20pt}
+
+\begin{columns}[T,onlytextwidth]
+
+% LEFT COLUMN
+\begin{column}{0.35\textwidth}
+\small
+\textbf{handle\_event/3 Workflow} \\
+When the UI triggers \texttt{"increment\_number"}, the function loads the latest \texttt{Queue}, increments \texttt{current\_number} via a changeset, and saves it using \texttt{Repo.update/1}. The updated value is reloaded, sent to \texttt{QueueCounter .set\_current\_number/1} to update the GenServer, and assigned to the socket so the LiveView refreshes without a page reload.
+\end{column}
+
+
+% RIGHT COLUMN
+\begin{column}{0.6\textwidth}
+\begin{lstlisting}[language=Elixir]
+def handle_event("increment_number", _params, socket) do
+  
+  old_queue = Repo.get!(Queue, socket.assigns.queue_id)
+  new_state = %{ "current_number" => old_queue.current_number + 1 }
+  changeset = Queue.changeset(old_queue, new_state)
+  Repo.update(changeset)
+  
+  current_queue = Repo.get!(Queue, socket.assigns.queue_id)
+  new_number = current_queue.current_number
+  QueueCounter.set_current_number(new_number)
+  
+  {:noreply, assign(socket, :current_number, new_number)}
+end
+\end{lstlisting}
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+
+
+% ---------- FRAME 3 ----------
+\begin{frame}[fragile]{Receiving PubSub Updates in LiveView}
+\vspace{20pt}
+
+\begin{columns}[T,onlytextwidth]
+
+% LEFT COLUMN
+\begin{column}{0.4\textwidth}
+\small
+\textbf{handle\_info/2 and Real-Time Sync} \\
+\texttt{ModifiableLive} subscribes to the topic \texttt{"queue\_counter:updates"} during \texttt{mount/3}. Whenever \texttt{Hiwi.QueueCounter} broadcasts a message such as \texttt{\{:number\_update, new\_number\}} through PubSub, \texttt{handle\_info/2} receives it and updates \texttt{:current\_number} in the socket. As a result, all subscribed sessions instantly display the same updated value, ensuring a synchronized and real-time case count across users.
+\end{column}
+
+% RIGHT COLUMN
+\begin{column}{0.55\textwidth}
+\begin{lstlisting}[language=Elixir]
+def handle_info( {:number_update, new_number}, socket) do
+  {:noreply, assign(socket, :current_number, new_number)}
+end
+\end{lstlisting}
+
+\begin{itemize}
+    \item User increments number $\rightarrow$ DB + QueueCounter updated.
+    \item \texttt{QueueCounter} broadcasts new number.
+    \item All \texttt{ModifiableLive} instances receive
+          \texttt{:number\_update}.
+    \item UI updates automatically without page reload.
+\end{itemize}
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+\section{Interface Design for \texttt{ModifiableLive} in \texttt{modifiable\_live.html.heex}}
+
+% ---------- FRAME 1 : CODE ----------
+\begin{frame}[fragile]{HTML Template for \texttt{ModifiableLive}}
+\vspace{20pt}
+
+\begin{lstlisting}[language=HTML]
+<div class="flex">
+  <!-- Left Area -->
+  <div class="w-1/2 p-4 bg-gray-100 flex flex-col justify-start">
+    <h1 class="text-4xl font-bold">Queue</h1>
+    <div class="text-2xl font-semibold hover:text-zinc-700">Name: <%= @queue.name %></div>
+    <div class="text-2xl font-semibold hover:text-zinc-700">Description:</div>
+    <div class="text-2xl"><%= @queue.description %></div>
+    <div class="text-2xl font-semibold hover:text-zinc-700">Max Number: <%= @queue.max_number %></div>
+    <button class="mt-4 px-4 py-2 bg-blue-500 text-white text-2xl rounded hover:bg-blue-600" phx-click="increment_number">Next Number</button>
+  </div>
+  <!-- Right Area -->
+  <div class="w-1/2 p-4 flex items-center justify-center bg-white">
+    <div class="text-9xl font-bold"><%= @queue.prefix %><%= @current_number %></div>
+  </div>
+</div>
+\end{lstlisting}
+
+\end{frame}
+
+
+
+% ---------- FRAME 2 : EXPLANATION ----------
+\begin{frame}[fragile]{Explanation of Layout and Behavior}
+\vspace{20pt}
+
+\begin{itemize}
+    \item The root container uses \texttt{flex} to split the UI into two equal columns.
+    \item The left area displays queue information (name, description, max number) and includes a \texttt{"Next Number"} button.
+    \item The button uses \texttt{phx-click="increment\_number"} to call \texttt{handle\_event/3} in \texttt{ModifiableLive}, increasing the queue number in real time.
+    \item The right area shows the current queue number in very large text (\texttt{text-9xl}), combining prefix + number for clear visibility.
+    \item Tailwind CSS classes provide a clean and responsive layout, emphasizing information on the left and visibility of the active number on the right.
+	\item The interface enables users to read queue details and increment the queue number instantly via LiveView, achieving real-time display without page reload.
+\end{itemize}
+
+\end{frame}
+
+
+\section{Implementation of \texttt{DisplayOnlyLive} for Real-Time Queue Display}
+
+% ---------- FRAME 1 : CODE ----------
+\begin{frame}[fragile]{Source Code — \texttt{DisplayOnlyLive}}
+\vspace{20pt}
+
+\begin{lstlisting}[language=Elixir]
+defmodule HiwiWeb.DisplayOnlyLive do
+  use HiwiWeb, :live_view
+  alias Hiwi.QueueCounter
+  alias Hiwi.Queue
+  alias Hiwi.Repo
+
+  def mount(params, _session, socket) do
+    %{"id" => queue_id} = params
+    :ok = Phoenix.PubSub.subscribe(Hiwi.PubSub, "queue_counter:updates")
+    current_number = QueueCounter.get_current_number()
+    queue = Repo.get!(Queue, queue_id)
+
+    socket =socket
+      |> assign(:current_number, current_number)
+      |> assign(:queue_name, queue.name)
+      |> assign(:queue_prefix, queue.prefix)
+    {:ok, socket, layout: false}
+  end
+  def handle_info({:number_update, new_number}, socket) do
+    {:noreply, assign(socket, :current_number, new_number)}
+  end
+end
+\end{lstlisting}
+
+\end{frame}
+
+
+
+% ---------- FRAME 2 : MOUNT & INITIAL STATE ----------
+\begin{frame}[fragile]{How \texttt{mount/3} Sets Up the Display}
+\vspace{20pt}
+
+\begin{columns}[T,onlytextwidth]
+
+% LEFT
+\begin{column}{0.55\textwidth}
+\textbf{mount/3 Explanation}
+\begin{itemize}
+    \item Extracts \texttt{queue\_id} from \texttt{params}.
+    \item Subscribes to \texttt{"queue\_counter:updates"} via PubSub.
+    \item Retrieves current queue number from \texttt{QueueCounter}.
+    \item Loads queue details from database using \texttt{Repo.get!/2}.
+    \item Assigns \texttt{:current\_number}, \texttt{:queue\_name}, and \texttt{:queue\_prefix} to socket.
+    \item \texttt{layout: false} for fullscreen display without default layout.
+\end{itemize}
+\end{column}
+
+% RIGHT
+\begin{column}{0.45\textwidth}
+\textbf{Benefits}
+\begin{itemize}
+    \item Queue information becomes available instantly at mount.
+    \item Subscribes once and continues receiving real-time updates.
+    \item Ideal for big screens, signage, and queue display monitors.
+    \item Lightweight interface focused only on queue visibility.
+    \item Lower rendering and layout overhead for better performance.
+\end{itemize}
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+
+
+% ---------- FRAME 3 : REAL-TIME UPDATE MECHANISM ----------
+\begin{frame}[fragile]{Real-Time Sync via \texttt{handle\_info/2}}
+\vspace{20pt}
+
+\begin{columns}[T,onlytextwidth]
+
+% LEFT
+\begin{column}{0.50\textwidth}
+\textbf{How It Works}
+\begin{itemize}
+    \item \texttt{QueueCounter} broadcasts updates through PubSub.
+    \item \texttt{handle\_info/2} receives \texttt{\{:number\_update, new\_number\}}.
+    \item Updates \texttt{:current\_number} in the LiveView socket.
+    \item LiveView re-renders automatically without page reload.
+    \item Every connected screen stays synchronized instantly.
+\end{itemize}
+\end{column}
+
+% RIGHT
+\begin{column}{0.50\textwidth}
+\textbf{Why It Matters}
+\begin{itemize}
+    \item Excellent for read-only queue display screens.
+    \item No polling required — updates pushed through WebSockets.
+    \item Works reliably for many viewers at the same time.
+    \item Users always see the latest queue number in real time.
+    \item Very low network and CPU overhead for high responsiveness.
+\end{itemize}
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+
+\section{Implementing \texttt{QueueCounterComponent} as a \texttt{LiveComponent} for Displaying Queue Numbers}
+
+% ---------- FRAME 1 ----------
+\begin{frame}[fragile]{QueueCounterComponent: Concept \& Purpose}
+\vspace{15pt}
+
+\begin{columns}[T,onlytextwidth]
+
+% LEFT (Explanation)
+\begin{column}{0.50\textwidth}
+\textbf{Component Overview}
+\begin{itemize}
+    \item A reusable \texttt{LiveComponent} for displaying queue numbers.
+    \item Designed for real-time UI without modification controls.
+    \item Uses \texttt{@queue\_prefix} and \texttt{@current\_number} passed from parent LiveView.
+    \item Automatically re-renders when assigns change.
+    \item Can be embedded across multiple LiveViews to avoid duplication.
+\end{itemize}
+\end{column}
+
+% RIGHT (Code)
+\begin{column}{0.50\textwidth}
+\begin{lstlisting}[language=Elixir]
+defmodule HiwiWeb.QueueCounterComponent do
+  use Phoenix.LiveComponent
+
+  def render(assigns) do
+    ~H"""
+    <div>
+      <%= @queue_prefix %><%= @current_number %>
+    </div>
+    """
+  end
+end
+\end{lstlisting}
+\end{column}
+
+\end{columns}
+\end{frame}
+
+
+
+% ---------- FRAME 2 ----------
+\begin{frame}[fragile]{Render Logic and Practical Benefits}
+\vspace{15pt}
+
+\begin{columns}[T,onlytextwidth]
+
+% LEFT (Explanation)
+\begin{column}{0.35\textwidth}
+\textbf{How It Works}
+\begin{itemize}
+    \item Receives assigns from parent LiveView — no internal state.
+    \item Displays queue number by interpolating prefix and number.
+    \item Re-render automatically triggered when LiveView assign changes.
+\end{itemize}
+
+\end{column}
+
+% RIGHT (Code)
+\begin{column}{0.6\textwidth}
+\begin{lstlisting}[language=Elixir]
+# Example usage inside a LiveView template
+<.live_component
+  module={HiwiWeb.QueueCounterComponent}
+  id="counter"
+  queue_prefix={@queue.prefix}
+  current_number={@current_number}
+/>
+\end{lstlisting}
+\textbf{Advantages}
+\begin{itemize}
+    \item Consistent UI for queue numbers across pages.
+    \item Eliminates repeated HTML templates.
+    \item Efficient — no PubSub subscription or event handling needed.
+    \item Perfect for dashboards and public display boards.
+\end{itemize}
+\end{column}
+
+\end{columns}
+\end{frame}
+
+
+
+
+\section{Creating \texttt{display\_only\_live.html.heex} for the \texttt{DisplayOnlyLive} Interface}
+
+% ---------- FRAME 1 : UI CODE ----------
+\begin{frame}[fragile]{UI Code for \texttt{DisplayOnlyLive}}
+\vspace{10pt}
+
+\begin{columns}[T]
+\small
+\begin{column}{0.35\textwidth}
+\textbf{Design Focus}
+\begin{itemize}
+    \item Full-screen layout optimized for public display.
+    \item Queue name positioned at the top for quick identification.
+    \item Queue number centered with extremely large font size.
+    \item Read-only display — no interaction required.
+    \item Uses \texttt{QueueCounterComponent} for real-time updates.
+\end{itemize}
+\end{column}
+
+% RIGHT COLUMN
+\begin{column}{0.6\textwidth}
+\begin{lstlisting}[language=HTML]
+<div class="h-screen flex flex-col items-center">
+  <div class="pt-8">
+    <h1 class="text-8xl font-bold text-center"><%= @queue_name %></h1>
+  </div>
+
+  <div class="flex-grow flex items-center justify-center -mt-24">
+    <div class="text-[16rem] font-bold text-center">
+      <.live_component
+        module={HiwiWeb.QueueCounterComponent}
+        id="queue_counter"
+        queue_prefix={@queue_prefix}
+        current_number={@current_number}
+      />
+    </div>
+  </div>
+</div>
+\end{lstlisting}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+
+% ---------- FRAME 2 : COMPONENT INTEGRATION & BEHAVIOR ----------
+\begin{frame}[fragile]{Real-Time Read-Only Display Logic}
+\vspace{10pt}
+
+\begin{columns}[T]
+% LEFT COLUMN
+\begin{column}{0.50\textwidth}
+\small
+\textbf{How the Template Works}
+\begin{itemize}
+    \item Displays \texttt{@queue\_prefix} + \texttt{@current\_number}.
+    \item Uses \texttt{QueueCounterComponent} for rendering.
+    \item Read-only — no buttons or interaction.
+    \item Updates instantly through PubSub + LiveView.
+\end{itemize}
+
+\medskip
+\textbf{Visual Strategy}
+\begin{itemize}
+    \item Very large fonts for visibility.
+    \item Minimal UI — focus only on queue info.
+    \item Center layout for clear focal point.
+\end{itemize}
+\end{column}
+
+% RIGHT COLUMN
+\begin{column}{0.5\textwidth}
+\begin{lstlisting}[language=HTML]
+<.live_component
+  module={HiwiWeb.QueueCounterComponent}
+  id="queue_counter"
+  queue_prefix={@queue_prefix}
+  current_number={@current_number}
+/>
+\end{lstlisting}
+\small
+\textbf{Real-Time Behavior}
+\begin{itemize}
+    \item Receives PubSub update via \texttt{handle\_info/2}.
+    \item Assigns new \texttt{:current\_number} to socket.
+    \item LiveView re-renders automatically (no refresh).
+\end{itemize}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+
+\section{Ringkasan}
+
+\begin{frame}[fragile]{Summary: Phoenix LiveView}
+\vspace{6pt}
+
+\begin{itemize}
+    \item \textbf{Real-time rendering.} LiveView enables interactive UIs via WebSockets without client JS frameworks.
+    \item \textbf{Efficient lifecycle.} \texttt{mount/3} initializes state, \texttt{render/1} updates only changed DOM via diff tracking.
+    \item \textbf{Server-state model.} All UI data lives in \texttt{socket.assigns}, updated through \texttt{handle\_event/3}.
+    \item \textbf{PubSub sync.} Shared state is broadcast instantly across user sessions for consistent views.
+    \item \textbf{Security support.} Sessions, authorization checks, and CSRF reduce risk in production apps.
+    \item \textbf{Case example.} \texttt{ModifiableLive} + \texttt{DisplayOnlyLive} demonstrate real queue updates powered by \texttt{QueueCounter GenServer}.
+\end{itemize}
+
+\end{frame}
+
+
+
+
+
+
 \end{document}

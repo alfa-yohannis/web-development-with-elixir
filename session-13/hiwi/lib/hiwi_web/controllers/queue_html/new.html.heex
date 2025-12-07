@@ -1,0 +1,66 @@
+<!-- lib/hiwi_web/controllers/queue_html/new.html.heex -->
+<HiwiWeb.Layouts.app flash={@flash}>
+  <div class="max-w-2xl mx-auto">
+    <div class="card bg-base-100 shadow-sm border border-base-200">
+      <div class="card-body">
+        <h1 class="card-title">New Queue</h1>
+        <p class="text-sm text-base-content/70 mb-2">
+          Create a queue with a name, status, and numbering rules.
+        </p>
+
+        <.form :let={f} for={@changeset} action={~p"/queues"} class="space-y-4">
+          <.input field={f[:name]} label="Name" required autofocus class="input input-bordered w-full" />
+
+          <.input
+            field={f[:status]}
+            type="select"
+            label="Status"
+            prompt="Choose status"
+            options={[Ready: "ready", Running: "running", Inactive: "inactive"]}
+            class="select select-bordered w-full"
+          />
+
+          <.input
+            field={f[:description]}
+            type="textarea"
+            label="Description"
+            class="textarea textarea-bordered w-full"
+          />
+          <label class="label -mt-2">
+            <span class="label-text-alt text-base-content/60">
+              Optional. Brief note about this queue or counter.
+            </span>
+          </label>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <.input field={f[:prefix]} label="Prefix" required class="input input-bordered w-full" />
+              <label class="label -mt-2">
+                <span class="label-text-alt text-base-content/60">Example: A, B, C</span>
+              </label>
+            </div>
+
+            <div>
+              <.input
+                field={f[:max_number]}
+                type="number"
+                label="Max Number"
+                min="1"
+                required
+                class="input input-bordered w-full"
+              />
+              <label class="label -mt-2">
+                <span class="label-text-alt text-base-content/60">Upper bound for ticket numbers</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-2">
+            <.link navigate={~p"/"} class="btn btn-ghost btn-sm">Cancel</.link>
+            <.button class="btn btn-primary btn-sm">Create</.button>
+          </div>
+        </.form>
+      </div>
+    </div>
+  </div>
+</HiwiWeb.Layouts.app>

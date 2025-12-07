@@ -1,0 +1,28 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "mix_task",
+      "name": "Phoenix server (phx.server)",
+      "request": "launch",
+      "projectDir": "${workspaceFolder}",
+      "task": "phx.server",
+      "taskArgs": [],
+      "env": {
+        "MIX_ENV": "dev"
+      }
+    },
+    {
+      "type": "mix_task",
+      "name": "mix test (debug)",
+      "request": "launch",
+      "projectDir": "${workspaceFolder}",
+      "task": "test",
+      "taskArgs": [],
+      "requireFiles": [
+        "test/**/test_helper.exs",
+        "test/**/*_test.exs"
+      ]
+    }
+  ]
+}

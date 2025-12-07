@@ -1,0 +1,62 @@
+<HiwiWeb.Layouts.app flash={@flash}>
+  <div class="max-w-2xl mx-auto">
+    <div class="card bg-base-100 shadow-sm border border-base-200">
+      <div class="card-body">
+        <h1 class="card-title mb-4">Queue Details</h1>
+
+        <dl class="divide-y divide-base-200">
+          <div class="py-2 grid grid-cols-3">
+            <dt class="font-medium text-base-content/70">Name</dt>
+            <dd class="col-span-2"><%= @queue.name %></dd>
+          </div>
+
+          <div class="py-2 grid grid-cols-3">
+            <dt class="font-medium text-base-content/70">Status</dt>
+            <dd class="col-span-2 capitalize"><%= @queue.status %></dd>
+          </div>
+
+          <div class="py-2 grid grid-cols-3">
+            <dt class="font-medium text-base-content/70">Prefix</dt>
+            <dd class="col-span-2"><%= @queue.prefix %></dd>
+          </div>
+
+          <div class="py-2 grid grid-cols-3">
+            <dt class="font-medium text-base-content/70">Max Number</dt>
+            <dd class="col-span-2"><%= @queue.max_number %></dd>
+          </div>
+
+          <div class="py-2 grid grid-cols-3">
+            <dt class="font-medium text-base-content/70">Description</dt>
+            <dd class="col-span-2"><%= @queue.description || "-" %></dd>
+          </div>
+
+          <div class="py-2 grid grid-cols-3">
+            <dt class="font-medium text-base-content/70">Inserted At</dt>
+            <dd class="col-span-2">
+              <%= @queue.inserted_at && Calendar.strftime(@queue.inserted_at, "%Y-%m-%d %H:%M:%S") %>
+            </dd>
+          </div>
+
+          <div class="py-2 grid grid-cols-3">
+            <dt class="font-medium text-base-content/70">Updated At</dt>
+            <dd class="col-span-2">
+              <%= @queue.updated_at && Calendar.strftime(@queue.updated_at, "%Y-%m-%d %H:%M:%S") %>
+            </dd>
+          </div>
+        </dl>
+
+        <div class="mt-6 flex justify-end gap-2">
+          <.link navigate={~p"/queues/edit/#{@queue.id}"} class="btn btn-sm btn-primary">
+            Edit
+          </.link>
+          <.link href={~p"/queues/delete/#{@queue.id}"} method="delete" data-confirm="Are you sure?" class="btn btn-sm btn-error">
+            Delete
+          </.link>
+          <.link navigate={~p"/"} class="btn btn-sm btn-ghost">
+            Back
+          </.link>
+        </div>
+      </div>
+    </div>
+  </div>
+</HiwiWeb.Layouts.app>
